@@ -1,0 +1,4 @@
+system: red hat enterprise version 7
+python version: 3.6.3
+django version: 1.5.11
+mongo db version: 2.6.12
