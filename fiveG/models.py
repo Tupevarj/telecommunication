@@ -48,7 +48,6 @@ print("Serving_Cell", normal.objects[0].Serving_Cell)
     # def preProcess():
     #     normalData = pd.DataFrame()
 normalData = preProcess()
-    #
 print(normalData[:5])
 
 
