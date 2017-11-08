@@ -9,4 +9,5 @@ db.createUser({user:"**", pwd:"******", roles:[{role:"userAdminAnyDatabase", db:
 ## create a new database
 use newDatabase
 
-##
+## import data into mongo database
+mongoimport --db 5gopt --collection normal --type csv --file ~/code/data/normal_800m.csv --ignoreBlanks
