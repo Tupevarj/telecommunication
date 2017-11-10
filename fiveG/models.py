@@ -10,18 +10,18 @@ from pymongo import MongoClient
 # connect('5gopt', username='yi', password='abc123')
 
 # connect(db='5gopt')
-
-class normal(Document):
-
-    Time = StringField()
-    UeNodeNo = StringField()
-    UeRNTI = StringField()
-    Cell_ID = StringField()
-    RSRP = StringField()
-    RSRQ = StringField()
-    Serving_Cell = StringField()
-
-    meta = {"collection": "normal"}
+#
+# class normal(Document):
+#
+#     Time = StringField()
+#     UeNodeNo = StringField()
+#     UeRNTI = StringField()
+#     Cell_ID = StringField()
+#     RSRP = StringField()
+#     RSRQ = StringField()
+#     Serving_Cell = StringField()
+#
+#     meta = {"collection": "normal"}
 
 
 def preProcess():
@@ -53,10 +53,13 @@ def preProcess():
 
 
 
-
-
-def _connect_mongo(host, port, username, password, db):
+def _connect_mongo():
     """ A util for making a connection to mongo """
+    host = "localhost"
+    port = 27017
+    username = ""
+    password = ""
+    db = "5gopt"
 
     if username and password:
         mongo_uri = 'mongodb://%s:%s@%s:%s/%s' % (username, password, host, port, db)
@@ -68,11 +71,12 @@ def _connect_mongo(host, port, username, password, db):
     return conn[db]
 
 
-def read_mongo(db, collection, query={}, host='localhost', port=27017, username=None, password=None, no_id=True):
+def normalCol_read_mongo(query={}, no_id=True):
     """ Read from Mongo and Store into DataFrame """
 
+    collection = "normal"
     # Connect to MongoDB
-    db = _connect_mongo(host=host, port=port, username=username, password=password, db=db)
+    db = _connect_mongo()
 
     # Make a query to the specific DB and Collection
     cursor = db[collection].find(query)
@@ -82,12 +86,16 @@ def read_mongo(db, collection, query={}, host='localhost', port=27017, username=
 
     # Delete the _id
     if no_id:
-        del df['_id']
+        try:
+            del df['_id']
+        except:
+            pass
 
     return df
 
-normalDF = read_mongo("5gopt", "normal", no_id=True)
-print(normalDF[:5])
+# normalDF = normalCol_read_mongo(no_id=True)
+
+# print(normalDF[:5])
 
 
 
