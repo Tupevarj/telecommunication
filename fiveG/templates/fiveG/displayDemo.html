@@ -12,35 +12,35 @@
         <div id="chart_panel" class="panel-body"
             style="width:100%;height:314px"></div>
     </div>
-<script type="text/javascript">
-$(document).ready(function() {
-
-    // Glucose Average by Day chart
-     var avgByDayOptions = {
-        chart: {
-            renderTo: 'chart_panel',
-            type: 'line',
-        },
-        legend: {enabled: false},
-        title: {text: 'Average Glucose by Day'},
-        subtitle: {text: 'Last 14 Days'},
-        xAxis: {title: {text: null}, labels: {rotation: -45}},
-        yAxis: {title: {text: null}},
-        series: [{}],
-    };
-
-    var chartDataUrl = "{% url 'chart_data_json' %}?name=avg_by_day"
-        + "&days=14";
-    $.getJSON(chartDataUrl,
-        function(data) {
-            avgByDayOptions.xAxis.categories = data['chart_data']['dates'];
-            avgByDayOptions.series[0].name = 'Avg Glucose (mg/dL)';
-            avgByDayOptions.series[0].data = data['chart_data']['values'];
-            var chart = new Highcharts.Chart(avgByDayOptions);
-    });
-
-} );
-</script>
+{#<script type="text/javascript">#}
+{#$(document).ready(function() {#}
+{##}
+{#    // Glucose Average by Day chart#}
+{#     var avgByDayOptions = {#}
+{#        chart: {#}
+{#            renderTo: 'chart_panel',#}
+{#            type: 'line',#}
+{#        },#}
+{#        legend: {enabled: false},#}
+{#        title: {text: 'Average Glucose by Day'},#}
+{#        subtitle: {text: 'Last 14 Days'},#}
+{#        xAxis: {title: {text: null}, labels: {rotation: -45}},#}
+{#        yAxis: {title: {text: null}},#}
+{#        series: [{}],#}
+{#    };#}
+{##}
+{#    var chartDataUrl = "{% url 'chart_data_json' %}?name=avg_by_day"#}
+{#        + "&days=14";#}
+{#    $.getJSON(chartDataUrl,#}
+{#        function(data) {#}
+{#            avgByDayOptions.xAxis.categories = data['chart_data']['dates'];#}
+{#            avgByDayOptions.series[0].name = 'Avg Glucose (mg/dL)';#}
+{#            avgByDayOptions.series[0].data = data['chart_data']['values'];#}
+{#            var chart = new Highcharts.Chart(avgByDayOptions);#}
+{#    });#}
+{##}
+{#} );#}
+{#</script>#}
 
 </body>
 </html>

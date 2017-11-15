@@ -11,17 +11,19 @@ from pymongo import MongoClient
 
 # connect(db='5gopt')
 #
-# class normal(Document):
-#
-#     Time = StringField()
-#     UeNodeNo = StringField()
-#     UeRNTI = StringField()
-#     Cell_ID = StringField()
-#     RSRP = StringField()
-#     RSRQ = StringField()
-#     Serving_Cell = StringField()
-#
-#     meta = {"collection": "normal"}
+class Normal(models.Model):
+
+    Time = StringField()
+    UeNodeNo = StringField()
+    UeRNTI = StringField()
+    Cell_ID = StringField()
+    RSRP = StringField()
+    RSRQ = StringField()
+    Serving_Cell = StringField()
+
+    meta = {"collection": "normal"}
+
+
 
 
 def preProcess():
