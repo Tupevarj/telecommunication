@@ -75,14 +75,11 @@ def _connect_mongo():
 
 def normalCol_read_mongo(query={}, no_id=True):
     """ Read from Mongo and Store into DataFrame """
-
     collection = "normal"
     # Connect to MongoDB
     db = _connect_mongo()
-
     # Make a query to the specific DB and Collection
     cursor = db[collection].find(query)
-
     # Expand the cursor and construct the DataFrame
     df =  pd.DataFrame(list(cursor))
 
@@ -92,12 +89,20 @@ def normalCol_read_mongo(query={}, no_id=True):
             del df['_id']
         except:
             pass
-
     return df
 
-# normalDF = normalCol_read_mongo(no_id=True)
+def collection_read_mongo(collection, query={}, no_id = True):
+    db = _connect_mongo()
+    cursor = db[collection].find(query)
+    df = pd.DataFrame(list(cursor))
 
-# print(normalDF[:5])
+    if no_id:
+        try:
+            del df["_id"]
+        except:
+            pass
+    return df
+
 
 
 
