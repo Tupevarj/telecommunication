@@ -590,6 +590,15 @@
              </div>
 
          </div>
+
+         <div class="container">
+             <div class="row">
+                 <div id="lineChartContainer" class="col-md-12 col-lg-12"></div>
+             </div>
+             <div class="row">
+                 <div id="lineChartContainer2" class="col-lg-12 col-md-12"></div>
+             </div>
+         </div>
      </section>
 
 
@@ -1190,64 +1199,171 @@
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
      <script>
 
-// Prepare random data
-var data = [
-    ['DE.SH', 728],
-    ['DE.BE', 710],
-    ['DE.MV', 963],
-    ['DE.HB', 541],
-    ['DE.HH', 622],
-    ['DE.RP', 866],
-    ['DE.SL', 398],
-    ['DE.BY', 785],
-    ['DE.SN', 223],
-    ['DE.ST', 605],
-    ['DE.NW', 237],
-    ['DE.BW', 157],
-    ['DE.HE', 134],
-    ['DE.NI', 136],
-    ['DE.TH', 704],
-    ['DE.', 361]
-];
+         // Prepare random data
+         var data = [
+             ['DE.SH', 728],
+             ['DE.BE', 710],
+             ['DE.MV', 963],
+             ['DE.HB', 541],
+             ['DE.HH', 622],
+             ['DE.RP', 866],
+             ['DE.SL', 398],
+             ['DE.BY', 785],
+             ['DE.SN', 223],
+             ['DE.ST', 605],
+             ['DE.NW', 237],
+             ['DE.BW', 157],
+             ['DE.HE', 134],
+             ['DE.NI', 136],
+             ['DE.TH', 704],
+             ['DE.', 361]
+         ];
 
-$.getJSON('https://www.highcharts.com/samples/data/jsonp.php?filename=germany.geo.json&callback=?', function (geojson) {
+         $.getJSON('https://www.highcharts.com/samples/data/jsonp.php?filename=germany.geo.json&callback=?', function (geojson) {
 
-    // Initiate the chart
-    Highcharts.mapChart('mapContainer', {
+             // Initiate the chart
+             Highcharts.mapChart('mapContainer', {
 
-        title: {
-            text: 'GeoJSON in Highmaps'
-        },
+                 title: {
+                     text: 'GeoJSON in Highmaps'
+                 },
 
-        mapNavigation: {
-            enabled: true,
-            buttonOptions: {
-                verticalAlign: 'bottom'
-            }
-        },
+                 mapNavigation: {
+                     enabled: true,
+                     buttonOptions: {
+                         verticalAlign: 'bottom'
+                     }
+                 },
 
-        colorAxis: {
-            tickPixelInterval: 100
-        },
+                 colorAxis: {
+                     tickPixelInterval: 100
+                 },
 
-        series: [{
-            data: data,
-            mapData: geojson,
-            joinBy: ['code_hasc', 0],
-            keys: ['code_hasc', 'value'],
-            name: 'Random data',
-            states: {
-                hover: {
-                    color: '#a4edba'
-                }
-            },
-            dataLabels: {
-                enabled: true,
-                format: '{point.properties.postal}'
-            }
-        }]
-    });
-});
+                 series: [{
+                     data: data,
+                     mapData: geojson,
+                     joinBy: ['code_hasc', 0],
+                     keys: ['code_hasc', 'value'],
+                     name: 'Random data',
+                     states: {
+                         hover: {
+                             color: '#a4edba'
+                         }
+                     },
+                     dataLabels: {
+                         enabled: true,
+                         format: '{point.properties.postal}'
+                     }
+                 }]
+             });
+         });
+
+
+         Highcharts.chart('lineChartContainer', {
+
+             title: {
+                 text: 'Solar Employment Growth by Sector, 2010-2016'
+             },
+
+             subtitle: {
+                 text: 'Source: thesolarfoundation.com'
+             },
+
+             yAxis: {
+                 title: {
+                     text: 'Number of Employees'
+                 }
+             },
+             legend: {
+                 layout: 'vertical',
+                 align: 'right',
+                 verticalAlign: 'middle'
+             },
+
+             plotOptions: {
+                 series: {
+                     label: {
+                         connectorAllowed: false
+                     },
+                     pointStart: 2010
+                 }
+             },
+
+             series: [{
+                 name: 'Other',
+                 data: [12908, 5948, 8105, 11248, 8989, 11816, 18274, 18111]
+             }],
+
+             responsive: {
+                 rules: [{
+                     condition: {
+                         maxWidth: 500
+                     },
+                     chartOptions: {
+                         legend: {
+                             layout: 'horizontal',
+                             align: 'center',
+                             verticalAlign: 'bottom'
+                         }
+                     }
+                 }]
+             }
+
+         });
+
+
+         Highcharts.chart('lineChartContainer2', {
+
+             title: {
+                 text: 'Solar Employment Growth by Sector, 2010-2016'
+             },
+
+             subtitle: {
+                 text: 'Source: thesolarfoundation.com'
+             },
+
+             yAxis: {
+                 title: {
+                     text: 'Number of Employees'
+                 }
+             },
+             legend: {
+                 layout: 'vertical',
+                 align: 'right',
+                 verticalAlign: 'middle'
+             },
+
+             plotOptions: {
+                 series: {
+                     label: {
+                         connectorAllowed: false
+                     },
+                     pointStart: 2010
+                 }
+             },
+
+             series: [{
+                 name: 'Other',
+                 data: [12908, 5948, 8105, 11248, 8989, 11816, 18274, 18111]
+             }],
+
+             responsive: {
+                 rules: [{
+                     condition: {
+                         maxWidth: 500
+                     },
+                     chartOptions: {
+                         legend: {
+                             layout: 'horizontal',
+                             align: 'center',
+                             verticalAlign: 'bottom'
+                         }
+                     }
+                 }]
+             }
+
+         });
+
 
      </script>
   </body>
