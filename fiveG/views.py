@@ -1,31 +1,20 @@
 from django.shortcuts import render
 from .models import normalCol_read_mongo, collection_read_mongo
 import json
-from django.db import models
-from django.db.models import Count, Sum
 from django.core.paginator import Paginator
 from django.http import HttpResponse
+from .ml import calculateThroughput
 
 # Create your views here.
 
 def index(request):
-    normalCol = normalCol_read_mongo()
-    rowNum = 100
-    data = list()
-    for i in range(rowNum):
-        record = {
-            "Time": normalCol.iloc[i]["Time"],
-            "UeNodeNo": normalCol.iloc[i]["UeNodeNo"],
-            "UeRNTI": normalCol.iloc[i]["UeRNTI"],
-            "Cell_ID": normalCol.iloc[i]["Cell_ID"],
-            "RSRP": normalCol.iloc[i]["RSRP"],
-            "RSRQ": normalCol.iloc[i]["RSRQ"],
-            "Serving_Cell": normalCol.iloc[i]["Serving_Cell"]
-        }
-        data.append(record)
-        # print(models.normal.objects.all())
+
+    # get main_file_with_UserThR collection from mongo
+    throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
+    result = calculateThroughput(throughputCapacityData[:200000])
+
     context = {
-        "items": data,
+        "UserThroughput": result
     }
 
     return render(request, 'fiveG/index.html', context)
