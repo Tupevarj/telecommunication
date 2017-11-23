@@ -6,12 +6,15 @@ import numpy as np
 
 
 def calculateThroughput(data):
-    data2 = data.fillna(0)
-    grouped = data2.groupby("Time")["UserThR"]
+    data["UserThR"].fillna(0, inplace=True)
+
+    grouped = data.groupby("Time")["UserThR"]
     throughputDict = dict()
     throughputDict["Time"] = list()
     throughputDict["throughput"] = list()
     for time, throughput in grouped:
+        pd.to_numeric(throughput, errors='coerce')
+        throughput.replace("NaN", 0, inplace=True)
         # np.nansum(throughput)
         throughputDict["Time"].append(time)
         tempThroughput = np.nansum(throughput)

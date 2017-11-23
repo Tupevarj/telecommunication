@@ -11,7 +11,7 @@ def index(request):
 
     # get main_file_with_UserThR collection from mongo
     throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
-    result = calculateThroughput(throughputCapacityData[:200000])
+    result = calculateThroughput(throughputCapacityData[:108000])
 
     context = {
         "UserThroughput": result
