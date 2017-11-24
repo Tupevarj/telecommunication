@@ -581,7 +581,10 @@
                                         </table>
                          </div>
                         <div class="col-lg-6 col-md-12">
-                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>
+                            <div>
+                                <img src="" class="img-fluid" alt="dominate map">
+                            </div>
+{#                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>#}
                         </div>
                      </div>
 
@@ -594,9 +597,11 @@
          <div class="container">
              <div class="row">
                  <div id="lineChartContainer" class="col-md-12 col-lg-12"></div>
-             </div>
-             <div class="row">
-                 <div id="lineChartContainer2" class="col-lg-12 col-md-12"></div>
+                 <div class="col-lg-12 col-md-12">
+                     <div class="centered text-center">
+                        <button class="btn btn-primary" id="loadMore" >load 2s more</button>
+                     </div>
+                 </div>
              </div>
          </div>
      </section>
@@ -1198,6 +1203,8 @@
     <!-- Custom js-->
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
      <script>
+         var throughtputData = {{ UserThroughput.throughput }};
+         var throughtputTime = {{ UserThroughput.Time }};
 
          // Prepare random data
          var data = [
@@ -1219,47 +1226,8 @@
              ['DE.', 361]
          ];
 
-         $.getJSON('https://www.highcharts.com/samples/data/jsonp.php?filename=germany.geo.json&callback=?', function (geojson) {
 
-             // Initiate the chart
-             Highcharts.mapChart('mapContainer', {
-
-                 title: {
-                     text: 'GeoJSON in Highmaps'
-                 },
-
-                 mapNavigation: {
-                     enabled: true,
-                     buttonOptions: {
-                         verticalAlign: 'bottom'
-                     }
-                 },
-
-                 colorAxis: {
-                     tickPixelInterval: 100
-                 },
-
-                 series: [{
-                     data: data,
-                     mapData: geojson,
-                     joinBy: ['code_hasc', 0],
-                     keys: ['code_hasc', 'value'],
-                     name: 'Random data',
-                     states: {
-                         hover: {
-                             color: '#a4edba'
-                         }
-                     },
-                     dataLabels: {
-                         enabled: true,
-                         format: '{point.properties.postal}'
-                     }
-                 }]
-             });
-         });
-
-
-         Highcharts.chart('lineChartContainer', {
+         var lineChartContainer = Highcharts.chart('lineChartContainer', {
              title: {
                  text: 'NS-3 simulator throughtput'
              },
@@ -1267,7 +1235,7 @@
                  text: '57 cells, 20 users, 5 times/s'
              },
              xAxis: {
-                 categories: {{ UserThroughput.Time }},
+                 categories: window.throughtputTime,
                  crosshair: true,
                  title: {
                      text: "seconds"
@@ -1286,62 +1254,25 @@
              },
              series: [{
                  name: 'throughtput',
-                 data: {{ UserThroughput.throughput }}
+                 data: window.throughtputData
              }]
          });
 
 
+         $(document).on("click", "#loadMore", function () {
+             $.ajax({
+                 url: "127.0.0.1:8000/loadMore",
+                 type: 'get',
+                 success: function (data) {
+                        window.throughtputData = window.throughtputData.concat(data["Time"])
+                        window.throughtputTime = window.throughtputTime.concat(data["throughput"])
+                 },
+                 failure: function (data) {
+                     alert("got a error, we are fixing");
 
-
-         Highcharts.chart('lineChartContainer2', {
-
-             title: {
-                 text: 'Solar Employment Growth by Sector, 2010-2016'
-             },
-
-             subtitle: {
-                 text: 'Source: thesolarfoundation.com'
-             },
-
-             yAxis: {
-                 title: {
-                     text: 'Number of Employees'
                  }
-             },
-             legend: {
-                 layout: 'vertical',
-                 align: 'right',
-                 verticalAlign: 'middle'
-             },
+             });
 
-             plotOptions: {
-                 series: {
-                     label: {
-                         connectorAllowed: false
-                     },
-                     pointStart: 2010
-                 }
-             },
-
-             series: [{
-                 name: 'Other',
-                 data: [12908, 5948, 8105, 11248, 8989, 11816, 18274, 18111]
-             }],
-
-             responsive: {
-                 rules: [{
-                     condition: {
-                         maxWidth: 500
-                     },
-                     chartOptions: {
-                         legend: {
-                             layout: 'horizontal',
-                             align: 'center',
-                             verticalAlign: 'bottom'
-                         }
-                     }
-                 }]
-             }
 
          });
 

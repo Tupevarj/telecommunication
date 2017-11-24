@@ -5,13 +5,21 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .ml import calculateThroughput
 
-# Create your views here.
+# declare global variables
+initialRecordNum = 108000
+throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
 
 def index(request):
 
+    # use session to keep the offset value
+    num = request.session.get("num")
+    if not num:
+        num = initialRecordNum
+    request.session["num"] = num
+
     # get main_file_with_UserThR collection from mongo
-    throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
-    result = calculateThroughput(throughputCapacityData[:108000])
+
+    result = calculateThroughput(throughputCapacityData[:initialRecordNum])
 
     context = {
         "UserThroughput": result
@@ -24,6 +32,8 @@ def show_normal_col_in_table(request):
 
     print("enter this function, enter this function, enter this function")
     if request.method == "GET":
+
+
 
         print(request.GET)
         limit = request.GET.get('limit')  # how many items per page
@@ -80,3 +90,17 @@ def displayDemo(request):
     # print(template_names[:1])
 
     return render(request, template_names)
+
+
+def loadMore(request):
+    oneTimeExtraRecord = 2280
+
+    if request.method == "GET":
+
+        prev = request.session.get("num")
+        after = prev + oneTimeExtraRecord
+        thisResult = calculateThroughput(throughputCapacityData[prev:after])
+        request.session["num"] = oneTimeExtraRecord + request.session.get("num")  # set up the new value
+        return HttpResponse(json.dumps(thisResult))
+    else:
+        return 0
