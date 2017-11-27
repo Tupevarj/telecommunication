@@ -1,27 +1,24 @@
-from django.db import models
-from mongoengine import *
+
+# from mongoengine import *
 import numpy as np
 import pandas as pd
+import pymongo
 from pymongo import MongoClient
 
-# Create your models here.
 
-# from mongoengine import connect
-# connect('5gopt', username='yi', password='abc123')
-
-# connect(db='5gopt')
+# connect('5gopt')
 #
-class Normal(models.Model):
-
-    Time = StringField()
-    UeNodeNo = StringField()
-    UeRNTI = StringField()
-    Cell_ID = StringField()
-    RSRP = StringField()
-    RSRQ = StringField()
-    Serving_Cell = StringField()
-
-    meta = {"collection": "normal"}
+# class Normal(models.Model):
+#
+#     Time = StringField()
+#     UeNodeNo = StringField()
+#     UeRNTI = StringField()
+#     Cell_ID = StringField()
+#     RSRP = StringField()
+#     RSRQ = StringField()
+#     Serving_Cell = StringField()
+#
+#     meta = {"collection": "normal"}
 
 
 
@@ -103,6 +100,16 @@ def collection_read_mongo(collection, query={}, no_id = True):
             pass
     return df
 
+
+# collection for cell indicator, ns3 can read command from this collection
+# class CellIndicator(Document):
+#     cell = IntField()
+#     flag = IntField()   #0 means False; 1 means True
+
+
+# build connection between already-existing collection and mongoengine collection
+# class EventLog(Document):
+#     meta = {'collection': 'event_log'}
 
 
 

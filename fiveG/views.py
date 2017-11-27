@@ -9,13 +9,15 @@ from .ml import calculateThroughput
 initialRecordNum = 108000
 throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
 
+cursorLocation = 108000
+
 def index(request):
 
     # use session to keep the offset value
-    num = request.session.get("num")
-    if not num:
-        num = initialRecordNum
-    request.session["num"] = num
+    # num = request.session.get("num")
+    # if not num:
+    #     num = initialRecordNum
+    # request.session["num"] = num
 
     # get main_file_with_UserThR collection from mongo
 
@@ -96,11 +98,9 @@ def loadMore(request):
     oneTimeExtraRecord = 2280
 
     if request.method == "GET":
-
-        prev = request.session.get("num")
-        after = prev + oneTimeExtraRecord
-        thisResult = calculateThroughput(throughputCapacityData[prev:after])
-        request.session["num"] = oneTimeExtraRecord + request.session.get("num")  # set up the new value
+        nextCursorLocation = cursorLocation + oneTimeExtraRecord
+        thisResult = calculateThroughput(throughputCapacityData[cursorLocation:nextCursorLocation])
+        cursorLocation = nextCursorLocation
         return HttpResponse(json.dumps(thisResult))
     else:
         return 0
