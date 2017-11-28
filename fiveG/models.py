@@ -8,19 +8,8 @@ from pymongo import MongoClient
 # from mongoengine import connect
 # connect('5gopt', username='yi', password='abc123')
 
-# connect(db='5gopt')
+connect(db='5gopt')
 #
-class Normal(models.Model):
-
-    Time = StringField()
-    UeNodeNo = StringField()
-    UeRNTI = StringField()
-    Cell_ID = StringField()
-    RSRP = StringField()
-    RSRQ = StringField()
-    Serving_Cell = StringField()
-
-    meta = {"collection": "normal"}
 
 
 
@@ -112,6 +101,21 @@ def collection_read_mongo(collection, query={}, no_id = True):
 # build connection between already-existing collection and mongoengine collection
 # class EventLog(Document):
 #     meta = {'collection': 'event_log'}
+
+# class Control(models.Model):
+#     cellID = models.IntegerField()
+#     normal = models.IntegerField()
+#     outage = models.IntegerField()
+#     coc = models.IntegerField()
+#     cco = models.IntegerField()
+#     mro = models.IntegerField()
+#     mlb = models.IntegerField()
+
+
+
+
+
+
 
 
 

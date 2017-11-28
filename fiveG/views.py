@@ -105,3 +105,17 @@ def loadMore(request):
         return HttpResponse(json.dumps(thisResult))
     else:
         return 0
+
+def controlPanel(request):
+    if request.method == "POST":
+        cellID = request.POST.get("cellID")
+        selfHealingOption = request.POST.get("selfHealingOption")
+        selfOptimizingOption = request.POST.get("selfOptimizingOption")
+
+        if cellID == None:
+            return 0
+        else:
+            # store this operation into mongoDB collecton - control Panel
+            return 0
+
+

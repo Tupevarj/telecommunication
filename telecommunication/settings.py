@@ -84,9 +84,9 @@ WSGI_APPLICATION = 'telecommunication.wsgi.application'
 # }
 #
 # DATABASES = {
-#    'default' : {
-#       'ENGINE' : 'django_mongodb_engine',
-#       'NAME' : '5gopt',
+#    'default': {
+#       'ENGINE': 'django_mongodb_engine',
+#       'NAME': '5gopt',
 #    }
 # }
 
