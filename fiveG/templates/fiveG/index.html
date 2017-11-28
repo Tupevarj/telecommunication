@@ -1253,27 +1253,28 @@
                  verticalAlign: 'middle'
              },
              series: [{
-                 name: 'throughtput',
-                 data: window.throughtputData
+                 data: window.throughtputData,
+                 name: 'throughtput'
              }]
          });
 
 
-         $(document).on("click", "#loadMore", function () {
+         $("#loadMore").click(function () {
              $.ajax({
-                 url: "127.0.0.1:8000/loadMore",
-                 type: 'get',
+                 url: "loadMore",
+                 type: 'GET',
                  success: function (data) {
-                        window.throughtputData = window.throughtputData.concat(data["Time"])
-                        window.throughtputTime = window.throughtputTime.concat(data["throughput"])
+                        var obj = JSON.parse(data);
+                        window.throughtputData = window.throughtputData.concat(obj["throughput"]);
+                        window.throughtputTime = window.throughtputTime.concat(obj["Time"]);
+                        window.lineChartContainer.xAxis[0].setCategories(window.throughtputTime);
+                        window.lineChartContainer.series[0].setData(window.throughtputData, true);
                  },
                  failure: function (data) {
                      alert("got a error, we are fixing");
 
                  }
              });
-
-
          });
 
 

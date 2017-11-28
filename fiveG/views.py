@@ -10,6 +10,7 @@ initialRecordNum = 108000
 throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
 
 cursorLocation = 108000
+oneTimeExtraRecord = 2280
 
 def index(request):
 
@@ -95,8 +96,8 @@ def displayDemo(request):
 
 
 def loadMore(request):
-    oneTimeExtraRecord = 2280
-
+    global cursorLocation
+    global oneTimeExtraRecord
     if request.method == "GET":
         nextCursorLocation = cursorLocation + oneTimeExtraRecord
         thisResult = calculateThroughput(throughputCapacityData[cursorLocation:nextCursorLocation])

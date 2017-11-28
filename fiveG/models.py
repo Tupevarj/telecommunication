@@ -1,24 +1,26 @@
-
-# from mongoengine import *
+from django.db import models
+from mongoengine import *
 import numpy as np
 import pandas as pd
-import pymongo
 from pymongo import MongoClient
 
 
-# connect('5gopt')
+# from mongoengine import connect
+# connect('5gopt', username='yi', password='abc123')
+
+# connect(db='5gopt')
 #
-# class Normal(models.Model):
-#
-#     Time = StringField()
-#     UeNodeNo = StringField()
-#     UeRNTI = StringField()
-#     Cell_ID = StringField()
-#     RSRP = StringField()
-#     RSRQ = StringField()
-#     Serving_Cell = StringField()
-#
-#     meta = {"collection": "normal"}
+class Normal(models.Model):
+
+    Time = StringField()
+    UeNodeNo = StringField()
+    UeRNTI = StringField()
+    Cell_ID = StringField()
+    RSRP = StringField()
+    RSRQ = StringField()
+    Serving_Cell = StringField()
+
+    meta = {"collection": "normal"}
 
 
 
