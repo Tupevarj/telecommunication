@@ -1,5 +1,5 @@
 from django.db import models
-from mongoengine import *
+# from mongoengine import *
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
@@ -8,7 +8,7 @@ from pymongo import MongoClient
 # from mongoengine import connect
 # connect('5gopt', username='yi', password='abc123')
 
-connect(db='5gopt')
+# connect(db='5gopt')
 #
 
 
@@ -110,6 +110,9 @@ def collection_read_mongo(collection, query={}, no_id = True):
 #     cco = models.IntegerField()
 #     mro = models.IntegerField()
 #     mlb = models.IntegerField()
+def insert_document(collection, data):
+    db = _connect_mongo()
+    db[collection].insert_one(data)
 
 
 

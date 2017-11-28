@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import normalCol_read_mongo, collection_read_mongo
+from .models import normalCol_read_mongo, collection_read_mongo, calculateThroughput
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
@@ -110,12 +110,25 @@ def controlPanel(request):
     if request.method == "POST":
         cellID = request.POST.get("cellID")
         selfHealingOption = request.POST.get("selfHealingOption")
+        if selfHealingOption == 1:
+
         selfOptimizingOption = request.POST.get("selfOptimizingOption")
+
+        document = {"cellID": cellID,
+                    "normal": selfHealingOption,
+                    "outage": outage,
+                    "coc": coc,
+                    "cco": cco,
+                    "mro": mro,
+                    "mlb": mlb
+                    }
 
         if cellID == None:
             return 0
         else:
             # store this operation into mongoDB collecton - control Panel
+            # insert one document into database
+            calculateThroughput("controlpanel", document)
             return 0
 
 
