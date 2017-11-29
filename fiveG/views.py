@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import normalCol_read_mongo, collection_read_mongo, calculateThroughput
+from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
@@ -107,15 +107,44 @@ def loadMore(request):
         return 0
 
 def controlPanel(request):
-    if request.method == "POST":
-        cellID = request.POST.get("cellID")
-        selfHealingOption = request.POST.get("selfHealingOption")
-        if selfHealingOption == 1:
+    if request.method == "GET":
+        if request.GET.get("cellID") == "":
+            cellID = 0
+        else:
+            cellID = request.GET.get("cellID")
 
-        selfOptimizingOption = request.POST.get("selfOptimizingOption")
+        if request.GET.get("normal") != None:
+            normal = request.GET.get("normal")
+        else:
+            normal = 0
+
+        if request.GET.get("outage") != None:
+            outage = request.GET.get("outage")
+        else:
+            outage = 0
+
+        if request.GET.get("coc") != None:
+            coc = request.GET.get("coc")
+        else:
+            coc = 0
+
+        if request.GET.get("cco") != None:
+            cco = request.GET.get("cco")
+        else:
+            cco = 0
+
+        if request.GET.get("mro") != None:
+            mro = request.GET.get("mro")
+        else:
+            mro = 0
+
+        if request.GET.get("mlb") != None:
+            mlb = request.GET.get("mlb")
+        else:
+            mlb = 0
 
         document = {"cellID": cellID,
-                    "normal": selfHealingOption,
+                    "normal": normal,
                     "outage": outage,
                     "coc": coc,
                     "cco": cco,
@@ -123,12 +152,13 @@ def controlPanel(request):
                     "mlb": mlb
                     }
 
-        if cellID == None:
-            return 0
+        if cellID == 0:
+            info = "Warning, the control Panel encounters problems, fixing"
+            return HttpResponse(json.dumps(info))
         else:
             # store this operation into mongoDB collecton - control Panel
             # insert one document into database
-            calculateThroughput("controlpanel", document)
-            return 0
-
+            info = "successfully finish new operation"
+            insert_document("controlpanel", document)
+            return HttpResponse(json.dumps(info))
 

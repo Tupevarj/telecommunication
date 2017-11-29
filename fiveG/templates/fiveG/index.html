@@ -606,39 +606,70 @@
          </div>
 
          <div class="container">
-             <form action="controlPanel" method="post">
-                <div class="row">
-                 <div class="panel panel-primary col-md-12 col-lg-12">
-                     <!-- Default panel contents -->
-                     <div class="panel-heading">
-                         <div class="panel-title">Dashboard - Control Panel</div>
-                     </div>
-                     <div class="panel-body">
-                         <div>Fault Model</div>
-                         <div class="row"><label for="">Enter Cell ID: </label><input type="text" class="" name="cellID"></div>
-                         <div class="row">
-                             <label for="">SelfHealing</label>
-                             <div class="btn-group" role="group" name="selfHealingOption">
-                                 <button type="button" class="btn btn-default">Normal</button>
-                                 <button type="button" class="btn btn-default">Outage</button>
-                                 <button type="button" class="btn btn-default">COC</button>
-                             </div>
+             <form action="controlPanel" method="GET" id="controlPanel">
+                 {% csrf_token %}
+                 <div class="row">
+                     <div class="panel panel-primary col-md-12 col-lg-12">
+                         <!-- Default panel contents -->
+                         <div class="panel-heading">
+                             <div class="panel-title">Dashboard - Control Panel</div>
                          </div>
-                         <div class="row">
-                             <label for="">SelfOptimizing</label>
-                             <div class="btn-group" role="group" name="selfOptimizingOption">
-                                 <button type="button" class="btn btn-default">CCO</button>
-                                 <button type="button" class="btn btn-default">MRO</button>
-                                 <button type="button" class="btn btn-default">MLB</button>
+                         <div class="panel-body">
+                             <div>Fault Model</div>
+                             <div class="row"><label for="">Enter Cell ID: </label><input type="text" class=""
+                                                                                          name="cellID"></div>
+                             <div class="row">
+                                 <label for="">SelfHealing</label>
+                                 <div class="btn-group" role="group" name="selfHealingOption">
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="normal" value="1">
+                                        Normal
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="outage" value="1">
+                                        Outage
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="coc" value="1">
+                                        COC
+                                      </label>
+                                    </div>
+                                 </div>
                              </div>
+                             <div class="row">
+                                 <label for="">SelfOptimizing</label>
+                                 <div class="btn-group" role="group" name="selfOptimizingOption">
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="cco" value="1">
+                                        CCO
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="mro" value="1">
+                                        MRO
+                                      </label>
+                                    </div>
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" name="mlb" value="1">
+                                        MLB
+                                      </label>
+                                    </div>
+                                 </div>
+                             </div>
+                             <button class="btn btn-primary" name="controlConfirm">confirm</button>
+                             <div class="alert alert-success invisible" id="alertSuccess"></div>
+                             <div class="alert alert-warning invisible" id="alertWarning"></div>
                          </div>
-                         <input type="submit" class="btn btn-primary" value="confirm">
-                     </div>
-
-                     <!-- List group -->
-
+                     </div>{% csrf_token %}
                  </div>
-             </div>
              </form>
 
          </div>
@@ -1317,6 +1348,26 @@
                  }
              });
          });
+
+         $(document).on("submit", "#controlPanel", function (e) {
+             e.preventDefault();
+             $.ajax({
+                 type: $(this).attr("method"),
+                 url: $(this).attr("action"),
+                 data: $(this).serialize(),
+                 success: function (data) {
+                     $("#alertWarning").addClass("invisible");
+                     $("#alertSuccess").html(data);
+                     $("#alertSuccess").removeClass("invisible");
+                 },
+                 failure: function (data) {
+                     $("#alertSuccess").addClass("invisible");
+                     $("#alertWarning").html(data);
+                     $("#alertWarning").removeClass("invisible");
+                 }
+             });
+         });
+
 
 
      </script>
