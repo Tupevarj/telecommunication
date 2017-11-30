@@ -3,7 +3,8 @@ from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from .ml import calculateThroughput
+from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
+import pandas as pd
 
 # declare global variables
 initialRecordNum = 108000
@@ -23,9 +24,11 @@ def index(request):
     # get main_file_with_UserThR collection from mongo
 
     result = calculateThroughput(throughputCapacityData[:initialRecordNum])
+    dominateMap = displayDominateMap()
 
     context = {
-        "UserThroughput": result
+        "UserThroughput": result,
+        "map": dominateMap
     }
 
     return render(request, 'fiveG/index.html', context)
@@ -45,10 +48,11 @@ def show_normal_col_in_table(request):
         sort_column = request.GET.get('sort')  # which column need to sort
         order = request.GET.get('order')  # ascending or descending
         if search:
-            all_records = collection_read_mongo(collection="event_log")
-            # all_records = normalCol_read_mongo()
+            # all_records = collection_read_mongo(collection="event_log")
+            all_records = pd.DataFrame.from_dict(detectUnnormalCell())
         else:
-            all_records = collection_read_mongo(collection="event_log")
+            # all_records = collection_read_mongo(collection="event_log")
+            all_records = pd.DataFrame.from_dict(detectUnnormalCell())
 
         # all_records = all_records.insert(0, "order", range(0, len(all_records.index)))
 
@@ -57,7 +61,7 @@ def show_normal_col_in_table(request):
         if not offset:
             offset = 0
         if not limit:
-            limit = 20
+            limit = 10
 
         all_records_list = all_records[:100].values.tolist()
         pageinator = Paginator(all_records_list, limit)
@@ -69,13 +73,16 @@ def show_normal_col_in_table(request):
             print(record)
 
             response_data['rows'].append({
-                "time": record[0] if record[0] else "",
-                "X": record[1] if record[1] else "",
-                "Y": record[2] if record[2] else "",
-                "IMSI": record[3] if record[3] else "",
-                "EVENT": record[4] if record[4] else "",
-                "RSRQ": record[5] if record[5] else "",
-                "CellID": record[6] if record[6] else ""
+                # "time": record[0] if record[0] else "",
+                # "X": record[1] if record[1] else "",
+                # "Y": record[2] if record[2] else "",
+                # "IMSI": record[3] if record[3] else "",
+                # "EVENT": record[4] if record[4] else "",
+                # "RSRQ": record[5] if record[5] else "",
+                # "CellID": record[6] if record[6] else ""
+                "CellID": record[0] if record[0] else "",
+                "userID": record[2] if record[2] else "",
+                "signal": record[1] if record[1] else ""
             })
 
         return HttpResponse(json.dumps(response_data))
@@ -161,4 +168,8 @@ def controlPanel(request):
             info = "successfully finish new operation"
             insert_document("controlpanel", document)
             return HttpResponse(json.dumps(info))
+
+
+
+
 

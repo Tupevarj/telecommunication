@@ -569,20 +569,28 @@
                                             >
                                             <thead>
                                                 <tr>
-                                                    <th data-field="time">time</th>
-                                                    <th data-field="X">X</th>
-                                                    <th data-field="Y">Y</th>
-                                                    <th data-field="IMSI">IMSI</th>
-                                                    <th data-field="EVENT">EVENT</th>
-                                                    <th data-field="RSRQ">RSRQ</th>
-                                                    <th data-field="CellID">CellID</th>
+{#                                                    <th data-field="time">time</th>#}
+{#                                                    <th data-field="X">X</th>#}
+{#                                                    <th data-field="Y">Y</th>#}
+{#                                                    <th data-field="IMSI">IMSI</th>#}
+{#                                                    <th data-field="EVENT">EVENT</th>#}
+{#                                                    <th data-field="RSRQ">RSRQ</th>#}
+{#                                                    <th data-field="CellID">CellID</th>#}
+                                                    <th data-field="CellID">cellID</th>
+                                                    <th data-field="userID">userID</th>
+                                                    <th data-field="signal">signal</th>
                                                 </tr>
                                             </thead>
                                         </table>
                          </div>
                         <div class="col-lg-6 col-md-12">
-                            <div>
-                                <img src="" class="img-fluid" alt="dominate map">
+                            <div class="panel panel-primary">
+                                <div class="panel-heading text-center">
+                                    DOMINACE MAP
+                                </div>
+                                <div class="panel-body text-center">
+                                    <img src="{% static 'fiveG/img/dominationMap.png' %}" class="img-fluid" alt="dominate map">
+                                </div>
                             </div>
 {#                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>#}
                         </div>
@@ -594,7 +602,7 @@
 
          </div>
 
-         <div class="container">
+         <div class="container style="margin-top: 2cm; " style="margin-top: 2cm;">
              <div class="row">
                  <div id="lineChartContainer" class="col-md-12 col-lg-12"></div>
                  <div class="col-lg-12 col-md-12">
@@ -605,35 +613,35 @@
              </div>
          </div>
 
-         <div class="container">
+         <div class="container" style="margin-top: 2cm;">
              <form action="controlPanel" method="GET" id="controlPanel">
                  {% csrf_token %}
                  <div class="row">
-                     <div class="panel panel-primary col-md-12 col-lg-12">
+                     <div class="panel panel-primary col-md-12 col-lg-offset-2 col-lg-8">
                          <!-- Default panel contents -->
-                         <div class="panel-heading">
-                             <div class="panel-title">Dashboard - Control Panel</div>
+                         <div class="panel-heading text-center col-lg-12">
+                             Dashboard - Control Panel
                          </div>
-                         <div class="panel-body">
-                             <div>Fault Model</div>
-                             <div class="row"><label for="">Enter Cell ID: </label><input type="text" class=""
-                                                                                          name="cellID"></div>
-                             <div class="row">
-                                 <label for="">SelfHealing</label>
-                                 <div class="btn-group" role="group" name="selfHealingOption">
-                                    <div class="form-check">
+                         <div class="panel-body col-lg-12">
+                             <div class="row col-lg-offset-1">
+                                 <label for="" class="col-lg-3">Enter Cell ID</label><input type="text" class="input-sm col-md-3 col-lg-3" name="cellID">
+                             </div>
+                             <div class="row col-lg-offset-1 col-lg-10 col-md-10">
+                                 <label for="" class="col-lg-3 col-md-3">SelfHealing</label>
+                                 <div class="btn-group col-lg-10 col-md-8" role="group" name="selfHealingOption">
+                                    <div class="form-check col-lg-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="normal" value="1">
                                         Normal
                                       </label>
                                     </div>
-                                    <div class="form-check">
+                                    <div class="form-check col-lg-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="outage" value="1">
                                         Outage
                                       </label>
                                     </div>
-                                    <div class="form-check">
+                                    <div class="form-check col-lg-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="coc" value="1">
                                         COC
@@ -641,22 +649,22 @@
                                     </div>
                                  </div>
                              </div>
-                             <div class="row">
-                                 <label for="">SelfOptimizing</label>
-                                 <div class="btn-group" role="group" name="selfOptimizingOption">
-                                    <div class="form-check">
+                             <div class="row col-lg-offset-1 col-lg-10 col-md-10">
+                                 <label for="" class="col-lg-3 col-md-3">SelfOptimizing</label>
+                                 <div class="btn-group col-lg-10 col-md-8" role="group" name="selfOptimizingOption">
+                                    <div class="form-check col-lg-4 col-md-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="cco" value="1">
                                         CCO
                                       </label>
                                     </div>
-                                    <div class="form-check">
+                                    <div class="form-check col-lg-4 col-md-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="mro" value="1">
                                         MRO
                                       </label>
                                     </div>
-                                    <div class="form-check">
+                                    <div class="form-check col-lg-4 col-md-4">
                                       <label class="form-check-label">
                                         <input class="form-check-input" type="checkbox" name="mlb" value="1">
                                         MLB
@@ -664,9 +672,13 @@
                                     </div>
                                  </div>
                              </div>
-                             <button class="btn btn-primary" name="controlConfirm">confirm</button>
-                             <div class="alert alert-success invisible" id="alertSuccess"></div>
-                             <div class="alert alert-warning invisible" id="alertWarning"></div>
+                             <div class="row col-md-12 col-lg-12 text-center">
+                                <button class="btn btn-primary" name="controlConfirm">confirm</button>
+                             </div>
+                             <div class="row col-lg-12 col-md-12">
+                                <div class="alert alert-success invisible" id="alertSuccess"></div>
+                                <div class="alert alert-warning invisible" id="alertWarning"></div>
+                             </div>
                          </div>
                      </div>{% csrf_token %}
                  </div>
