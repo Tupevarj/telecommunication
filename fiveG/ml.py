@@ -26,7 +26,18 @@ def calculateThroughput(data):
         tempThroughput = np.nansum(throughput)
         throughputDict["throughput"].append(tempThroughput)
 
-    return throughputDict
+    nonZeroThroughputDict = 0
+    i = 0
+    for t in throughputDict["throughput"]:
+        if t != 0:
+            break
+        else:
+            i += 1
+
+    nonZeroThroughputDict = {"Time": throughputDict["Time"][i:], "throughput": throughputDict["throughput"][i:]}
+
+
+    return nonZeroThroughputDict
 
 
 def displayDominateMap():
@@ -67,10 +78,13 @@ def displayDominateMap():
     # # canvas.print_png(responsePNG)
     return 0
 
+#time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 def detectUnnormalCell():
-    cellData = {"CellID": [10,1,2,5,3,1,18,3,4,30,8,4,14,27,5,7,11,6,19,22],
-                "userID": [ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,18, 19, 20],
-                "signal": ['normal', 'normal', 'normal', 'weak', 'normal', 'normal', 'weak','normal', 'normal', 'weak', 'normal', 'normal', 'normal', 'normal','weak', 'weak', 'normal', 'normal', 'normal', 'normal']
+    cellData = {"CellID": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+                "Severity": ["Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal"],
+                "Created": ['2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51','2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51','2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51'],
+                "Problem Class": ["Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic"],
+                "Service Class": ["eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN"]
                 }
 
 

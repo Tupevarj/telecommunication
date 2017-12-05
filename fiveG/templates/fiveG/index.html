@@ -561,7 +561,7 @@
                              <h2 class="wow fadeInLeftBig">display data demo</h2>
                          </div>
                          <div class="col-lg-6 col-md-12" style="height: 600px; overflow:scroll">
-                                        <table id="" data-toggle="table"
+                                        <table id="alarmTable" data-toggle="table"
                                             data-url = "{% url 'show_normal_col_in_table' %}"
                                             data-method = "get" data-page-size=20
                                             data-pagination = "true" data-show-columns="true"
@@ -569,16 +569,11 @@
                                             >
                                             <thead>
                                                 <tr>
-{#                                                    <th data-field="time">time</th>#}
-{#                                                    <th data-field="X">X</th>#}
-{#                                                    <th data-field="Y">Y</th>#}
-{#                                                    <th data-field="IMSI">IMSI</th>#}
-{#                                                    <th data-field="EVENT">EVENT</th>#}
-{#                                                    <th data-field="RSRQ">RSRQ</th>#}
-{#                                                    <th data-field="CellID">CellID</th>#}
-                                                    <th data-field="CellID">cellID</th>
-                                                    <th data-field="userID">userID</th>
-                                                    <th data-field="signal">signal</th>
+                                                    <th data-field="CellID">CellID</th>
+                                                    <th data-field="Severity">Severity</th>
+                                                    <th data-field="Created">Created</th>
+                                                    <th data-field="Problem Class">Problem Class</th>
+                                                    <th data-field="Service Class">Service Class</th>
                                                 </tr>
                                             </thead>
                                         </table>
@@ -611,6 +606,18 @@
                      </div>
                  </div>
              </div>
+         </div>
+
+         <div class="container" style="margin-top: 2cm;">
+             <div class="row">
+                 <div id="lineChartContainer2" class="col-md-12 col-lg-12"></div>
+                 <div class="col-lg-12 col-md-12">
+                     <div class="centered text-center">
+                     </div>
+                 </div>
+
+             </div>
+
          </div>
 
          <div class="container" style="margin-top: 2cm;">
@@ -1290,6 +1297,8 @@
          var throughtputData = {{ UserThroughput.throughput }};
          var throughtputTime = {{ UserThroughput.Time }};
 
+         var sinr = 0;
+
          // Prepare random data
          var data = [
              ['DE.SH', 728],
@@ -1309,6 +1318,38 @@
              ['DE.TH', 704],
              ['DE.', 361]
          ];
+
+         var lineChartContainer2 = Highcharts.chart("lineChartContainer2", {
+              title: {
+                 text: 'NS-3 simulator SINR'
+             },
+             subtitle: {
+                 text: '57 cells, 20 users, 5 times/s'
+             },
+             xAxis: {
+                 categories: window.throughtputTime,
+                 crosshair: true,
+                 title: {
+                     text: "seconds"
+                 }
+
+             },
+             yAxis: {
+                 title: {
+                     text: 'Throughput'
+                 }
+             },
+             legend: {
+                 layout: 'vertical',
+                 align: 'right',
+                 verticalAlign: 'middle'
+             },
+             series: [{
+                 data: window.throughtputData,
+                 name: 'throughtput'
+             }]
+
+         });
 
 
          var lineChartContainer = Highcharts.chart('lineChartContainer', {
@@ -1379,6 +1420,34 @@
                  }
              });
          });
+
+
+         $(function () {
+             $("tr").each(function () {
+                 var col_val = $(this).find("td:eq(1)").text();
+                 if (col_val == "Normal Traffic") {
+                     $(this).addClass("success");
+                 } else {
+                     $(this).addClass("warning");
+                 }
+             });
+
+         });
+
+         $(document).ready(function () {
+             $("td:nth-child(2)").each(function () {
+                 if ($(this).text() === "Normal Traffic"){
+                     $(this).parent().addClass("success");
+                 } else {
+                     $(this).parent().addClass("warning");
+                 }
+             });
+
+         });
+
+
+
+
 
 
 

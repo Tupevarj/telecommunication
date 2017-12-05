@@ -81,8 +81,11 @@ def show_normal_col_in_table(request):
                 # "RSRQ": record[5] if record[5] else "",
                 # "CellID": record[6] if record[6] else ""
                 "CellID": record[0] if record[0] else "",
-                "userID": record[2] if record[2] else "",
-                "signal": record[1] if record[1] else ""
+                "Severity": record[2] if record[2] else "",
+                "Created": record[1] if record[1] else "",
+                "Problem Class": record[3] if record[3] else "",
+                "Service Class": record[4] if record[4] else ""
+
             })
 
         return HttpResponse(json.dumps(response_data))
