@@ -563,14 +563,21 @@
                          <div class="col-lg-6 col-md-12" style="height: 600px; overflow:scroll">
                                         <table id="alarmTable" data-toggle="table"
                                             data-url = "{% url 'show_normal_col_in_table' %}"
-                                            data-method = "get" data-page-size=20
+                                            data-method = "get" data-page-size=10
                                             data-pagination = "true" data-show-columns="true"
                                             data-side-pagination = "server" data-striped="true"
                                             >
                                             <thead>
                                                 <tr>
+                                                    <td>Severity</td>
                                                     <th data-field="CellID">CellID</th>
-                                                    <th data-field="Severity">Severity</th>
+{#                                                    {% if  Severity == "Normal Traffic" %}#}
+{#                                                        <th class="success" data-field="Severity">Severity</th>#}
+{#                                                    {% elif Severity == "Temporary Low Traffic" %}#}
+{#                                                        <th class="warning" data-field="Severity">Severity</th>#}
+{#                                                    {% elif Severity == "" %}#}
+                                                        <th data-field="Severity" data-cell-style="cellStyle">Severity</th>
+{#                                                    {% endif %}#}
                                                     <th data-field="Created">Created</th>
                                                     <th data-field="Problem Class">Problem Class</th>
                                                     <th data-field="Service Class">Service Class</th>
@@ -1422,34 +1429,21 @@
          });
 
 
-         $(function () {
-             $("tr").each(function () {
-                 var col_val = $(this).find("td:eq(1)").text();
-                 if (col_val == "Normal Traffic") {
-                     $(this).addClass("success");
-                 } else {
-                     $(this).addClass("warning");
+         function cellStyle(value, row, index) {
+             if (value === "Normal") {
+                 return {
+                     classes: "success"
                  }
-             });
-
-         });
-
-         $(document).ready(function () {
-             $("td:nth-child(2)").each(function () {
-                 if ($(this).text() === "Normal Traffic"){
-                     $(this).parent().addClass("success");
-                 } else {
-                     $(this).parent().addClass("warning");
+             } else if (value === "Minor") {
+                 return {
+                     classes: "warning"
                  }
-             });
-
-         });
-
-
-
-
-
-
+             } else {
+                 return {
+                     classes: ""
+                 }
+             }
+         }
 
      </script>
   </body>
