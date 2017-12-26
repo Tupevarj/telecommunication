@@ -115,6 +115,22 @@ def insert_document(collection, data):
     db[collection].insert_one(data)
 
 
+# keep watching the changes in mongodb collections
+db = _connect_mongo()
+cursor = db.handover_log.changes([
+    {
+        "$match": {
+            "operationType": {"$in": ["insert", "replace"]}
+        }
+
+    }
+])
+
+#     loop forever to keep watching
+for changes in cursor:
+    print("new changes in collections")
+
+
 
 
 
