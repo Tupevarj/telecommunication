@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="65a02b13-c8ef-4a9f-8669-c93a4525b7de" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fiveG/models.py" afterPath="$PROJECT_DIR$/fiveG/models.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -38,8 +37,8 @@
       <file leaf-file-name="ml.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="270">
-              <caret line="15" column="30" lean-forward="true" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
+            <state relative-caret-position="90">
+              <caret line="15" column="30" lean-forward="false" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
               <folding>
                 <element signature="e#43#56#0" expanded="true" />
               </folding>
@@ -51,7 +50,7 @@
         <entry file="file://$PROJECT_DIR$/fiveG/views.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="90">
-              <caret line="5" column="60" lean-forward="true" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
+              <caret line="5" column="60" lean-forward="false" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
               <folding>
                 <element signature="e#3264#3440#0" expanded="false" />
                 <element signature="e#3874#5477#0" expanded="false" />
@@ -83,8 +82,8 @@
       <file leaf-file-name="models.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fiveG/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="316">
-              <caret line="48" column="16" lean-forward="true" selection-start-line="48" selection-start-column="16" selection-end-line="48" selection-end-column="16" />
+            <state relative-caret-position="388">
+              <caret line="64" column="47" lean-forward="false" selection-start-line="64" selection-start-column="47" selection-end-line="64" selection-end-column="47" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
               </folding>
@@ -119,8 +118,8 @@
       <find>td</find>
       <find>DISPLAY DATA DEMO</find>
       <find>_connect_mongo</find>
-      <find>collection_read_mongo</find>
       <find>throughputCapacityData</find>
+      <find>collection_read_mongo</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -171,8 +170,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -202,6 +199,8 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -482,7 +481,14 @@
       <option name="project" value="LOCAL" />
       <updated>1514327432740</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="continue fixing mongodb notification problems">
+      <created>1514871840984</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1514871840984</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -503,9 +509,9 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1920" y="28" width="1920" height="1018" extended-state="6" />
+    <frame x="1765" y="0" width="1920" height="1018" extended-state="6" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15811966" sideWeight="0.496" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15972222" sideWeight="0.496" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32914287" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25080043" sideWeight="0.508547" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -585,7 +591,8 @@
     <MESSAGE value="working on displaying table row with different color" />
     <MESSAGE value="fix table column order and row color" />
     <MESSAGE value="new changes" />
-    <option name="LAST_COMMIT_MESSAGE" value="new changes" />
+    <MESSAGE value="continue fixing mongodb notification problems" />
+    <option name="LAST_COMMIT_MESSAGE" value="continue fixing mongodb notification problems" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -939,14 +946,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="10296">
-          <caret line="572" column="16" lean-forward="false" selection-start-line="572" selection-start-column="16" selection-end-line="572" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/telecommunication/settings.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1116">
@@ -957,8 +956,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="15" column="30" lean-forward="true" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
+        <state relative-caret-position="90">
+          <caret line="15" column="30" lean-forward="false" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
           <folding>
             <element signature="e#43#56#0" expanded="true" />
           </folding>
@@ -968,7 +967,7 @@
     <entry file="file://$PROJECT_DIR$/fiveG/views.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
-          <caret line="5" column="60" lean-forward="true" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
+          <caret line="5" column="60" lean-forward="false" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
           <folding>
             <element signature="e#3264#3440#0" expanded="false" />
             <element signature="e#3874#5477#0" expanded="false" />
@@ -976,10 +975,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="10296">
+          <caret line="572" column="16" lean-forward="false" selection-start-line="572" selection-start-column="16" selection-end-line="572" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="48" column="16" lean-forward="true" selection-start-line="48" selection-start-column="16" selection-end-line="48" selection-end-column="16" />
+        <state relative-caret-position="388">
+          <caret line="64" column="47" lean-forward="false" selection-start-line="64" selection-start-column="47" selection-end-line="64" selection-end-column="47" />
           <folding>
             <element signature="e#0#28#0" expanded="true" />
           </folding>
