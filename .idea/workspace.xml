@@ -4,7 +4,6 @@
     <list default="true" id="65a02b13-c8ef-4a9f-8669-c93a4525b7de" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fiveG/models.py" afterPath="$PROJECT_DIR$/fiveG/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" afterPath="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -39,8 +38,8 @@
       <file leaf-file-name="ml.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1368">
-              <caret line="86" column="195" lean-forward="false" selection-start-line="86" selection-start-column="190" selection-end-line="86" selection-end-column="195" />
+            <state relative-caret-position="270">
+              <caret line="15" column="30" lean-forward="true" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
               <folding>
                 <element signature="e#43#56#0" expanded="true" />
               </folding>
@@ -51,10 +50,9 @@
       <file leaf-file-name="views.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1386">
-              <caret line="83" column="25" lean-forward="false" selection-start-line="83" selection-start-column="17" selection-end-line="83" selection-end-column="25" />
+            <state relative-caret-position="90">
+              <caret line="5" column="60" lean-forward="true" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
               <folding>
-                <element signature="e#0#35#0" expanded="true" />
                 <element signature="e#3264#3440#0" expanded="false" />
                 <element signature="e#3874#5477#0" expanded="false" />
               </folding>
@@ -75,7 +73,7 @@
       <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="175">
+            <state relative-caret-position="10296">
               <caret line="572" column="16" lean-forward="false" selection-start-line="572" selection-start-column="16" selection-end-line="572" selection-end-column="16" />
               <folding />
             </state>
@@ -85,9 +83,11 @@
       <file leaf-file-name="models.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fiveG/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="89">
-              <caret line="100" column="81" lean-forward="true" selection-start-line="100" selection-start-column="81" selection-end-line="100" selection-end-column="81" />
-              <folding />
+            <state relative-caret-position="316">
+              <caret line="48" column="16" lean-forward="true" selection-start-line="48" selection-start-column="16" selection-end-line="48" selection-end-column="16" />
+              <folding>
+                <element signature="e#0#28#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -118,6 +118,9 @@
       <find>tr</find>
       <find>td</find>
       <find>DISPLAY DATA DEMO</find>
+      <find>_connect_mongo</find>
+      <find>collection_read_mongo</find>
+      <find>throughputCapacityData</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -149,8 +152,9 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="width" value="1920" />
-    <option name="height" value="1080" />
+    <option name="x" value="1765" />
+    <option name="width" value="1910" />
+    <option name="height" value="810" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -167,8 +171,8 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
       <pane id="Scope" />
+      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -471,7 +475,14 @@
       <option name="project" value="LOCAL" />
       <updated>1512737314570</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="new changes">
+      <created>1514327432740</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1514327432740</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -492,9 +503,9 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1920" height="1080" extended-state="6" />
+    <frame x="1920" y="28" width="1920" height="1018" extended-state="6" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15651709" sideWeight="0.496" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15811966" sideWeight="0.496" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32914287" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25080043" sideWeight="0.508547" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -504,7 +515,7 @@
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32870865" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.17200854" sideWeight="0.504" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.4290288" sideWeight="0.491453" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4290288" sideWeight="0.491453" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.22435898" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -573,7 +584,8 @@
     <MESSAGE value="display annormal cell and userID" />
     <MESSAGE value="working on displaying table row with different color" />
     <MESSAGE value="fix table column order and row color" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix table column order and row color" />
+    <MESSAGE value="new changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="new changes" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -620,7 +632,6 @@
         <state relative-caret-position="234">
           <caret line="13" column="0" lean-forward="true" selection-start-line="13" selection-start-column="0" selection-end-line="13" selection-end-column="0" />
           <folding>
-            <element signature="e#0#35#0" expanded="true" />
             <element signature="e#3264#3440#0" expanded="false" />
             <element signature="e#3874#5477#0" expanded="false" />
           </folding>
@@ -660,7 +671,6 @@
         <state relative-caret-position="0">
           <caret line="0" column="35" lean-forward="false" selection-start-line="0" selection-start-column="35" selection-end-line="0" selection-end-column="35" />
           <folding>
-            <element signature="e#0#35#0" expanded="true" />
             <element signature="e#3264#3440#0" expanded="false" />
             <element signature="e#3874#5477#0" expanded="false" />
           </folding>
@@ -737,7 +747,6 @@
         <state relative-caret-position="90">
           <caret line="5" column="12" lean-forward="false" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
           <folding>
-            <element signature="e#0#35#0" expanded="true" />
             <element signature="e#3264#3440#0" expanded="false" />
             <element signature="e#3874#5477#0" expanded="false" />
           </folding>
@@ -763,7 +772,6 @@
         <state relative-caret-position="90">
           <caret line="5" column="12" lean-forward="false" selection-start-line="5" selection-start-column="12" selection-end-line="5" selection-end-column="12" />
           <folding>
-            <element signature="e#0#35#0" expanded="true" />
             <element signature="e#3264#3440#0" expanded="false" />
             <element signature="e#3874#5477#0" expanded="false" />
           </folding>
@@ -858,7 +866,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="2" column="19" lean-forward="false" selection-start-line="2" selection-start-column="19" selection-end-line="2" selection-end-column="19" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -873,7 +880,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="395">
           <caret line="890" column="33" lean-forward="false" selection-start-line="890" selection-start-column="33" selection-end-line="890" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -888,7 +894,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="701">
           <caret line="139" column="0" lean-forward="false" selection-start-line="139" selection-start-column="0" selection-end-line="139" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -926,14 +931,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tessstttyyy2.png" />
-    <entry file="file://$PROJECT_DIR$/telecommunication/settings.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1116">
-          <caret line="62" column="35" lean-forward="false" selection-start-line="62" selection-start-column="35" selection-end-line="62" selection-end-column="35" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/anaconda3/lib/python3.6/site-packages/django/core/handlers/base.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2430">
@@ -942,41 +939,50 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/views.py">
+    <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1386">
-          <caret line="83" column="25" lean-forward="false" selection-start-line="83" selection-start-column="17" selection-end-line="83" selection-end-column="25" />
-          <folding>
-            <element signature="e#0#35#0" expanded="true" />
-            <element signature="e#3264#3440#0" expanded="false" />
-            <element signature="e#3874#5477#0" expanded="false" />
-          </folding>
+        <state relative-caret-position="10296">
+          <caret line="572" column="16" lean-forward="false" selection-start-line="572" selection-start-column="16" selection-end-line="572" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/telecommunication/settings.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1116">
+          <caret line="62" column="35" lean-forward="false" selection-start-line="62" selection-start-column="35" selection-end-line="62" selection-end-column="35" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1368">
-          <caret line="86" column="195" lean-forward="false" selection-start-line="86" selection-start-column="190" selection-end-line="86" selection-end-column="195" />
+        <state relative-caret-position="270">
+          <caret line="15" column="30" lean-forward="true" selection-start-line="15" selection-start-column="30" selection-end-line="15" selection-end-column="30" />
           <folding>
             <element signature="e#43#56#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
+    <entry file="file://$PROJECT_DIR$/fiveG/views.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="572" column="16" lean-forward="false" selection-start-line="572" selection-start-column="16" selection-end-line="572" selection-end-column="16" />
-          <folding />
+        <state relative-caret-position="90">
+          <caret line="5" column="60" lean-forward="true" selection-start-line="5" selection-start-column="60" selection-end-line="5" selection-end-column="60" />
+          <folding>
+            <element signature="e#3264#3440#0" expanded="false" />
+            <element signature="e#3874#5477#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="89">
-          <caret line="100" column="81" lean-forward="true" selection-start-line="100" selection-start-column="81" selection-end-line="100" selection-end-column="81" />
-          <folding />
+        <state relative-caret-position="316">
+          <caret line="48" column="16" lean-forward="true" selection-start-line="48" selection-start-column="16" selection-end-line="48" selection-end-column="16" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

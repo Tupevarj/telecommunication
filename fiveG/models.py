@@ -3,7 +3,7 @@ from django.db import models
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
-
+from mongotriggers import MongoTrigger
 
 # from mongoengine import connect
 # connect('5gopt', username='yi', password='abc123')
@@ -116,27 +116,39 @@ def insert_document(collection, data):
 
 
 # keep watching the changes in mongodb collections
-db = _connect_mongo()
-cursor = db.handover_log.changes([
-    {
-        "$match": {
-            "operationType": {"$in": ["insert", "replace"]}
-        }
+# db = _connect_mongo()
+# cursor = db["handover_log"].watch([
+#     {
+#         "$match": {
+#             "operationType": {"$in": ["insert", "replace"]}
+#         }
+#
+#     }
+# ])
 
-    }
-])
-
-#     loop forever to keep watching
-for changes in cursor:
-    print("new changes in collections")
-
-
+# #     loop forever to keep watching
+# for changes in cursor:
+#     print("new changes in collections")
 
 
 
+# def notify_manager(op_document):
+#     print('wake up! someone is adding me money')
+#
+# conn = MongoClient(host='localhost', port=27017)
+# triggers = MongoTrigger(conn)
+# triggers.register_op_trigger(notify_manager, "5gopt", "controlpanel")
 
+# triggers.tail_oplog()
+# client['my_account']['my_transactions'].insert_one({"balance": 1000})
+# triggers.stop_tail()
 
-
+# collectionTotalSize = 0
+#
+# if collectionTotalSize < _connect_mongo()["normal"].totalSize():
+#
+#
+# totalSize()
 
 
 
