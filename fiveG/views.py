@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import normalCol_read_mongo, collection_read_mongo, insert_document
+from .models import normalCol_read_mongo, collection_read_mongo, insert_document, calculate_dominatemap_size
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
@@ -12,7 +12,7 @@ throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTH
 
 cursorLocation = 108000
 oneTimeExtraRecord = 2280
-
+dominateMap_size = 0
 def index(request):
 
     # use session to keep the offset value
@@ -22,13 +22,13 @@ def index(request):
     # request.session["num"] = num
 
     # get main_file_with_UserThR collection from mongo
+    global dominateMap_size
 
     result = calculateThroughput(throughputCapacityData[:initialRecordNum])
-    dominateMap = displayDominateMap()
+    dominateMap_size = displayDominateMap()
 
     context = {
-        "UserThroughput": result,
-        "map": dominateMap
+        "UserThroughput": result
     }
 
     return render(request, 'fiveG/index.html', context)
@@ -38,9 +38,6 @@ def show_normal_col_in_table(request):
 
     print("enter this function, enter this function, enter this function")
     if request.method == "GET":
-
-
-
         print(request.GET)
         limit = request.GET.get('limit')  # how many items per page
         offset = request.GET.get('offset')  # how many items in total in the DB
@@ -173,6 +170,26 @@ def controlPanel(request):
             return HttpResponse(json.dumps(info))
 
 
+import sched, time
+s = sched.scheduler(time.time, time.sleep)
+def do_something(sc):
+    global dominateMap_size
+    print("Doing stuff...")
+    collectionTotalSize = 0
+    latest_size = calculate_dominatemap_size()
 
+    if latest_size > dominateMap_size:
+    #     generate new dominate map and then send it to the front end
+        displayDominateMap()
+
+
+
+
+    totalSize()
+    # do your stuff
+    s.enter(60, 1, do_something, (sc,))
+
+s.enter(60, 1, do_something, (s,))
+s.run()
 
 
