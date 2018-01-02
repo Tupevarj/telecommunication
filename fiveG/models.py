@@ -149,6 +149,14 @@ def insert_document(collection, data):
 #
 #
 # totalSize()
+def calculate_dominatemap_size():
+    db = _connect_mongo()
+    # Make a query to the specific DB and Collection
+
+    try:
+        return db."dominationmap.metadata".totalSize()
+    except:
+        return 0
 
 
 

@@ -78,7 +78,7 @@ def displayDominateMap():
     #
     # # responsePNG = django.http.HttpResponse(content_type="image/png")
     # # canvas.print_png(responsePNG)
-    return 0
+    return data.size()
 
 #time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 def detectUnnormalCell():
