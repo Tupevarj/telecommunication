@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
 import pandas as pd
+from PIL import Image
 
 # declare global variables
 initialRecordNum = 108000
@@ -26,9 +27,11 @@ def index(request):
 
     result = calculateThroughput(throughputCapacityData[:initialRecordNum])
     dominateMap_size = displayDominateMap()
-
+    # dominateMap = Image.open("dominationMap.png")
+    # image_data = open("dominationMap.png", "rb").read()
     context = {
         "UserThroughput": result
+        # "dominateMap": image_data
     }
 
     return render(request, 'fiveG/index.html', context)
@@ -113,6 +116,30 @@ def loadMore(request):
     else:
         return 0
 
+def loadNewestDominateMap(request):
+    if request.method == "GET":
+        global dominateMap_size
+        latest_size = calculate_dominatemap_size()
+        if latest_size >= dominateMap_size:
+            #     generate new dominate map and then send it to the front end
+            displayDominateMap()
+            # do your stuff
+            try:
+                base_image = Image.open("dominationMap.png")
+                with open("dominationMap.png", "rb") as f:
+                    return HttpResponse(base_image, content_type="image/png")
+                    # img = Image.new("RGB", (300, 300), "#FFFFFF")
+                # response = HttpResponse(content_type="image/png")
+                #
+
+
+            except IOError:
+                red = Image.new('RGBA', (1, 1), (255, 0, 0, 0))
+                response = HttpResponse(mimetype="image/png")
+                red.save(response, "png")
+                return response
+
+
 def controlPanel(request):
     if request.method == "GET":
         if request.GET.get("cellID") == "":
@@ -170,26 +197,21 @@ def controlPanel(request):
             return HttpResponse(json.dumps(info))
 
 
-import sched, time
-s = sched.scheduler(time.time, time.sleep)
-def do_something(sc):
-    global dominateMap_size
-    print("Doing stuff...")
-    collectionTotalSize = 0
-    latest_size = calculate_dominatemap_size()
-
-    if latest_size > dominateMap_size:
-    #     generate new dominate map and then send it to the front end
-        displayDominateMap()
-
-
-
-
-    totalSize()
-    # do your stuff
-    s.enter(60, 1, do_something, (sc,))
-
-s.enter(60, 1, do_something, (s,))
-s.run()
+# import sched, timedd
+# s = sched.scheduler(time.time, time.sleep)
+# def do_something(sc):
+#     global dominateMap_size
+#     print("Doing stuff...")
+#     collectionTotalSize = 0
+#     latest_size = calculate_dominatemap_size()
+#
+#     if latest_size > dominateMap_size:
+#     #     generate new dominate map and then send it to the front end
+#         displayDominateMap()
+#     # do your stuff
+#     s.enter(60, 1, do_something, (sc,))
+#
+# s.enter(60, 1, do_something, (s,))
+# s.run()
 
 

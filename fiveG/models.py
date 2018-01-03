@@ -9,6 +9,7 @@ from mongotriggers import MongoTrigger
 # connect('5gopt', username='yi', password='abc123')
 
 # connect(db='5gopt')
+
 #
 
 
@@ -154,7 +155,7 @@ def calculate_dominatemap_size():
     # Make a query to the specific DB and Collection
 
     try:
-        return db."dominationmap.metadata".totalSize()
+        return db["dominationmap"].count()
     except:
         return 0
 

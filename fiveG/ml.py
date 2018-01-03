@@ -12,6 +12,11 @@ from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 from scipy.interpolate import griddata
 
 from collections import OrderedDict
+import os
+from django.conf import settings
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def calculateThroughput(data):
     data["UserThR"].fillna(0, inplace=True)
@@ -67,7 +72,14 @@ def displayDominateMap():
     zi[(zi < zmin) | (zi > zmax)] = None
 
     plt.contourf(xi, yi, zi, 15, cmap=plt.cm.rainbow, vmax=zmax, vmin=zmin)
+    # storePath = settings.STATIC_URL + "fiveG/img/"
+    # try:
+    #     os.remove(storePath + "dominationMap.png")
+    # except OSError:
+    #     pass
+    # plt.savefig(storePath + 'dominationMap.png')
     plt.savefig('dominationMap.png')
+
 
     # plt.save()
     # newDF = pd.DataFrame({"X": data.iloc[:, 0], "Y": data.iloc[:, 1], "Z": data.iloc[:, 3]})
@@ -78,7 +90,7 @@ def displayDominateMap():
     #
     # # responsePNG = django.http.HttpResponse(content_type="image/png")
     # # canvas.print_png(responsePNG)
-    return data.size()
+    return len(data.index)
 
 #time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 def detectUnnormalCell():

@@ -591,7 +591,7 @@
                                     DOMINACE MAP
                                 </div>
                                 <div class="panel-body text-center">
-                                    <img src="{% static 'fiveG/img/dominationMap.png' %}" class="img-fluid" alt="dominate map">
+                                    <img id="dominateMap" src="" class="img-fluid" alt="dominate map">
                                 </div>
                             </div>
 {#                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>#}
@@ -1389,6 +1389,18 @@
                  name: 'throughtput'
              }]
          });
+
+
+         $(document).ready(function () {
+             setInterval(function () {
+                 $.get('/loadNewestDominateMap',
+                     function (data) {
+                         $('#dominateMap').attr("src", data)
+                     });
+             }, 5000);
+         });
+
+
 
 
          $("#loadMore").click(function () {
