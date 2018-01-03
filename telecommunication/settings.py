@@ -136,4 +136,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(os.path.dirname(__file__), '/static/')
+
+MEDIA_HOST = "http://127.0.0.1:8000/media/"
+MEDIA_URL= MEDIA_HOST
 # STATIC_URL = '/static/'
+
+MEDIA_ROOT = '/home/yizhou/code/telecommunication/media/'
+MEDIA_URL = '/media/'

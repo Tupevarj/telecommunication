@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 from scipy.interpolate import griddata
-
+from django.conf import settings
 from collections import OrderedDict
 import os
 from django.conf import settings
@@ -78,7 +78,7 @@ def displayDominateMap():
     # except OSError:
     #     pass
     # plt.savefig(storePath + 'dominationMap.png')
-    plt.savefig('dominationMap.png')
+    plt.savefig(settings.MEDIA_ROOT+'dominationMap.png')
 
 
     # plt.save()

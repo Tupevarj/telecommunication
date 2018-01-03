@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
 import pandas as pd
 from PIL import Image
+from django.conf import settings
 
 # declare global variables
 initialRecordNum = 108000
@@ -125,19 +126,16 @@ def loadNewestDominateMap(request):
             displayDominateMap()
             # do your stuff
             try:
-                base_image = Image.open("dominationMap.png")
-                with open("dominationMap.png", "rb") as f:
-                    return HttpResponse(base_image, content_type="image/png")
+                base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
+                with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
+                    return HttpResponse(f.read(), content_type="image/png")
                     # img = Image.new("RGB", (300, 300), "#FFFFFF")
                 # response = HttpResponse(content_type="image/png")
                 #
 
 
             except IOError:
-                red = Image.new('RGBA', (1, 1), (255, 0, 0, 0))
-                response = HttpResponse(mimetype="image/png")
-                red.save(response, "png")
-                return response
+                return 0
 
 
 def controlPanel(request):
