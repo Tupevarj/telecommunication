@@ -121,10 +121,11 @@ def loadNewestDominateMap(request):
     if request.method == "GET":
         global dominateMap_size
         latest_size = calculate_dominatemap_size()
-        if latest_size >= dominateMap_size:
+        if latest_size > dominateMap_size:
             #     generate new dominate map and then send it to the front end
             displayDominateMap()
-            # do your stuff
+            # update the global variable
+            dominateMap_size = latest_size
             try:
                 base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
                 with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
@@ -135,7 +136,9 @@ def loadNewestDominateMap(request):
 
 
             except IOError:
-                return 0
+                return HttpResponse('')
+        else:
+            return HttpResponse('')
 
 
 def controlPanel(request):

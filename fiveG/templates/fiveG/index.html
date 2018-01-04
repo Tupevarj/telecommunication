@@ -591,7 +591,7 @@
                                     DOMINACE MAP
                                 </div>
                                 <div class="panel-body text-center">
-                                    <img id="dominateMap" src="" class="img-fluid" alt="dominate map">
+                                    <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">
                                 </div>
                             </div>
 {#                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>#}
@@ -1392,12 +1392,13 @@
 
 
          $(document).ready(function () {
+             d = new Date();
              setInterval(function () {
                  $.get('/loadNewestDominateMap',
                      function (data) {
-                         $('#dominateMap').attr("src", data)
+                         $('#dominateMap').attr("src", "http://127.0.0.1:8000/media/dominationMap.png"+"?"+Math.random());
                      });
-             }, 5000);
+             }, 2000);
          });
 
 

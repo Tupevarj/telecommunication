@@ -63,7 +63,7 @@ def displayDominateMap():
     Y = np.array(data.iloc[:, 1])
     Z = np.array(data.iloc[:, 3])
 
-    xi = np.linspace(X.min(), X.max(), 1000)
+    xi = np.linspace(float(X.min()), float(X.max()), 1000)
     yi = np.linspace(Y.min(), Y.max(), 1000)
     zi = griddata((X, Y), Z, (xi[None, :], yi[:, None]), method='cubic')
 
@@ -73,11 +73,11 @@ def displayDominateMap():
 
     plt.contourf(xi, yi, zi, 15, cmap=plt.cm.rainbow, vmax=zmax, vmin=zmin)
     # storePath = settings.STATIC_URL + "fiveG/img/"
-    # try:
-    #     os.remove(storePath + "dominationMap.png")
-    # except OSError:
-    #     pass
-    # plt.savefig(storePath + 'dominationMap.png')
+    try:
+        os.remove(settings.MEDIA_ROOT + "dominationMap.png")
+    except OSError:
+        pass
+
     plt.savefig(settings.MEDIA_ROOT+'dominationMap.png')
 
 
