@@ -17,14 +17,16 @@ mongoimport --db 5gopt --collection main_file_with_UserTHR --type csv --file ~/D
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local ..
 
 # development environment
-> python - 3.6.3
-> mongo - 2.6.12
-> django - 1.11.7
-> MongoDB shell version - 2.6.12
-> pymongo - 3.5.1
-> Operating system - Red Hat Enterprise Linux 7
-> anaconda 3
-> pycharm - 2017.2.4
+* python - 3.6.3
+* mongo - 2.6.12
+* django - 1.11.7
+* MongoDB shell version - 2.6.12
+* pymongo - 3.5.1
+* Operating system - Red Hat Enterprise Linux 7
+* anaconda 3
+https://anaconda.org/anaconda/python/files
+
+* pycharm - 2017.2.4
 
 
 
