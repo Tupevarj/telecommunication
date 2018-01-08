@@ -31,3 +31,6 @@ https://anaconda.org/anaconda/python/files
 
 
 
+
+# to do list
+1.  set up Apache when it's ready to deploy Django in production.
