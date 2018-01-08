@@ -24,6 +24,7 @@ MongoDB shell version - 2.6.12
 pymongo - 3.5.1
 Operating system - Red Hat Enterprise Linux 7
 anaconda 3
+pycharm - 2017.2.4
 
 
 
