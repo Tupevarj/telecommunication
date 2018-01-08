@@ -16,13 +16,22 @@ mongoimport --db 5gopt --collection main_file_with_UserTHR --type csv --file ~/D
 ## install mongo c driver and mongo cxx driver to implment communication between ns-allinone-3.26 and mongo v2.6.12
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local ..
 
+## restore bson file into mongodb
+mongorestore -d db_name -c collection_name path/file.bson
+* ./mongorestore -d 5gopt -c normal /home/tupevarj/Downloads/normal.bson
+* ./mongorestore -d 5gopt -c controlpanel /home/tupevarj/Downloads/controlpanel.bson
+* ./mongorestore -d 5gopt -c outage /home/tupevarj/Downloads/outage.bson
+* ./mongorestore -d 5gopt -c event_log /home/tupevarj/Downloads/event_log.bson
+* ./mongorestore -d 5gopt -c main_file_with_UserTHR /home/tupevarj/Downloads/main_file_with_UserTHR.bson
+
 # development environment
 * python - 3.6.3
 * mongo - 2.6.12
 * django - 1.11.7
+[pip install Django==1.11.7]
 * MongoDB shell version - 2.6.12
 * pymongo - 3.5.1
-[python -m pip install pymongo==3.1.1]
+[pip install pymongo==3.1.1]
 * Operating system - Red Hat Enterprise Linux 7
 * anaconda 3
 https://anaconda.org/anaconda/python/files
@@ -31,3 +40,6 @@ https://anaconda.org/anaconda/python/files
 
 
 
+
+# to do list
+1.  set up Apache when it's ready to deploy Django in production.
