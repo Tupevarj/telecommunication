@@ -16,6 +16,9 @@ mongoimport --db 5gopt --collection main_file_with_UserTHR --type csv --file ~/D
 ## install mongo c driver and mongo cxx driver to implment communication between ns-allinone-3.26 and mongo v2.6.12
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local ..
 
+## restore bson file into mongodb
+mongorestore -d db_name -c collection_name path/file.bson
+
 # development environment
 * python - 3.6.3
 * mongo - 2.6.12
