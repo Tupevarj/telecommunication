@@ -18,6 +18,11 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFI
 
 ## restore bson file into mongodb
 mongorestore -d db_name -c collection_name path/file.bson
+* ./mongorestore -d 5gopt -c normal /home/tupevarj/Downloads/normal.bson
+* ./mongorestore -d 5gopt -c controlpanel /home/tupevarj/Downloads/controlpanel.bson
+* ./mongorestore -d 5gopt -c outage /home/tupevarj/Downloads/outage.bson
+* ./mongorestore -d 5gopt -c event_log /home/tupevarj/Downloads/event_log.bson
+* ./mongorestore -d 5gopt -c main_file_with_UserTHR /home/tupevarj/Downloads/main_file_with_UserTHR.bson
 
 # development environment
 * python - 3.6.3
