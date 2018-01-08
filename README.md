@@ -20,6 +20,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFI
 * python - 3.6.3
 * mongo - 2.6.12
 * django - 1.11.7
+[pip install Django==1.11.7]
 * MongoDB shell version - 2.6.12
 * pymongo - 3.5.1
 [python -m pip install pymongo==3.1.1]
