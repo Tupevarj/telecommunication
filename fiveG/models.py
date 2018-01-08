@@ -1,18 +1,5 @@
-from django.db import models
-# from mongoengine import *
-import numpy as np
 import pandas as pd
 from pymongo import MongoClient
-from mongotriggers import MongoTrigger
-
-# from mongoengine import connect
-# connect('5gopt', username='yi', password='abc123')
-
-# connect(db='5gopt')
-
-#
-
-
 
 
 def preProcess():
@@ -24,23 +11,6 @@ def preProcess():
         index = index + 1
     print("finish load")
     return normalDF
-#
-
-
-# for i in normal.objects[:1]:
-# print("Time", normal.objects[0].Time)
-# print("UeNodeNo", normal.objects[0].UeNodeNo)
-# print("UeRNTI", normal.objects[0].UeRNTI)
-# print("cell id", normal.objects[0].Cell_ID)
-# print("RSRP", normal.objects[0].RSRP)
-# print("RSRQ", normal.objects[0].RSRQ)
-# print("Serving_Cell", normal.objects[0].Serving_Cell)
-    # print(preProcess())
-
-    # def preProcess():
-    #     normalData = pd.DataFrame()
-# normalData = preProcess()
-# print(normalData[:5])
 
 
 
@@ -93,67 +63,14 @@ def collection_read_mongo(collection, query={}, no_id = True):
     return df
 
 
-# collection for cell indicator, ns3 can read command from this collection
-# class CellIndicator(Document):
-#     cell = IntField()
-#     flag = IntField()   #0 means False; 1 means True
-
-
-# build connection between already-existing collection and mongoengine collection
-# class EventLog(Document):
-#     meta = {'collection': 'event_log'}
-
-# class Control(models.Model):
-#     cellID = models.IntegerField()
-#     normal = models.IntegerField()
-#     outage = models.IntegerField()
-#     coc = models.IntegerField()
-#     cco = models.IntegerField()
-#     mro = models.IntegerField()
-#     mlb = models.IntegerField()
 def insert_document(collection, data):
     db = _connect_mongo()
     db[collection].insert_one(data)
 
 
-# keep watching the changes in mongodb collections
-# db = _connect_mongo()
-# cursor = db["handover_log"].watch([
-#     {
-#         "$match": {
-#             "operationType": {"$in": ["insert", "replace"]}
-#         }
-#
-#     }
-# ])
-
-# #     loop forever to keep watching
-# for changes in cursor:
-#     print("new changes in collections")
-
-
-
-# def notify_manager(op_document):
-#     print('wake up! someone is adding me money')
-#
-# conn = MongoClient(host='localhost', port=27017)
-# triggers = MongoTrigger(conn)
-# triggers.register_op_trigger(notify_manager, "5gopt", "controlpanel")
-
-# triggers.tail_oplog()
-# client['my_account']['my_transactions'].insert_one({"balance": 1000})
-# triggers.stop_tail()
-
-# collectionTotalSize = 0
-#
-# if collectionTotalSize < _connect_mongo()["normal"].totalSize():
-#
-#
-# totalSize()
 def calculate_dominatemap_size():
     db = _connect_mongo()
     # Make a query to the specific DB and Collection
-
     try:
         return db["dominationmap"].count()
     except:

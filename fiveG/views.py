@@ -17,19 +17,11 @@ oneTimeExtraRecord = 2280
 dominateMap_size = 0
 def index(request):
 
-    # use session to keep the offset value
-    # num = request.session.get("num")
-    # if not num:
-    #     num = initialRecordNum
-    # request.session["num"] = num
-
     # get main_file_with_UserThR collection from mongo
     global dominateMap_size
 
     result = calculateThroughput(throughputCapacityData[:initialRecordNum])
     dominateMap_size = displayDominateMap()
-    # dominateMap = Image.open("dominationMap.png")
-    # image_data = open("dominationMap.png", "rb").read()
     context = {
         "UserThroughput": result
         # "dominateMap": image_data
@@ -99,9 +91,7 @@ def displayDemo(request):
 
     normalCol = normalCol_read_mongo()
 
-
     context = {}
-    # print(template_names[:1])
 
     return render(request, template_names)
 
@@ -130,11 +120,6 @@ def loadNewestDominateMap(request):
                 base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
                 with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
                     return HttpResponse(f.read(), content_type="image/png")
-                    # img = Image.new("RGB", (300, 300), "#FFFFFF")
-                # response = HttpResponse(content_type="image/png")
-                #
-
-
             except IOError:
                 return HttpResponse('')
         else:
@@ -198,21 +183,5 @@ def controlPanel(request):
             return HttpResponse(json.dumps(info))
 
 
-# import sched, timedd
-# s = sched.scheduler(time.time, time.sleep)
-# def do_something(sc):
-#     global dominateMap_size
-#     print("Doing stuff...")
-#     collectionTotalSize = 0
-#     latest_size = calculate_dominatemap_size()
-#
-#     if latest_size > dominateMap_size:
-#     #     generate new dominate map and then send it to the front end
-#         displayDominateMap()
-#     # do your stuff
-#     s.enter(60, 1, do_something, (sc,))
-#
-# s.enter(60, 1, do_something, (s,))
-# s.run()
 
 

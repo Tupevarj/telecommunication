@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
-# from mongoengine import connect
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,31 +72,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'telecommunication.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-# #
-# DATABASES = {
-#    'default': {
-#       'ENGINE': 'django_mongodb_engine',
-#       'NAME': '5gopt'
-#    }
-# }
-
-# connect(
-#     db='5gopt',
-#     username='yi',
-#     password='abc123',
-# )
-
-# Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -141,5 +116,9 @@ MEDIA_HOST = "http://127.0.0.1:8000/media/"
 MEDIA_URL= MEDIA_HOST
 # STATIC_URL = '/static/'
 
+# media path in Yi's machine
 MEDIA_ROOT = '/home/yizhou/code/telecommunication/media/'
+#media path inTuukka's machine
+# MEDIA_ROOT = '/home/yizhou/code/telecommunication/media/'
+
 MEDIA_URL = '/media/'

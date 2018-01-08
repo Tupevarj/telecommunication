@@ -571,13 +571,7 @@
                                                 <tr>
                                                     <td>Severity</td>
                                                     <th data-field="CellID">CellID</th>
-{#                                                    {% if  Severity == "Normal Traffic" %}#}
-{#                                                        <th class="success" data-field="Severity">Severity</th>#}
-{#                                                    {% elif Severity == "Temporary Low Traffic" %}#}
-{#                                                        <th class="warning" data-field="Severity">Severity</th>#}
-{#                                                    {% elif Severity == "" %}#}
                                                         <th data-field="Severity" data-cell-style="cellStyle">Severity</th>
-{#                                                    {% endif %}#}
                                                     <th data-field="Created">Created</th>
                                                     <th data-field="Problem Class">Problem Class</th>
                                                     <th data-field="Service Class">Service Class</th>
@@ -594,7 +588,6 @@
                                     <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">
                                 </div>
                             </div>
-{#                            <div id="mapContainer" style="min-width: 310px; max-width: 400px"></div>#}
                         </div>
                      </div>
 
@@ -1306,26 +1299,6 @@
 
          var sinr = 0;
 
-         // Prepare random data
-         var data = [
-             ['DE.SH', 728],
-             ['DE.BE', 710],
-             ['DE.MV', 963],
-             ['DE.HB', 541],
-             ['DE.HH', 622],
-             ['DE.RP', 866],
-             ['DE.SL', 398],
-             ['DE.BY', 785],
-             ['DE.SN', 223],
-             ['DE.ST', 605],
-             ['DE.NW', 237],
-             ['DE.BW', 157],
-             ['DE.HE', 134],
-             ['DE.NI', 136],
-             ['DE.TH', 704],
-             ['DE.', 361]
-         ];
-
          var lineChartContainer2 = Highcharts.chart("lineChartContainer2", {
               title: {
                  text: 'NS-3 simulator SINR'
@@ -1339,7 +1312,6 @@
                  title: {
                      text: "seconds"
                  }
-
              },
              yAxis: {
                  title: {
@@ -1400,7 +1372,6 @@
                      });
              }, 2000);
          });
-
 
 
 
