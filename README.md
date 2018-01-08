@@ -23,7 +23,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFI
 [pip install Django==1.11.7]
 * MongoDB shell version - 2.6.12
 * pymongo - 3.5.1
-[python -m pip install pymongo==3.1.1]
+[pip install pymongo==3.1.1]
 * Operating system - Red Hat Enterprise Linux 7
 * anaconda 3
 https://anaconda.org/anaconda/python/files
