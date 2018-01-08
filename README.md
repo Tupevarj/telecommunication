@@ -16,3 +16,14 @@ mongoimport --db 5gopt --collection main_file_with_UserTHR --type csv --file ~/D
 ## install mongo c driver and mongo cxx driver to implment communication between ns-allinone-3.26 and mongo v2.6.12
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local ..
 
+# development environment
+python - 3.6.3
+mongo - 2.6.12
+django - 1.11.7
+MongoDB shell version - 2.6.12
+pymongo - 3.5.1
+Operating system - Red Hat Enterprise Linux 7
+anaconda 3
+
+
+
