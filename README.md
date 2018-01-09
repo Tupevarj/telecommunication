@@ -5,7 +5,7 @@
 # file description in this project
 | instructions_For_install_MongoCXXDriver.txt | how to install mongo cxx driver to implement communication between ns3 controller and mongoDB |
 | media/ | folder for domination map which is dynamically generated in backend and updates when new documents add in mongo
-
+| installShell.sh | script for automatically set up the development environment(not finish) |
 
 ## Create a new mongo user
 + db.createUser({user:"**", pwd:"******", roles:[{role:"userAdminAnyDatabase", db:"admin"}]})
@@ -39,6 +39,10 @@
 | OS | RHEL 7 | ...... |
 | pycharm | 2017.2.4 | ... |
 
+| Database name | 5gopt |
+| DB user name | ... |
+| DB password | ... |
+
 # related documentation for this project
 * MongoDB C Driver 1.9.0 [http://mongoc.org/libmongoc/current/index.html]
 * MongoDB C++ Driver manual [https://mongodb.github.io/mongo-cxx-driver/]
@@ -63,10 +67,17 @@ Collection schemas
 | ---------------------- | ---- | ------- | --------- | ------ | ------ | ---- | ---- | ---- | --------- |
 | Demo                   | 0.2  | NaN     |   948     |  1     | 1      | -113 | NaN  |  NaN |  1429     |
 
+| event_log | "TIME" | "X" | "S" | "IMSI" | A2 RSRQ Enter | RSRQ   | CellID |
+| --------- | ------ | --- | --- | ------ | ------------- | ------ | -------|
+| Demo      |  8     | 964 | 423 | 19     |               | -9.315 |  14    |
 
+| handover_log | "TIME" | "X" | "Y" | "IMSI" |       EVENT        | "CellID" |
+| ------------ | ------ | --- | --- | ------ | ------------------ | -------- | 
+| Demo         | 12.26  | 449 | 449 |20      | "Handover End OK"  |   11     | 
 
-
- 
+| normal(outage) | Time | UeNodeNo | UeRNTI | RSRP     | Serving_Cell | RSRQ | Cell_ID | 
+| -------------- | ---- | -------- | ------ | -------- | ------------ | ---- | ------- |
+| Demo           | 0,2  |       21 | 0      | -89,9397 | 0            | -nan |  20     |
 
 # to do list
 1.  set up Apache when it's ready to deploy Django in production.
