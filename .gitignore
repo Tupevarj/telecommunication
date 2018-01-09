@@ -105,3 +105,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+.idea/
+fiveG/migrations/0001_initial.py
+fiveG/static/dominationMap.png
+fiveG/static/fiveG/dominationMap.png
+preScript.ipynb
+unnormalDectection.ipynb
