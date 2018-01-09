@@ -38,8 +38,35 @@ https://anaconda.org/anaconda/python/files
 
 * pycharm - 2017.2.4
 
+# related documentation for this project
+* MongoDB C Driver 1.9.0 [http://mongoc.org/libmongoc/current/index.html]
+* MongoDB C++ Driver manual [https://mongodb.github.io/mongo-cxx-driver/]
+* PyMongo 3.6.0 Documentation [https://api.mongodb.com/python/current/]
+* MongoEngine Documentation [http://docs.mongoengine.org/]
+
+# Match between display figures in front end and database
+
+| Display in Front End          | Data in MongoDB                     |
+| ----------------------------- | ----------------------------------- |
+| unnormal cell detection table | Fake data in Backend not from Mongo |
+| Domination Map                | dominationmap                       |
+| throughput line graph         | main_file_with_UserTHR              |
+
+Collection schemas
+
+| dominationmap |   x   |   y   |   z   |  sinr  |
+| ------------- | ----- | ----- | ----- | ------ |
+|     Demo      | -250  | -250  | 1.5   |  1.45  |
+
+| main_file_with_UserTHR | Time | UserThR | LocationX | UserID | CellID | RSRP | RSRQ | SINR | LocationY |
+| ---------------------- | ---- | ------- | --------- | ------ | ------ | ---- | ---- | ---- | --------- |
+| Demo                   | 0.2  | NaN     |   948     |  1     | 1      | -113 | NaN  |  NaN |  1429     |
 
 
+
+
+
+ 
 
 # to do list
 1.  set up Apache when it's ready to deploy Django in production.
