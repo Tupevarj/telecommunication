@@ -117,7 +117,7 @@ def loadNewestDominateMap(request):
             # update the global variable
             dominateMap_size = latest_size
             try:
-                base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
+                # base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
                 with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
                     return HttpResponse(f.read(), content_type="image/png")
             except IOError:
