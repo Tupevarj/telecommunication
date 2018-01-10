@@ -23,7 +23,7 @@ def calculateThroughput(data):
         throughput.replace("NaN", 0, inplace=True)
         throughputDict["Time"].append(time)
         tempThroughput = np.nansum(throughput)
-        throughputDict["throughput"].append(tempThroughput)
+        throughputDict["throughput"].append(np.asscalar(tempThroughput))
 
     nonZeroThroughputDict = 0
     i = 0
