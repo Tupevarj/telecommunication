@@ -1,0 +1,96 @@
+
+Install Mongo C driver:
+-----------------------
+
+wget https://github.com/mongodb/mongo-c-driver/releases/download/1.8.2/mongo-c-driver-1.8.2.tar.gz
+tar xzf mongo-c-driver-1.8.2.tar.gz
+cd mongo-c-driver-1.8.2
+./configure --disable-automatic-init-and-cleanup
+make
+sudo make install
+
+
+
+Install Mongo C++ driver:
+-------------------------
+
+git clone https://github.com/mongodb/mongo-cxx-driver.git --branch releases/stable --depth 1
+cd mongo-cxx-driver/build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_PREFIX_PATH=/usr/local ..
+sudo make EP_mnmlstc_core
+make && sudo make install
+
+Test installation:
+-----------------
+nano test.cpp
+copy to test.cpp:
+
+#include <iostream>
+
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+
+int main(int, char**) {
+    mongocxx::instance inst{};
+    mongocxx::client conn{mongocxx::uri{}};
+
+    bsoncxx::builder::stream::document document{};
+
+    auto collection = conn["testdb"]["testcollection"];
+    document << "hello" << "world";
+
+    collection.insert_one(document.view());
+    auto cursor = collection.find({});
+
+    for (auto&& doc : cursc++ --std=c++11 test.cpp -o test \
+    -I/usr/local/include \
+    -I/usr/local/include \
+    -L/usr/local/lib -lmongocxx -lbsoncxxor) {
+        std::cout << bsoncxx::to_json(doc) << std::endl;
+    }
+}
+
+exit & save
+
+try to compile:
+c++ --std=c++11 test.cpp -o test $(pkg-config --cflags --libs libmongocxx)
+
+Maybe you need to set environment paths with export (PKG_CONFIG_PATH, LD_LIBRARY_PATH..)  propably not :)
+
+I needed to move /usr/local/include/bsonxxx/v_noabi/bsoncxx to /usr/local/include/bsoncxx
+Same for /usr/local/include/mongocxx/v_noabi/mongocxx to /usr/local/include/mongocxx
+
+Finally modify the begin of wscript to look like this:
+
+
+def configure(conf):
+    conf.env.append_value("LINKFLAGS", ["-lbsoncxx"])
+    conf.env.append_value("LINKFLAGS", ["-lmongocxx"])
+    conf.env.append_value("LINKFLAGS", ["-lmongoc-1.0"])
+    conf.env.append_value("LINKFLAGS", ["-lbson-1.0"])
+
+def build(bld):
+    lte_module_dependencies = ['core', 'network', 'spectrum', 'stats', 'buildings', 'virtual-net-device','point-to-point','applications','internet','csma']
+    if (bld.env['ENABLE_EMU']):
+        lte_module_dependencies.append('fd-net-device')
+    module = bld.create_ns3_module('lte', lte_module_dependencies)
+    bld.env.append_value("RPATH", ['/usr/local/lib'])
+    module.source = [
+        'model/lte-common.cc',
+        'model/lte-spectrum-phy.cc',
+        'model/lte-spectrum-signal-parameters.cc',
+    ...
+    ...
+
+In ns-3 folder:
+
+./waf configure
+./waf build
+
+Couldn't still get rid of rpath..
+
+
+Hopefully works this time! :)
