@@ -79,5 +79,9 @@ Collection schemas
 | -------------- | ---- | -------- | ------ | -------- | ------------ | ---- | ------- |
 | Demo           | 0,2  |       21 | 0      | -89,9397 | 0            | -nan |  20     |
 
+# run ns3 command
+* ns-3.26>$ ./waf --run="CSONDemo --simTime=5 --ns3::LteHelper::HandoverAlgorithm=ns3::A3RsrpHandoverAlgorithm"
+
+
 # to do list
 1.  set up Apache when it's ready to deploy Django in production.
