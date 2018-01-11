@@ -1,0 +1,75 @@
+
+///////////////////////////////
+// EVENT LOG
+///////////////////////////////
+logs name: event_log
+
+columns:
+Time : double
+LocationX : double
+LocationY : double
+UserID : int64_t            <- called (NumberLong) in MongoDB
+EventID : int
+CellID : int
+RSRQ : double
+
+
+
+///////////////////////////////
+// HANDOVER LOG
+///////////////////////////////
+logs name: handover_log
+
+columns:
+Time : double
+LocationX : double
+LocationY : double
+UserID : int64_t            <- called (NumberLong) in MongoDB
+HEventID : int
+CellID : int
+TargetCellID : int
+
+x
+
+
+///////////////////////////////
+// SINR LOG
+///////////////////////////////
+logs name: handover_log
+
+columns:
+Time : double
+UserID : int64_t            <- called (NumberLong) in MongoDB
+CellID : int
+SINR : double
+
+
+
+///////////////////////////////
+// THROUGHPUT LOG
+///////////////////////////////
+logs name: throughput_log
+
+columns:
+Time : double
+UserID : int64_t            <- called (NumberLong) in MongoDB
+CellID : int
+Throughput : double
+
+
+
+///////////////////////////////
+// MAIN KPIS LOG
+///////////////////////////////
+logs name: main_kpis_log or main_file_with_UserTHR
+
+columns:
+Time : double
+LocationX : double
+LocationY : double
+UserID : int64_t            <- called (NumberLong) in MongoDB
+CellID : int
+RSRP : double
+RSRQ : double
+
+

@@ -5,14 +5,14 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
 import pandas as pd
-from PIL import Image
+#from PIL import Image
 from django.conf import settings
 
 # declare global variables
-initialRecordNum = 108000
-throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
 
-cursorLocation = 108000
+throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
+initialRecordNum = len(throughputCapacityData)
+cursorLocation = len(throughputCapacityData)
 oneTimeExtraRecord = 2280
 dominateMap_size = 0
 def index(request):
@@ -101,6 +101,7 @@ def loadMore(request):
     global oneTimeExtraRecord
     if request.method == "GET":
         nextCursorLocation = cursorLocation + oneTimeExtraRecord
+        throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
         thisResult = calculateThroughput(throughputCapacityData[cursorLocation:nextCursorLocation])
         cursorLocation = nextCursorLocation
         return HttpResponse(json.dumps(thisResult))

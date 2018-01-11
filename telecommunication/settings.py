@@ -119,6 +119,6 @@ MEDIA_URL= MEDIA_HOST
 # media path in Yi's machine
 MEDIA_ROOT = '/home/yizhou/code/telecommunication/media/'
 #media path inTuukka's machine
-# MEDIA_ROOT = '/home/yizhou/code/telecommunication/media/'
+# MEDIA_ROOT = '/home/tupevarj/telecommunication/media/'
 
 MEDIA_URL = '/media/'
