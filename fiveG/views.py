@@ -3,7 +3,7 @@ from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
+from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell, calculateRSRP
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -20,11 +20,14 @@ def index(request):
     # get main_file_with_UserThR collection from mongo
     global dominateMap_size
 
-    result = calculateThroughput(throughputCapacityData[:initialRecordNum])
+    throughput_Result = calculateThroughput(throughputCapacityData[:initialRecordNum])
+
+    rsrp_Result = calculateRSRP(throughputCapacityData[:initialRecordNum])
+
     dominateMap_size = displayDominateMap()
     context = {
-        "UserThroughput": result
-        # "dominateMap": image_data
+        "UserThroughput": throughput_Result,
+        "rsrp": rsrp_Result
     }
 
     return render(request, 'fiveG/index.html', context)
@@ -164,13 +167,13 @@ def controlPanel(request):
         else:
             mlb = 0
 
-        document = {"cellID": cellID,
-                    "normal": normal,
-                    "outage": outage,
-                    "coc": coc,
-                    "cco": cco,
-                    "mro": mro,
-                    "mlb": mlb
+        document = {"cellID": int(cellID),
+                    "normal": int(normal),
+                    "outage": int(outage),
+                    "coc": int(coc),
+                    "cco": int(cco),
+                    "mro": int(mro),
+                    "mlb": int(mlb)
                     }
 
         if cellID == 0:

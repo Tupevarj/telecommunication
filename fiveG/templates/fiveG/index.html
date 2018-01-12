@@ -1297,11 +1297,16 @@
          var throughtputData = {{ UserThroughput.throughput }};
          var throughtputTime = {{ UserThroughput.Time }};
 
+         var rsrpTime = {{ rsrp.Time }}
+         var rsrp_1 = {{ rsrp.RSRP_1 }}
+         var rsrp_2 = {{ rsrp.RSRP_2 }}
+         var rsrp_3 = {{ rsrp.RSRP_3 }}
+
          var sinr = 0;
 
-         var lineChartContainer2 = Highcharts.chart("lineChartContainer2", {
-              title: {
-                 text: 'NS-3 simulator SINR'
+         var lineChartContainer = Highcharts.chart('lineChartContainer', {
+             title: {
+                 text: 'NS-3 simulator throughtput'
              },
              subtitle: {
                  text: '57 cells, 20 users, 5 times/s'
@@ -1330,25 +1335,23 @@
 
          });
 
-
-         var lineChartContainer = Highcharts.chart('lineChartContainer', {
-             title: {
-                 text: 'NS-3 simulator throughtput'
+         var lineChartContainer2 = Highcharts.chart("lineChartContainer2", {
+              title: {
+                 text: '3 Cells RSRP in NS3 simulator'
              },
              subtitle: {
-                 text: '57 cells, 20 users, 5 times/s'
+                 text: ''
              },
              xAxis: {
-                 categories: window.throughtputTime,
+                 categories: window.rsrpTime,
                  crosshair: true,
                  title: {
                      text: "seconds"
                  }
-
              },
              yAxis: {
                  title: {
-                     text: 'Throughput'
+                     text: 'RSRP'
                  }
              },
              legend: {
@@ -1357,9 +1360,16 @@
                  verticalAlign: 'middle'
              },
              series: [{
-                 data: window.throughtputData,
-                 name: 'throughtput'
+                 data: window.rsrp_1,
+                 name: "cell 1"
+             }, {
+                 data: window.rsrp_2,
+                 name: "cell 2"
+             }, {
+                 data: window.rsrp_3,
+                 name: "cell 3"
              }]
+
          });
 
 

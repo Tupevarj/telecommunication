@@ -36,14 +36,40 @@ def calculateThroughput(data):
     nonZeroThroughputDict = {"Time": throughputDict["Time"][i:], "throughput": throughputDict["throughput"][i:]}
     return nonZeroThroughputDict
 
+def calculateRSRP(data):
+    # replace nan value with 0 in RSRP column
+    data["RSRP"].fillna(0, inplace=True)
+
+    grouped = data.groupby(["Time", "CellID"])["RSRP"]
+
+    RSRPDict = dict()
+    RSRPDict["Time"] = list()
+    RSRPDict[1] = list()
+    RSRPDict[2] = list()
+    RSRPDict[3] = list()
+
+    for k, rsrp in grouped:
+        if k[1] in (1,2,3):
+            RSRPDict["Time"].append(k[0])
+            RSRPDict[k[1]].append(sum(rsrp))
+        else:#means not the specific cells
+            pass
+
+    return {"Time": RSRPDict["Time"], "RSRP_1": RSRPDict[1], "RSRP_2": RSRPDict[2], "RSRP_3": RSRPDict[3]}
+
+
+
+
+
+
 
 def displayDominateMap():
 
     data = collection_read_mongo(collection="dominationmap")
 
-    X = np.array(data.iloc[:, 0])
-    Y = np.array(data.iloc[:, 1])
-    Z = np.array(data.iloc[:, 3])
+    X = np.array(data["x"])
+    Y = np.array(data["y"])
+    Z = np.array(data["sinr"])
 
     xi = np.linspace(float(X.min()), float(X.max()), 1000)
     yi = np.linspace(Y.min(), Y.max(), 1000)
@@ -58,6 +84,7 @@ def displayDominateMap():
         os.remove(settings.MEDIA_ROOT + "dominationMap.png")
     except OSError:
         pass
+    plt.savefig("dominationMap.png")
 
     fig = plt.gcf()
     fig.set_size_inches(4.8, 3.6)
