@@ -106,8 +106,17 @@ def loadMore(request):
         nextCursorLocation = cursorLocation + oneTimeExtraRecord
         throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
         thisResult = calculateThroughput(throughputCapacityData[cursorLocation:nextCursorLocation])
+
+        # load more for cell RSRP graph
+        rsrpLoadMoreResult = calculateRSRP(throughputCapacityData[cursorLocation:nextCursorLocation])
+        result = {"throughputTime": thisResult["Time"],
+                  "throughput": thisResult["throughput"],
+                  "rsrpTime":rsrpLoadMoreResult["Time"],
+                  "RSRP_1": rsrpLoadMoreResult["RSRP_1"],
+                  "RSRP_2": rsrpLoadMoreResult["RSRP_2"],
+                  "RSRP_3": rsrpLoadMoreResult["RSRP_3"]}
         cursorLocation = nextCursorLocation
-        return HttpResponse(json.dumps(thisResult))
+        return HttpResponse(json.dumps(result))
     else:
         return 0
 

@@ -84,8 +84,6 @@ def displayDominateMap():
         os.remove(settings.MEDIA_ROOT + "dominationMap.png")
     except OSError:
         pass
-    plt.savefig("dominationMap.png")
-
     fig = plt.gcf()
     fig.set_size_inches(4.8, 3.6)
     fig.savefig(settings.MEDIA_ROOT+'dominationMap.png')
