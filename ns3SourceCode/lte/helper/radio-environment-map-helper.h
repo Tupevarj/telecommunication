@@ -25,6 +25,7 @@
 
 #include <ns3/object.h>
 #include <fstream>
+#include <ns3/traced-callback.h>
 
 
 namespace ns3 {
@@ -74,6 +75,19 @@ public:
    * 
    */
   void Install ();
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  TracedCallback<double, double, double, double> m_RemTrace;
+
+  typedef void (* RemCallback)
+        (double x, double y, double z, double sinr);
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 private:
 

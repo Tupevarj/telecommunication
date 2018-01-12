@@ -105,6 +105,12 @@ ConfigureInOut::LogMainKpis(double time, double x, double y, uint64_t imsi, uint
 	mainKpisLog.push_back(MainKpiLog{time, x, y, rsrp, rsrq, imsi, cellId});
 }
 
+void
+ConfigureInOut::LogREM(double x, double y, double z, double sinr)
+{
+	remLog.push_back(REMLog{x, y, z, sinr});
+}
+
 //
 //void
 //ConfigureInOut::WriteLogToCSVFile(std::string path, LogCollection logCol)
@@ -169,12 +175,22 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	}
 	if(mainKpisLog.size() > 0)
 	{
-			std::ofstream outFile;
-			outFile.open((prefix + MainKpiLog::GetFileName()).c_str(), std::ios_base::app);
-			for(uint i = 0; i < mainKpisLog.size(); ++i)
-			{
-				outFile	<< mainKpisLog[i].ConvertToCSV() << "\n";
-			}
+		std::ofstream outFile;
+		outFile.open((prefix + MainKpiLog::GetFileName()).c_str(), std::ios_base::app);
+		for(uint i = 0; i < mainKpisLog.size(); ++i)
+		{
+			outFile	<< mainKpisLog[i].ConvertToCSV() << "\n";
+		}
+		outFile.close();
+	}
+	if(remLog.size() > 0)
+	{
+		std::ofstream outFile;
+		outFile.open((prefix + MainKpiLog::GetFileName()).c_str(), std::ios_base::app);
+		for(uint i = 0; i < remLog.size(); ++i)
+		{
+			outFile	<< remLog[i].ConvertToCSV() << "\n";
+		}
 		outFile.close();
 	}
 }
@@ -240,7 +256,7 @@ ConfigureInOut::WriteLogsToDatabase()
 	/* MAIN KPIS */
 	if(mainKpisLog.size() > 0)
 	{
-		SetCollection("main_file_with_UserTHR");
+		SetCollection("main_kpis_log");
 
 		for(uint i = 0; i < mainKpisLog.size(); ++i)
 		{
@@ -249,6 +265,45 @@ ConfigureInOut::WriteLogsToDatabase()
 		mongoCollection->insert_many(documents);
 		documents.clear();
 	}
+
+	/* REM */
+	if(remLog.size() > 0)
+	{
+		SetCollection("dominationmap");
+
+		for(uint i = 0; i < remLog.size(); ++i)
+		{
+			documents.push_back(remLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+		mongoCollection->insert_many(documents);
+		documents.clear();
+	}
+}
+
+SONEngineLog
+ConfigureInOut::ReadSONEngineMethodsFromDatabase()
+{
+	SetCollection("controlpanel");
+
+//	int64_t currentNo = mongoCollection->count(document{} << finalize);
+
+//	if(currentNo > numberOfSONLogsInDB)
+//	{
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize);
+//		numberOfSONLogsInDB = currentNo;
+
+	SONEngineLog configuration =  SONEngineLog(cursor);
+
+	/* UPDATE DIRTY FLAGS */
+	bsoncxx::stdx::optional<mongocxx::result::update> result =
+			mongoCollection->update_many(bsoncxx::builder::stream::document{} << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize,
+					bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document << "dirty_flag" << 1 <<
+					bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
+
+
+
+	return configuration;
+//	}
 }
 
 /* todo: Check connection to database! SIGSEGV Error jos MongoDB ei ole käynnissä!!!!!!!!!!!!!! */
