@@ -92,3 +92,20 @@ Collection schemas
 
 # to do list
 1.  set up Apache when it's ready to deploy Django in production.
+2.  preprocessing the data, which the final table schema should be like the following:
+
+| Time | User | LocationX | LocationY | RSRP_1st | 1stRSRP_Corresponding_RSRQ| RSRP_2nd | 2ndRSRP_Corresponding_RSRQ | RSRP_3rd | 3rdRSRP_Corresponding_RSRQ | RSRP_4th | 4thRSRP_Corresponding_RSRQ| Serving Cell |
+| ---- | --- | --------- | ---------- | -------- | ------------------------- | -------- | -------------------------- | -------- | ------------------------- | -------- | --------------------------- | ------------ |
+| 0.2 | 1 | .. | .. | .. | .. | 
+| 0.2 | 2 | .. |
+| 0.2 | .. | .. |
+| 0.4 | 1 | .. | .. |
+| 0.4 | 2 | .. | .. |
+Explaination
+Serving Cell: pick the cell number which its rsrp value is the biggest, therefore, pick the rsrp_1st corresponding cell
+calculate all users at specific time point, then for the next time point, repeat the above process. 
+the final data schema should be following:
+
+
+
+
