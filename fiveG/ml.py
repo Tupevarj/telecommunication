@@ -55,6 +55,8 @@ def calculateRSRP(data):
         else:#means not the specific cells
             pass
 
+
+
     return {"Time": RSRPDict["Time"], "RSRP_1": RSRPDict[1], "RSRP_2": RSRPDict[2], "RSRP_3": RSRPDict[3]}
 
 
@@ -91,6 +93,10 @@ def displayDominateMap():
     return len(data.index)
 
 def detectUnnormalCell():
+    '''
+    use RSRP variable to detect the whether the cell is normal or not
+    :return:
+    '''
     # cellData = OrderedDict()
     # cellData["CellID"] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
     # cellData["Severity"] = ["Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Minor","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Minor","Normal"]
@@ -100,16 +106,24 @@ def detectUnnormalCell():
 
     # return cellData
 
+    # data = collection_read_mongo(collection="main_file_with_UserTHR")
+    # groupedData = data.groupby(["Time", "CellID"])["RSRP"].sum()
+    #
+    # rsrpUpper = getThreshold(groupedData, time_interval=30)["upper"]
+    # rsrpLower = getThreshold(groupedData)["lower"]
+
+    # this number should be decided by applying ML algorithm
     data = collection_read_mongo(collection="TUUKKA_throughputs")
     groupedData = data.groupby(["Time", "CellID"])["Throughput"]
 
-    # this number should be decided by applying ML algorithm
     trafficUPThreshold = 10000
     trafficDOWNThreshold = 1000
     records = list()
+    throughputList = list()
     for k, throughput in groupedData:
         record = list()
         totalThroughput = sum(throughput)
+        throughputList.append(totalThroughput)
         # k[1] means cell ID
         record.append(k[1])
         # k[0] is time variable
@@ -128,7 +142,127 @@ def detectUnnormalCell():
         records.append(record)
     # create new dataframe which stores "Time", "CellID", "totalThroughputForThisCellAtThisTime"
     df = pd.DataFrame(records, columns=["CellID", "Time", "totalThroughput","Severity", "Problem Class", "Service Class"])
+
     return df
+
+
+def getThreshold(data, time_interval=30):
+    '''
+    calculate the upper bound threshold and lower bound threshold
+    data["time"] list of time series
+    data["rsrp"] list of double
+    time_interval default 30 seconds, with containing 5 whole periods
+    :return dictionary
+
+    '''
+
+    upper = 0
+    lower = 0
+    avg = np.mean(data["rsrp"])
+    std = np.std(data["rsrp"])
+    k = 3
+    upper = avg + k * std
+    lower = avg + k * std
+
+    return {"upper": upper, "lower": lower}
+
+
+def getVectorRSRP(data):
+    '''
+    generate rsrp vector and its traffic label
+    :return:
+    '''
+
+    # get all total rsrp for all cells for each user
+    grouped = data.groupby(["Time", "UserID"])["RSRP"]
+    time_interval = 5
+    l = list()
+    for k, rsrp in grouped:
+        totalRSRP = np.sum(rsrp)
+        l.append([k[0], k[1], totalRSRP])
+
+    df = pd.DataFrame(l, columns=["Time", "Cell", "TotalRSRP"])
+
+
+    # get specific section of dataframe between specific time slot
+
+    latestTime = max(df["Time"])
+
+    repeatTimes = int(latestTime / time_interval) + 1
+    # for i in range(repeatTimes):
+    #     if
+
+
+def calculateAvgRSRPForCell(data):
+    grouped = data.groupby("cell")["TotalRSRP"]
+
+
+    rsrpCells = dict()
+    rsrpCells[1] = 0
+    rsrpCells[2] = 0
+    return rsrpCells
+
+
+
+def detectCellREAL():
+#     preprocess data to get the specific dataframe
+    data = collection_read_mongo(collection="main_file_with_UserTHR")
+    preparedDF = preprocessDF(data)
+
+# apply machine learning algorithm here
+
+
+
+
+def preprocessDF(data):
+    '''
+    process the raw dataframe and then put the processed data into machine learning part
+    :param rawData:
+    :return: dataframe
+    '''
+
+    testData = data[:10000]
+
+    wantedDF = pd.DataFrame(
+        columns=["Time", "User", "LocationX", "LocationY", "RSRP_1st", "1stRSRP_Corresponding_RSRQ", "Serving_Cell",
+                 "RSRP_2nd", "2ndRSRP_Corresponding_RSRQ", "RSRP_3rd", "3rdRSRP_Corresponding_RSRQ", "RSRP_4th",
+                 "4thRSRP_Corresponding_RSRQ"])
+    i = 0
+    for stamp, group in testData.groupby(["Time", "UserID"]):
+        #     rsrp_top3 = [0,0,0]
+        #     rsrp_matched_record_index = [0, 0,0]
+        rsrpIndexList = list()
+        for i in range(group.shape[0]):
+            rsrpIndexList.append((i, group["RSRP"][i]))
+        rsrpIndexListSorted = sorted(rsrpIndexList, key=lambda x: x[1], reverse=True)
+        row_rsrp1st = group.iloc[rsrpIndexListSorted[0][0]]
+        a = row_rsrp1st["Time"]
+        b = int(row_rsrp1st["UserID"])
+        c = row_rsrp1st["LocationX"]
+        d = row_rsrp1st["LocationY"]
+        e = row_rsrp1st["RSRP"]
+        f = row_rsrp1st["RSRQ"]
+        g = int(row_rsrp1st["CellID"])
+        h = group.iloc[rsrpIndexListSorted[1][0]]["RSRP"]
+        p = group.iloc[rsrpIndexListSorted[1][0]]["RSRQ"]
+        k = group.iloc[rsrpIndexListSorted[2][0]]["RSRP"]
+        l = group.iloc[rsrpIndexListSorted[2][0]]["RSRQ"]
+        m = group.iloc[rsrpIndexListSorted[3][0]]["RSRP"]
+        n = group.iloc[rsrpIndexListSorted[3][0]]["RSRQ"]
+        wantedDF.loc[i] = [a, b, c, d, e, f, g, h, p, k, l, m, n]
+        i += 1
+
+
+    return wantedDF
+
+
+
+
+
+
+
+
+
 
 
 
