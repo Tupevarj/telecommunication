@@ -1,3 +1,8 @@
+# All resource list for all resource of this project
+* slides, docs, etc, in shared google drive: https://drive.google.com/drive/folders/1RxiAF65TxsQQYNlToQf0eLN43lpVKUC6?usp=sharing
+* slack communication team: 5gopt.slack.com
+
+
 # telecommunication
 
 + python manage.py runserver
