@@ -209,7 +209,8 @@ def detectCellREAL():
     data = collection_read_mongo(collection="main_file_with_UserTHR")
     preparedDF = preprocessDF(data)
 
-# apply machine learning algorithm here
+# apply anormaly detection model machine learning algorithm here
+
 
 
 
