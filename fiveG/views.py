@@ -3,7 +3,7 @@ from .models import normalCol_read_mongo, collection_read_mongo, insert_document
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell
+from .ml import calculateThroughput, displayDominateMap, detectUnnormalCell, calculateRSRP
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -20,11 +20,14 @@ def index(request):
     # get main_file_with_UserThR collection from mongo
     global dominateMap_size
 
-    result = calculateThroughput(throughputCapacityData[:initialRecordNum])
+    throughput_Result = calculateThroughput(throughputCapacityData[:initialRecordNum])
+
+    rsrp_Result = calculateRSRP(throughputCapacityData[:initialRecordNum])
+
     dominateMap_size = displayDominateMap()
     context = {
-        "UserThroughput": result
-        # "dominateMap": image_data
+        "UserThroughput": throughput_Result,
+        "rsrp": rsrp_Result
     }
 
     return render(request, 'fiveG/index.html', context)
@@ -42,10 +45,10 @@ def show_normal_col_in_table(request):
         order = request.GET.get('order')  # ascending or descending
         if search:
             # all_records = collection_read_mongo(collection="event_log")
-            all_records = pd.DataFrame.from_dict(detectUnnormalCell())
+            all_records = detectUnnormalCell()
         else:
             # all_records = collection_read_mongo(collection="event_log")
-            all_records = pd.DataFrame.from_dict(detectUnnormalCell())
+            all_records = detectUnnormalCell()
 
         # all_records = all_records.insert(0, "order", range(0, len(all_records.index)))
 
@@ -66,19 +69,11 @@ def show_normal_col_in_table(request):
             print(record)
 
             response_data['rows'].append({
-                # "time": record[0] if record[0] else "",
-                # "X": record[1] if record[1] else "",
-                # "Y": record[2] if record[2] else "",
-                # "IMSI": record[3] if record[3] else "",
-                # "EVENT": record[4] if record[4] else "",
-                # "RSRQ": record[5] if record[5] else "",
-                # "CellID": record[6] if record[6] else ""
                 "CellID": record[0] if record[0] else "",
-                "Severity": record[1] if record[1] else "",
-                "Created": record[2] if record[2] else "",
-                "Problem Class": record[3] if record[3] else "",
-                "Service Class": record[4] if record[4] else ""
-
+                "Created": record[1] if record[1] else "",
+                "Severity": record[3] if record[3] else "",
+                "Problem Class": record[4] if record[4] else "",
+                "Service Class": record[5] if record[5] else ""
             })
 
         return HttpResponse(json.dumps(response_data))
@@ -103,8 +98,17 @@ def loadMore(request):
         nextCursorLocation = cursorLocation + oneTimeExtraRecord
         throughputCapacityData = collection_read_mongo(collection="main_file_with_UserTHR")
         thisResult = calculateThroughput(throughputCapacityData[cursorLocation:nextCursorLocation])
+
+        # load more for cell RSRP graph
+        rsrpLoadMoreResult = calculateRSRP(throughputCapacityData[cursorLocation:nextCursorLocation])
+        result = {"throughputTime": thisResult["Time"],
+                  "throughput": thisResult["throughput"],
+                  "rsrpTime":rsrpLoadMoreResult["Time"],
+                  "RSRP_1": rsrpLoadMoreResult["RSRP_1"],
+                  "RSRP_2": rsrpLoadMoreResult["RSRP_2"],
+                  "RSRP_3": rsrpLoadMoreResult["RSRP_3"]}
         cursorLocation = nextCursorLocation
-        return HttpResponse(json.dumps(thisResult))
+        return HttpResponse(json.dumps(result))
     else:
         return 0
 
@@ -118,7 +122,7 @@ def loadNewestDominateMap(request):
             # update the global variable
             dominateMap_size = latest_size
             try:
-                #base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
+                # base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
                 with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
                     return HttpResponse(f.read(), content_type="image/png")
             except IOError:
@@ -164,13 +168,14 @@ def controlPanel(request):
         else:
             mlb = 0
 
-        document = {"cellID": cellID,
-                    "normal": normal,
-                    "outage": outage,
-                    "coc": coc,
-                    "cco": cco,
-                    "mro": mro,
-                    "mlb": mlb
+        document = {"cellID": int(cellID),
+                    "normal": int(normal),
+                    "outage": int(outage),
+                    "coc": int(coc),
+                    "cco": int(cco),
+                    "mro": int(mro),
+                    "mlb": int(mlb),
+                    "dirty_flag": 0
                     }
 
         if cellID == 0:
