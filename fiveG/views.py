@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import normalCol_read_mongo, collection_read_mongo, insert_document, calculate_dominatemap_size
+from .models import collection_read_mongo, insert_document, calculate_dominatemap_size
 import json
 from django.core.paginator import Paginator
 from django.http import HttpResponse
@@ -79,17 +79,6 @@ def show_normal_col_in_table(request):
         return HttpResponse(json.dumps(response_data))
 
 
-def displayDemo(request):
-
-
-    template_names = "fiveG/displayDemo.html"
-
-    normalCol = normalCol_read_mongo()
-
-    context = {}
-
-    return render(request, template_names)
-
 
 def loadMore(request):
     global cursorLocation
@@ -106,7 +95,12 @@ def loadMore(request):
                   "rsrpTime":rsrpLoadMoreResult["Time"],
                   "RSRP_1": rsrpLoadMoreResult["RSRP_1"],
                   "RSRP_2": rsrpLoadMoreResult["RSRP_2"],
-                  "RSRP_3": rsrpLoadMoreResult["RSRP_3"]}
+                  "RSRP_3": rsrpLoadMoreResul
+
+
+
+
+                  t["RSRP_3"]}
         cursorLocation = nextCursorLocation
         return HttpResponse(json.dumps(result))
     else:
