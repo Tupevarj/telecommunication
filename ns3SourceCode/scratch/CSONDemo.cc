@@ -106,6 +106,7 @@ GetConnectedCell(uint64_t imsi)
 	return 0;
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CALLBACKS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +180,12 @@ ReportUeSinr(double time, uint64_t imsi, uint16_t cellId, double sinr)
 }
 
 void
+RemCallback(double x, double y, double z, double sinr)
+{
+	confInOut.LogREM(x, y, z, sinr);
+}
+
+void
 WriteUeThroughPut(Ptr<RadioBearerStatsCalculator> rlcStats)
 {
 	// last measured throughput for Ues.
@@ -200,6 +207,19 @@ WriteUeThroughPut(Ptr<RadioBearerStatsCalculator> rlcStats)
 // END:		CALLBACKS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+GenerateRemMap(Ptr<RadioEnvironmentMapHelper> remHelper, Box macroUeBox)
+{
+	remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
+	remHelper->SetAttribute ("OutputFile", StringValue ("CSONREM.rem"));
+	remHelper->SetAttribute ("XMin", DoubleValue (macroUeBox.xMin));
+	remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
+	remHelper->SetAttribute ("YMin", DoubleValue (macroUeBox.yMin));
+	remHelper->SetAttribute ("YMax", DoubleValue (macroUeBox.yMax));
+	remHelper->SetAttribute ("Z", DoubleValue (1.5));
+    remHelper->Install();
+}
+
 
 
 /* Apply changes from updated configuration */
@@ -212,19 +232,32 @@ ApplyChanges(ConfigurationLog confData)
 	}
 }
 
-static int fileNumber = 0;
+void
+ApplySONEngineMethods(SONEngineLog confData)
+{
+	for(uint i = 0; i < confData.configurations.size(); ++i)
+	{
+		//std::cout << "Cell ID: " << confData.configurations[i].cellId <<  std::endl;
+		std::cout << "SON ENGINE start method: \"" << SONEngineLog::GetMethodName(confData.configurations[i].method) <<
+				"\" for cell " << confData.configurations[i].cellId << std::endl;
+	}
+}
+
+//static int fileNumber = 0;
 
 /* Reads changes from configuration file and apply changes if updated */
 void Update()
 {
-	ConfigurationLog conf = confInOut.ReadConfigurationFromDatabase();
-	ApplyChanges(conf);
+	SONEngineLog conf = confInOut.ReadSONEngineMethodsFromDatabase();
+	ApplySONEngineMethods(conf);
+	//ConfigurationLog conf = confInOut.ReadConfigurationFromDatabase();
+	//ApplyChanges(conf);
 
-	std::stringstream strs;
-	strs << fileNumber;
-	std::string postFix = strs.str();
-
-	fileNumber++;
+//	std::stringstream strs;
+//	strs << fileNumber;
+//	std::string postFix = strs.str();
+//
+//	fileNumber++;
 	Simulator::Schedule (MilliSeconds (3000), &Update);
 }
 
@@ -234,8 +267,8 @@ void
 WaitSonEngine()
 {
 	// todo: wait SON engine to make new configuration..
-	// currently waiting 10 seconds:
-	usleep(10000000);
+	// currently waiting 1 seconds:
+	usleep(1000000);
 }
 
 void
@@ -382,6 +415,14 @@ main (int argc, char *argv[])
 	Ptr<PhyStatsCalculator> phyStats = lteHelper->GetPhyStatsCalculator();
 	phyStats->TraceConnectWithoutContext("SinrTrace", MakeCallback(&ReportUeSinr));
 
+
+//	Ptr<RadioEnvironmentMapHelper> remHelper;
+//	remHelper = CreateObject<RadioEnvironmentMapHelper> ();
+//	remHelper->SetAttribute("StopWhenDone", BooleanValue(false));
+//    remHelper->TraceConnectWithoutContext("RemTrace", MakeCallback(&RemCallback));
+//	// Generate REM
+//	GenerateRemMap(remHelper, macroUeBox);
+
 	///////////////////////////////////////////////
 	// DEMO LOOP
 	///////////////////////////////////////////////
@@ -390,7 +431,7 @@ main (int argc, char *argv[])
 	while(true)
 	{
 		// read configuration from database:
-		//Update(); // HUOM! requires connection to database
+		Update(); // HUOM! requires connection to database
 		// run simulation:
 	    Simulator::Stop (Seconds (simTime));
 		Simulator::Run ();

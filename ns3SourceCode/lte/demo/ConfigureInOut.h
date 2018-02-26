@@ -61,8 +61,14 @@ public:
 	/* Adds environment measure to cache */
 	void LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq);
 
+	/* Adds REM measurement */
+	void LogREM(double x, double y, double z, double sinr);
+
 	/* Writes all the logs into database/csv files and CLEARS LOG FILES */
 	void FlushLogs();
+
+	/* Reads SONEngine instructions from database  FOR TESTING ONLY!! */
+	SONEngineLog ReadSONEngineMethodsFromDatabase();
 
 	/* Reads configuration from database */
 	ConfigurationLog ReadConfigurationFromDatabase();
@@ -111,4 +117,7 @@ private:
 	std::vector<SinrLog> sinrsLog;
 	std::vector<ThrouhgputLog> throughputsLog;
 	std::vector<MainKpiLog> mainKpisLog;
+	std::vector<REMLog> remLog;
+
+	int64_t numberOfSONLogsInDB = 0;
 };

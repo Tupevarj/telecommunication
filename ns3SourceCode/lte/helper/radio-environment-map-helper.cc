@@ -146,6 +146,10 @@ RadioEnvironmentMapHelper::GetTypeId (void)
                    IntegerValue (-1),
                    MakeIntegerAccessor (&RadioEnvironmentMapHelper::m_rbId),
                    MakeIntegerChecker<int32_t> ())
+	.AddTraceSource ("RemTrace",
+				   	 "Trace fired",
+				   	MakeTraceSourceAccessor (&RadioEnvironmentMapHelper::m_RemTrace),
+				   	"ns3::RadioEnvironmentMapHelper::RemCallback")
   ;
   return tid;
 }
@@ -201,7 +205,7 @@ RadioEnvironmentMapHelper::Install ()
       NS_FATAL_ERROR ("Can't open file " << (m_outputFile));
       return;
     }
-  
+
   double startDelay = 0.0026;
 
   if (m_useDataChannel)
@@ -318,6 +322,10 @@ RadioEnvironmentMapHelper::PrintAndReset ()
 {
   NS_LOG_FUNCTION (this);
   
+
+
+
+
   for (std::list<RemPoint>::iterator it = m_rem.begin ();
        it != m_rem.end ();
        ++it)
@@ -337,6 +345,12 @@ RadioEnvironmentMapHelper::PrintAndReset ()
      // Ptr<LteUeRrc> rrc = lteNetDevice->GetRrc();
 
       Vector pos = it->bmm->GetPosition ();
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      m_RemTrace(pos.x, pos.y, pos.z, it->phy->GetSinr (m_noisePower));
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
       NS_LOG_LOGIC ("output: " << pos.x << "\t" 
                     << pos.y << "\t" 
                     << pos.z << "\t" 
