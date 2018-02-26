@@ -277,48 +277,6 @@ def preprocessDF(data):
     return wantedDF
 
 
-def dimensionReduction(data):
-    """
-
-    :param data: dataframe from collection "main_kpis_log"
-    :return: dataframe with three dimensions left after applying MDS, columns = ["Time", "UserID", "RSRP_1", "RSRQ_1", "RSRP_2", "RSRQ_2", "RSRP_3", "RSRQ_3", "RSRP_4", "RSRQ_4"]
-    """
-    identiferList = list()
-    pd.DataFrame(columns=["Time", "UserID"])
-    signalList = list()
-
-    for ident, group in data.groupby(["Time", "UserID"]):
-        #     iterate the group object, and pick the top 4 highest rsrp value and then its corresponsing rsrq value in that row
-        #     print(type(group))
-        top4Row = group.sort_values(by=["RSRP"])[:4]
-        #     print(top4Row)
-        try:
-            signalRow = [top4Row.iloc[0]["RSRP"], top4Row.iloc[0]["RSRQ"], top4Row.iloc[1]["RSRP"],
-                         top4Row.iloc[1]["RSRQ"], top4Row.iloc[2]["RSRP"], top4Row.iloc[2]["RSRQ"],
-                         top4Row.iloc[3]["RSRP"], top4Row.iloc[3]["RSRQ"]]
-            signalList.append(signalRow)
-            ident = (round(ident[0], 1), ident[1])
-            identiferList.append(ident)
-        except:
-            pass
-
-    signalDF = pd.DataFrame(signalList, columns=["RSRP_1", "RSRQ_1", "RSRP_2", "RSRQ_2", "RSRP_3", "RSRQ_3", "RSRP_4", "RSRQ_4"])
-    identiferDF = pd.DataFrame(identiferList, columns=["Time", "UserID"])
-
-    # apply MDS dimension reduction to signalDF, with only 3 dimensions left
-    mds = manifold.MDS(3, max_iter=200, n_init=1)
-    # before applying MDS, need to remove rows which contain NaN value, so that MDS can run correctly.
-    signalDF = signalDF.dropna(axis=0, how="any")
-    threeDimSig = mds.fit_transform(signalDF)
-
-    # create a new Dataframe with merging two exist Dataframe, and length of these two dataframe is same
-    threeDimSigDF = pd.DataFrame(threeDimSig)
-    referenceDF = identiferDF.merge(threeDimSigDF, left_index=True, right_index=True)
-
-    return referenceDF
-
-
-
 
 
 
