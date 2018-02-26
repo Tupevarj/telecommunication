@@ -457,5 +457,5 @@ jQuery(function($){
 	  $('.navbar-collapse').collapse('hide');
 	});
 
-	
+
 });

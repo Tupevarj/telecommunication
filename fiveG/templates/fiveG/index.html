@@ -595,11 +595,29 @@
 
              </div>
 
+             </div>
+         <div class="container" style="margin-top: 2cm;">
+             <div class="row">
+                 <div id="testChartContainer" class="col-md-12 col-lg-12"></div>
+                 <div class="col-lg-12 col-md-12"></div>
+                     <div class="centered text-center"></div>
+             </div>
+
+         </div>
+
+         </div>
+         <div class="container" style="margin-top: 2cm;">
+             <div class="row">
+                 <div id="dominanceMapContainer" class="col-md-12 col-lg-12"></div>
+                 <div class="col-lg-12 col-md-12"></div>
+                     <div class="centered text-center"></div>
+             </div>
+
          </div>
 
          <div class="container style="margin-top: 2cm; " style="margin-top: 2cm;">
              <div class="row">
-                 <div id="lineChartContainer" class="col-md-12 col-lg-12"></div>
+                 <div id="throughputChartContainer" class="col-md-12 col-lg-12"></div>
                  <div class="col-lg-12 col-md-12">
                      <div class="centered text-center">
 
@@ -610,16 +628,27 @@
 
          <div class="container" style="margin-top: 2cm;">
              <div class="row">
-                 <div id="lineChartContainer2" class="col-md-12 col-lg-12"></div>
+                 <div id="rsrpChartContainer" class="col-md-12 col-lg-12"></div>
                  <div class="col-lg-12 col-md-12">
                      <div class="centered text-center">
-                         <button class="btn btn-primary" id="loadMore" >load more</button>
                      </div>
                  </div>
 
              </div>
 
          </div>
+
+         <div class="container" style="margin-top: 2cm;">
+             <div class="row">
+                 <div id="rsrpPerCellChartContainer" class="col-md-12 col-lg-12"></div>
+                 <div class="col-lg-12 col-md-12"></div>
+                     <div class="centered text-center">
+                         <button class="btn btn-primary" id="updateCharts" >Update</button>
+                     </div>
+             </div>
+
+         </div>
+
 
          <div class="container" style="margin-top: 2cm;">
              <form action="controlPanel" method="GET" id="controlPanel">
@@ -734,8 +763,8 @@
                     <div class="team_img">
                       <img src="{% static 'fiveG/img/team-1.jpg' %}" alt="img">
                     </div>
-                    <h5>Jamie Sidens</h5>
-                    <span>CMS Developer</span>                        
+                    <h5>Tuukka Varjus</h5>
+                    <span>Research Assistant</span>
                     <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature</p>
                     <div class="team_social">
                       <a href="#"><i class="fa fa-facebook"></i></a>
@@ -1291,88 +1320,19 @@
     <script src="{% static 'fiveG/js/classie.js' %}"></script>
     <script src="{% static 'fiveG/js/elastic_grid.min.js' %}"></script>
     <script src="{% static 'fiveG/js/portfolio_slider.js' %}"></script>
-
+     <!-- Draw charts -->
+     <script>
+         var dominanceMap = {{ DominanceMap | safe }};
+         var throughtputDict = {{ TotalThroughput | safe }}; // Need to use safe
+         var rsrpDict = {{ RSRP | safe }}; // Need to use safe
+         var rsrpPerCellList = {{ RsrpPerCell | safe }}; // Need to use safe
+     </script>
+    <script src="{% static 'fiveG/js/graphs.js' %}"></script>
+     <!-- Buttons -->
+    <script src="{% static 'fiveG/js/buttons.js' %}"></script>
     <!-- Custom js-->
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
      <script>
-         var throughtputData = {{ UserThroughput.throughput }};
-         var throughtputTime = {{ UserThroughput.Time }};
-
-         var rsrpTime = {{ rsrp.Time }}
-         var rsrp_1 = {{ rsrp.RSRP_1 }}
-         var rsrp_2 = {{ rsrp.RSRP_2 }}
-         var rsrp_3 = {{ rsrp.RSRP_3 }}
-
-         var sinr = 0;
-
-         var lineChartContainer = Highcharts.chart('lineChartContainer', {
-             title: {
-                 text: 'NS-3 simulator throughtput'
-             },
-             subtitle: {
-                 text: '57 cells, 20 users, 5 times/s'
-             },
-             xAxis: {
-                 categories: window.throughtputTime,
-                 crosshair: true,
-                 title: {
-                     text: "seconds"
-                 }
-             },
-             yAxis: {
-                 title: {
-                     text: 'Throughput'
-                 }
-             },
-             legend: {
-                 layout: 'vertical',
-                 align: 'right',
-                 verticalAlign: 'middle'
-             },
-             series: [{
-                 data: window.throughtputData,
-                 name: 'throughtput'
-             }]
-
-         });
-
-         var lineChartContainer2 = Highcharts.chart("lineChartContainer2", {
-              title: {
-                 text: '3 Cells RSRP in NS3 simulator'
-             },
-             subtitle: {
-                 text: ''
-             },
-             xAxis: {
-                 categories: window.rsrpTime,
-                 crosshair: true,
-                 title: {
-                     text: "seconds"
-                 }
-             },
-             yAxis: {
-                 title: {
-                     text: 'RSRP'
-                 }
-             },
-             legend: {
-                 layout: 'vertical',
-                 align: 'right',
-                 verticalAlign: 'middle'
-             },
-             series: [{
-                 data: window.rsrp_1,
-                 name: "cell 1"
-             }, {
-                 data: window.rsrp_2,
-                 name: "cell 2"
-             }, {
-                 data: window.rsrp_3,
-                 name: "cell 3"
-             }]
-
-         });
-
 
          $(document).ready(function () {
              d = new Date();
@@ -1384,53 +1344,6 @@
              }, 2000);
          });
 
-
-
-         $("#loadMore").click(function () {
-             $.ajax({
-                 url: "loadMore",
-                 type: 'GET',
-                 success: function (data) {
-                        var obj = JSON.parse(data);
-                        window.throughtputData = window.throughtputData.concat(obj["throughput"]);
-                        window.throughtputTime = window.throughtputTime.concat(obj["Time"]);
-                        window.lineChartContainer.xAxis[0].setCategories(window.throughtputTime);
-                        window.lineChartContainer.series[0].setData(window.throughtputData, true);
-
-                        window.rsrpTime = window.rsrpTime.concat(obj["rsrpTime"]);
-                        window.rsrp_1 = window.rsrp_1.concat(obj["RSRP_1"]);
-                        window.rsrp_2 = window.rsrp_2.concat(obj["RSRP_2"]);
-                        window.rsrp_3 = window.rsrp_3.concat(obj["RSRP_2"]);
-                        window.lineChartContainer2.xAxis[0].setCategories(window.rsrpTime);
-                        window.lineChartContainer2.series[0].setData(window.rsrp_1, true);
-                        window.lineChartContainer2.series[1].setData(window.rsrp_2, true);
-                        window.lineChartContainer2.series[2].setData(window.rsrp_3, true);
-                 },
-                 failure: function (data) {
-                     alert("got a error, we are fixing");
-
-                 }
-             });
-         });
-
-         $(document).on("submit", "#controlPanel", function (e) {
-             e.preventDefault();
-             $.ajax({
-                 type: $(this).attr("method"),
-                 url: $(this).attr("action"),
-                 data: $(this).serialize(),
-                 success: function (data) {
-                     $("#alertWarning").addClass("invisible");
-                     $("#alertSuccess").html(data);
-                     $("#alertSuccess").removeClass("invisible");
-                 },
-                 failure: function (data) {
-                     $("#alertSuccess").addClass("invisible");
-                     $("#alertWarning").html(data);
-                     $("#alertWarning").removeClass("invisible");
-                 }
-             });
-         });
 
 
          function cellStyle(value, row, index) {

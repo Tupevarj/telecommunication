@@ -11,58 +11,77 @@ import os
 from django.conf import settings
 
 
-def calculateThroughput(data):
-    data["UserThR"].fillna(0, inplace=True)
+def calculate_total_throughput(data_frame):
+    """Calculates networks total throughput at each timestamp and puts it in dictionary"""
+    # Initialize dictionary
+    throughput_dict = dict()
+    throughput_dict["time"] = list()
+    throughput_dict["throughput"] = list()
 
-    grouped = data.groupby("Time")["UserThR"]
-    throughputDict = dict()
-    throughputDict["Time"] = list()
-    throughputDict["throughput"] = list()
+    # Check if dataframe is empty
+    if data_frame.empty:
+        return throughput_dict
+
+    # Set NaN values to zero (pandas)
+    data_frame["Throughput"].fillna(0, inplace=True)
+    # Group data (pandas)
+    grouped = data_frame.groupby("Time")["Throughput"]
+
+    previous_thr = 0.0
+    previous_time = 0.0
     for time, throughput in grouped:
         pd.to_numeric(throughput, errors='coerce')
-        throughput.replace("NaN", 0, inplace=True)
-        throughputDict["Time"].append(time)
-        tempThroughput = np.nansum(throughput)
-        throughputDict["throughput"].append(np.asscalar(tempThroughput))
+        throughput_dict["time"].append(time)
+        current = np.nansum(throughput)
+        elapsed_time = time - previous_time
+        # divided by time and converted to -> megabit/s:
+        throughput_dict["throughput"].append((current - previous_thr) / (1000000 * elapsed_time))
+        previous_thr = current
+        previous_time = time
+    return throughput_dict
 
-    nonZeroThroughputDict = 0
-    i = 0
-    for t in throughputDict["throughput"]:
-        if t != 0:
-            break
+
+def get_rsrp_per_cell_from_collection_II(list_rsrp, dict_rsrp):
+    """Calculates rsrp for each cell at each timestamp and puts them into dictionary"""
+    # TODO: CURRENTLY EXPECTING FIRST USER ID TO 1
+    # Calculate RSRP for each cell
+    time_stamp = -1
+    for i in list_rsrp:
+        if time_stamp != i["Time"]:
+            time_stamp = i["Time"]
+            dict_rsrp["Time"].append(time_stamp)
+        user_id = i["UserID"]  # Based on user id  we know
+        key = "RSRP" + str(i["CellID"])
+        if key not in dict_rsrp:
+            dict_rsrp[key] = list()
+        # Calculate average if timestamp is same
+        if user_id > 1:
+            dict_rsrp[key][-1] = (dict_rsrp[key][-1] + i["RSRP"]) / 2
         else:
-            i += 1
-
-    nonZeroThroughputDict = {"Time": throughputDict["Time"][i:], "throughput": throughputDict["throughput"][i:]}
-    return nonZeroThroughputDict
-
-def calculateRSRP(data):
-    # replace nan value with 0 in RSRP column
-    data["RSRP"].fillna(0, inplace=True)
-
-    grouped = data.groupby(["Time", "CellID"])["RSRP"]
-
-    RSRPDict = dict()
-    RSRPDict["Time"] = list()
-    RSRPDict[1] = list()
-    RSRPDict[2] = list()
-    RSRPDict[3] = list()
-
-    for k, rsrp in grouped:
-        if k[1] in (1,2,3):
-            RSRPDict["Time"].append(k[0])
-            RSRPDict[k[1]].append(sum(rsrp))
-        else:#means not the specific cells
-            pass
+            dict_rsrp[key].append(i["RSRP"])
 
 
-
-    return {"Time": RSRPDict["Time"], "RSRP_1": RSRPDict[1], "RSRP_2": RSRPDict[2], "RSRP_3": RSRPDict[3]}
-
-
-
-
-
+def get_rsrp_per_cell_from_collection(list_rsrp):
+    """Calculates rsrp for each cell at each timestamp and puts them into dictionary"""
+    # TODO: CURRENTLY EXPECTING FIRST USER ID TO 1
+    # Calculate RSRP for each cell
+    dict_rsrp = dict()
+    dict_rsrp["Time"] = list()  # WILL WE DO THIS IF LIST IS EMPTY??
+    time_stamp = -1
+    for i in list_rsrp:
+        if time_stamp != i["Time"]:
+            time_stamp = i["Time"]
+            dict_rsrp["Time"].append(time_stamp)
+        user_id = i["UserID"]  # Based on user id  we know
+        key = "RSRP" + str(i["CellID"])
+        if key not in dict_rsrp:
+            dict_rsrp[key] = list()
+        # Calculate average if timestamp is same
+        if user_id > 1:
+            dict_rsrp[key][-1] = (dict_rsrp[key][-1] + i["RSRP"]) / 2
+        else:
+            dict_rsrp[key].append(i["RSRP"])
+    return dict_rsrp
 
 
 def displayDominateMap():
