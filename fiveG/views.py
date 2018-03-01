@@ -7,7 +7,7 @@ import numpy as np
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .ml import calculate_total_throughput, displayDominateMap, detectUnnormalCell, \
-    get_rsrp_per_cell_from_collection_II
+    get_rsrp_per_cell_from_collection_II, detectCellREAL
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -24,8 +24,9 @@ dominateMap_size = 0
 last_read_rsrp = 0
 last_read_thr = 0
 last_read_dominance = 0
-dict_rsrp_graph = dict()
+#dict_rsrp_graph = dict()
 dict_thr_graph = dict()
+
 
 
 # #
@@ -73,7 +74,7 @@ def is_update_needed_for_charts():
     global last_read_rsrp
     global last_read_thr
     #check_and_average_buffer()
-    count_rsrp = get_collection_count(collection="main_kpis_log")
+    count_rsrp = get_collection_count(collection="main_kpis_log_labels")
     count_thr = get_collection_count(collection="throughput_log")
     if last_read_rsrp >= count_rsrp and last_read_thr >= count_thr: # Not should need to use and
         return False
@@ -84,13 +85,13 @@ def is_update_needed_for_charts():
 def initialize():
     global last_read_rsrp
     global last_read_thr
-    global dict_rsrp_graph
+    #global dict_rsrp_graph
     global dict_thr_graph
     last_read_rsrp = 0
     last_read_thr = 0
-    dict_rsrp_graph.clear()
+    #dict_rsrp_graph.clear()
     dict_thr_graph.clear()
-    dict_rsrp_graph["Time"] = list()  # WILL WE DO THIS IF LIST IS EMPTY??
+    #dict_rsrp_graph["Time"] = list()  # WILL WE DO THIS IF LIST IS EMPTY??
 
 
 def update_dominance_map(context):
@@ -118,32 +119,40 @@ def update_dominance_map(context):
 def update_charts_data(context):
     global last_read_rsrp
     global last_read_thr
-    global dict_rsrp_graph
+    #global dict_rsrp_graph
     global dict_thr_graph
-    # Load main_kpis log from DB
-    list_main_kpis = read_collection_as_list_mongo(collection="main_kpis_log", skip=last_read_rsrp)
+   # dict_rsrp_graph_new = dict()
+   # dict_rsrp_graph_new["Time"] = list()
+
+    dict_rsrp_graph = dict()
+    dict_rsrp_graph["Time"] = list()
+
+    # RSRP: Load main_kpis log from DB
+    list_main_kpis = read_collection_as_list_mongo(collection="main_kpis_log_labels", skip=last_read_rsrp)
     last_read_rsrp += len(list_main_kpis)
-    # Load throughput log from DB
-    throughput_log_db = collection_read_mongo(collection="throughput_log")
+
+    # THROUGHPUT: Load throughput log from DB
+   # throughput_log_db = collection_read_mongo(collection="throughput_log")
     throughput_new = collection_read_mongo(collection="throughput_log", skip=last_read_thr)
-    last_read_thr += len(throughput_log_db)
+    last_read_thr += len(throughput_new)
+
     # Create RSRP dictionary
     get_rsrp_per_cell_from_collection_II(list_rsrp=list_main_kpis, dict_rsrp=dict_rsrp_graph)
 
     # Calculate throughput
-    throughput_result = calculate_total_throughput(throughput_log_db[:len(throughput_log_db)])
+   # throughput_result = calculate_total_throughput(throughput_log_db[:len(throughput_log_db)])
     throughput_result_new = dict()
     if len(throughput_new) > 0:
         throughput_result_new = calculate_total_throughput(throughput_new[:len(throughput_new)])
 
-    # Get latest RSRP for each cell TODO: Make this as separate function!
+    # Get latest RSRP for each cell TODO: Make this as separate function!?!
     list_rsrp_per_cell = list()
     for i in range(1, len(dict_rsrp_graph)):
         list_rsrp_per_cell.append(dict_rsrp_graph["RSRP" + str(i)][-1])
 
-    context['TotalThroughput'] = json.dumps(throughput_result)
+    context['TotalThroughput'] = json.dumps(throughput_result_new)
     context['RSRP'] = json.dumps(dict_rsrp_graph)
-    context['ThrNew'] = json.dumps(throughput_result_new)
+    #context['ThrNew'] = json.dumps(throughput_result_new)
     context['RsrpPerCell'] = list_rsrp_per_cell
 
 
@@ -151,7 +160,6 @@ def index(request):
     """ Read data from mongoDB and based on that data produce values for graphs
         in front-end. """
     # Get main_file_with_UserThR collection from mongo
-    global dominateMap_size
     initialize()
 
     # Create context to be send to html file:
@@ -209,8 +217,22 @@ def show_normal_col_in_table(request):
         return HttpResponse(json.dumps(response_data))
 
 
+def displayDemo(request):
+
+
+    template_names = "fiveG/displayDemo.html"
+
+    normalCol = normalCol_read_mongo()
+
+    context = {}
+
+    return render(request, template_names)
+
 
 def update_charts(request):
+    """ Main update routine for charts; checks if charts needs to be updated
+        and returns data needed for charts. TODO: Should we only response if new data is available?
+        (Currently we are doing unnecessary checks in front-end.)"""
     if request.method == "GET" and request.path == '/updateCharts':
         # Create context to be send to html file:
         context = dict()
@@ -223,7 +245,7 @@ def update_charts(request):
     else:
         return 0
 
-
+# WE ARE NOT USING THIS ANYMORE - TUUKKA 22.2 TODO: Delete
 def loadMore(request):
     global cursorLocation
     global oneTimeExtraRecord
@@ -232,7 +254,7 @@ def loadMore(request):
         # Load throughput log from DB
         throughput_log_db = collection_read_mongo(collection="throughput_log")
         # Load main_kpis log from DB
-        main_kpis_log_db = collection_read_mongo(collection="main_kpis_log ")
+        main_kpis_log_db = collection_read_mongo(collection="main_kpis_log_labels ")
         # Calculate throughput based on data from DB
         throughput_result_dict = calculate_total_throughput(throughput_log_db[cursorLocation:nextCursorLocation])
 

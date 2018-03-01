@@ -188,15 +188,19 @@ def getThreshold(data, time_interval=30):
 
 def detectCellREAL():
 #     preprocess data to get the specific dataframe
-    data = collection_read_mongo(collection="main_file_with_UserTHR")
-    preparedDF = preprocessDF(data)
+    data = collection_read_mongo(collection="main_kpis_log_labels")
+
+    mds(data)
+   # NOT WORKING
+   # preparedDF = preprocessDF(data)
 
 # apply anormaly detection model machine learning algorithm here
 
 
 
 
-
+# DON'T KNOW PURPOSE OF THIS, BUT THIS IS NOT WORKING TODO: Could we delete this? - TUUKKA 1.3
+# ERROR IN SECOND FOR LOOP
 def preprocessDF(data):
     '''
     process the raw dataframe and then put the processed data into machine learning part
@@ -215,7 +219,7 @@ def preprocessDF(data):
         #     rsrp_top3 = [0,0,0]
         #     rsrp_matched_record_index = [0, 0,0]
         rsrpIndexList = list()
-        for i in range(group.shape[0]):
+        for i in range(group.shape[0]):                 # ERROR HERE: i set to zero in for loop! should be 21..
             rsrpIndexList.append((i, group["RSRP"][i]))
         rsrpIndexListSorted = sorted(rsrpIndexList, key=lambda x: x[1], reverse=True)
         row_rsrp1st = group.iloc[rsrpIndexListSorted[0][0]]
@@ -247,7 +251,7 @@ def mds(data):
     '''
     # for each user A, we pick the top 4 highest RSRP, RSRQ value at a time point t.
     identiferList = list()
-    pd.DataFrame(columns=["Time", "UserID"])
+    pd.DataFrame(columns=["Time", "UserID", "LABEL"])
     signalList = list()
 
     for ident, group in data.groupby(["Time", "UserID"]):
@@ -260,12 +264,12 @@ def mds(data):
                          top4Row.iloc[1]["RSRQ"], top4Row.iloc[2]["RSRP"], top4Row.iloc[2]["RSRQ"],
                          top4Row.iloc[3]["RSRP"], top4Row.iloc[3]["RSRQ"]]
             signalList.append(signalRow)
-            ident = (round(ident[0], 1), ident[1])
+            ident = (round(ident[0], 1), ident[1], group["LABEL"].iloc[0])
             identiferList.append(ident)
         except:
             pass
     signalDF = pd.DataFrame(signalList, columns=["RSRP_1", "RSRQ_1", "RSRP_2", "RSRQ_2", "RSRP_3", "RSRQ_3", "RSRP_4", "RSRQ_4"])
-    identiferDF = pd.DataFrame(identiferList, columns=["Time", "UserID"])
+    identiferDF = pd.DataFrame(identiferList, columns=["Time", "UserID", "LABEL"])
 
     referenceDF = identiferDF.merge(signalDF, left_index=True, right_index=True)
     mds = manifold.MDS(3, max_iter=200, n_init=1)
