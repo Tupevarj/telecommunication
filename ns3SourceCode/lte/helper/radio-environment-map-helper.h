@@ -86,6 +86,14 @@ public:
         (double x, double y, double z, double sinr);
 
 
+
+  TracedCallback<bool> m_RemEndedTrace;
+
+  typedef void (* RemEndedCallback)
+        (bool b);
+
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

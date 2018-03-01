@@ -49,14 +49,14 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 
 	mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
-	lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::HybridBuildingsPropagationLossModel"));
-	lteHelper->SetPathlossModelAttribute ("ShadowSigmaOutdoor", DoubleValue (1));
-	  // use always LOS model
-	lteHelper->SetPathlossModelAttribute ("Los2NlosThr", DoubleValue (1e6));
-	lteHelper->SetSpectrumChannelType ("ns3::MultiModelSpectrumChannel");
-	//lteHelper->SetAttribute ("FadingModel", StringValue ("ns3::TraceFadingLossModel"));
-	//lteHelper->SetFadingModelAttribute ("TraceFilename", StringValue (""));
 
+	lteHelper->SetAttribute("PathlossModel", StringValue("ns3::FriisPropagationLossModel"));
+//	  lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::HybridBuildingsPropagationLossModel"));
+//	  lteHelper->SetPathlossModelAttribute ("ShadowSigmaExtWalls", DoubleValue (0));
+//	  lteHelper->SetPathlossModelAttribute ("ShadowSigmaOutdoor", DoubleValue (1));
+//	  lteHelper->SetPathlossModelAttribute ("ShadowSigmaIndoor", DoubleValue (1.5));
+//	  lteHelper->SetPathlossModelAttribute ("Los2NlosThr", DoubleValue (1e6));
+	  lteHelper->SetSpectrumChannelType ("ns3::MultiModelSpectrumChannel");
 
 	if (epc)
 	{
@@ -86,7 +86,6 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 		lteHelper->AddX2Interface (macroEnbs);
 	}
 
-	//if(ALLOW)
 	///////////////////////////////////////////////////////////////////////////
 	//	ALLOW UE MEASUREMENTS
 	///////////////////////////////////////////////////////////////////////////
@@ -118,7 +117,7 @@ DemoHelper::CreateUsers(NodeContainer& macroUes, MobilityHelper& mobility, Box& 
 {
 	macroUes.Create (nUes);
 
-	Ptr<PositionAllocator> positionAlloc = CreateObject<RandomRoomPositionAllocator> ();
+	Ptr<PositionAllocator> positionAlloc = CreateObject<RandomBoxPositionAllocator> ();
 	mobility.SetPositionAllocator (positionAlloc);
 	lteHelper->SetUeDeviceAttribute ("CsgId", UintegerValue (1));
 

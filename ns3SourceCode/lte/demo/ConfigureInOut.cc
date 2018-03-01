@@ -5,8 +5,9 @@
 #include <iomanip>
 #include <ios>
 #include <cstdlib>
-
+#include <string>
 #include <mongocxx/cursor.hpp>
+
 
 ConfigureInOut::ConfigureInOut() : mongoClient(NULL), mongoDatabase(NULL), mongoCollection(NULL)
 {
@@ -99,10 +100,16 @@ ConfigureInOut::LogThroughput(double time, uint64_t imsi, uint16_t cellId, doubl
 }
 
 void
-ConfigureInOut::LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq)
+ConfigureInOut::LogMainKpisWithLabeling(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected, bool label)
+{
+	mainKpisWithLabelLog.push_back(MainKpiWithLabelLog{time, x, y, rsrp, rsrq, imsi, cellId, connected, label});
+}
+
+void
+ConfigureInOut::LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected)
 {
 //	mainKpisLogCol.AddLog(new MainKpiLog{time, x, y, rsrp, rsrq, imsi, cellId});
-	mainKpisLog.push_back(MainKpiLog{time, x, y, rsrp, rsrq, imsi, cellId});
+	mainKpisLog.push_back(MainKpiLog{time, x, y, rsrp, rsrq, imsi, cellId, connected});
 }
 
 void
@@ -136,7 +143,7 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	if(eventsLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + EventLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + EventLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < eventsLog.size(); ++i)
 		{
 			outFile	<< eventsLog[i].ConvertToCSV() << "\n";
@@ -146,7 +153,7 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	if(handoversLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + HandoverLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + HandoverLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < handoversLog.size(); ++i)
 		{
 			outFile	<< handoversLog[i].ConvertToCSV() << "\n";
@@ -156,7 +163,7 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	if(sinrsLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + SinrLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + SinrLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < sinrsLog.size(); ++i)
 		{
 			outFile	<< sinrsLog[i].ConvertToCSV() << "\n";
@@ -166,7 +173,7 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	if(throughputsLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + ThrouhgputLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + ThrouhgputLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < throughputsLog.size(); ++i)
 		{
 			outFile	<< throughputsLog[i].ConvertToCSV() << "\n";
@@ -176,17 +183,27 @@ ConfigureInOut::WriteAllLogsToCSVFiles(std::string prefix)
 	if(mainKpisLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + MainKpiLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + MainKpiLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < mainKpisLog.size(); ++i)
 		{
 			outFile	<< mainKpisLog[i].ConvertToCSV() << "\n";
 		}
 		outFile.close();
 	}
+	if(mainKpisWithLabelLog.size() > 0)
+	{
+		std::ofstream outFile;
+		outFile.open((prefix + MainKpiWithLabelLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
+		for(uint i = 0; i < mainKpisWithLabelLog.size(); ++i)
+		{
+			outFile	<< mainKpisWithLabelLog[i].ConvertToCSV() << "\n";
+		}
+		outFile.close();
+	}
 	if(remLog.size() > 0)
 	{
 		std::ofstream outFile;
-		outFile.open((prefix + MainKpiLog::GetFileName()).c_str(), std::ios_base::app);
+		outFile.open((prefix + REMLog::GetFileName() + postFix + ".csv").c_str(), std::ios_base::app);
 		for(uint i = 0; i < remLog.size(); ++i)
 		{
 			outFile	<< remLog[i].ConvertToCSV() << "\n";
@@ -204,7 +221,7 @@ ConfigureInOut::WriteLogsToDatabase()
 	/* EVENTS */
 	if(eventsLog.size() > 0)
 	{
-		SetCollection("TUUKKA_event_log");
+		SetCollection("event_log");
 
 		for(uint i = 0; i < eventsLog.size(); ++i)
 		{
@@ -217,7 +234,7 @@ ConfigureInOut::WriteLogsToDatabase()
 	/* HANDOVERS */
 	if(handoversLog.size() > 0)
 	{
-		SetCollection("TUUKKA_handover_log");
+		SetCollection("handover_log");
 
 		for(uint i = 0; i < handoversLog.size(); ++i)
 		{
@@ -230,7 +247,7 @@ ConfigureInOut::WriteLogsToDatabase()
 	/* SINR */
 	if(sinrsLog.size() > 0)
 	{
-		SetCollection("TUUKKA_sinr_log");
+		SetCollection("sinr_log");
 
 		for(uint i = 0; i < sinrsLog.size(); ++i)
 		{
@@ -243,7 +260,7 @@ ConfigureInOut::WriteLogsToDatabase()
 	/* THROUGHPUTS */
 	if(throughputsLog.size() > 0)
 	{
-		SetCollection("TUUKKA_throughputs");
+		SetCollection("throughput_log");
 
 		for(uint i = 0; i < throughputsLog.size(); ++i)
 		{
@@ -261,6 +278,19 @@ ConfigureInOut::WriteLogsToDatabase()
 		for(uint i = 0; i < mainKpisLog.size(); ++i)
 		{
 			documents.push_back(mainKpisLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+		mongoCollection->insert_many(documents);
+		documents.clear();
+	}
+
+	/* MAIN KPIS WITH LABELS */
+	if(mainKpisWithLabelLog.size() > 0)
+	{
+		SetCollection("main_kpis_log_labels");
+
+		for(uint i = 0; i < mainKpisWithLabelLog.size(); ++i)
+		{
+			documents.push_back(mainKpisWithLabelLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
 		}
 		mongoCollection->insert_many(documents);
 		documents.clear();
@@ -284,13 +314,7 @@ SONEngineLog
 ConfigureInOut::ReadSONEngineMethodsFromDatabase()
 {
 	SetCollection("controlpanel");
-
-//	int64_t currentNo = mongoCollection->count(document{} << finalize);
-
-//	if(currentNo > numberOfSONLogsInDB)
-//	{
-	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize);
-//		numberOfSONLogsInDB = currentNo;
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "outage" << 1 << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize);
 
 	SONEngineLog configuration =  SONEngineLog(cursor);
 
@@ -310,14 +334,34 @@ ConfigureInOut::ReadSONEngineMethodsFromDatabase()
 ConfigurationLog
 ConfigureInOut::ReadConfigurationFromDatabase()
 {
-	int confNo = 0;// todo: GetConfigurationNumber() ++
+	//int confNo = 0;// todo: GetConfigurationNumber() ++
 //
-	SetCollection("configuration");
+	SetDatabase("CellConfigurations");
+	SetCollection("TxPowers");
+//
+//	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "Step" << confNo << bsoncxx::builder::stream::finalize);
 
-	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "Step" << confNo << bsoncxx::builder::stream::finalize);
-
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);
 	ConfigurationLog configuration =  ConfigurationLog(cursor);
+
+	//TODO: SET LAST DATABASE
+	SetDatabase("5gopt");
 	return configuration;
+}
+
+
+void
+ConfigureInOut::UpdateTxPower(u_int16_t cellId, double tx)
+{
+
+	SetDatabase("CellConfigurations");
+	SetCollection("TxPowers");
+	// Update
+	mongoCollection->update_one(bsoncxx::builder::stream::document{} << "CellID" << cellId << bsoncxx::builder::stream::finalize,
+				bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document <<
+				"TxPower" << tx << bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
+
+	SetDatabase("5gopt");
 }
 
 bool
@@ -334,6 +378,7 @@ ConfigureInOut::SetOutPutFolder(std::string path)
 	outputFolder = path;
 }
 
+
 void
 ConfigureInOut::FlushLogs()
 {
@@ -343,6 +388,7 @@ ConfigureInOut::FlushLogs()
 		if(CheckConnectionToDatabase())
 		{
 			WriteLogsToDatabase();
+			WriteAllLogsToCSVFiles(outputFolder); // <- DEBUG
 			ClearAllLogs();
 		}
 		else
@@ -357,6 +403,131 @@ ConfigureInOut::FlushLogs()
 	}
 }
 
+
+void
+ConfigureInOut::SetPostFixCSV(std::string postFix)
+{
+	this->postFix = postFix;
+}
+
+void
+ConfigureInOut::InitializeCellConfigurations(double txPower, int noCells)
+{
+	SetDatabase("CellConfigurations");
+	SetCollection("TxPowers");
+	mongoCollection->drop();
+
+	std::vector<bsoncxx::document::value> documents;
+
+	for(int i = 1; i <= noCells; i++)
+	{
+		bsoncxx::builder::stream::document doc {};
+		doc << "CellID" << i << "TxPower" << txPower;
+		documents.push_back(doc << bsoncxx::builder::stream::finalize);
+	}
+	mongoCollection->insert_many(documents);
+}
+
+
+void
+ConfigureInOut::ReadCellsStates(double txs[], int noCells,  int stepId)
+{
+	SetCollection("Ns3TransmissionPowers");
+
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "Step" << stepId << bsoncxx::builder::stream::finalize);
+	for(auto view : cursor)
+	{
+		std::string cellName;
+		for(int i = 1; i < noCells; i++)
+		{
+			cellName = "Cell" + i;
+			auto id = view["CellId"];
+			auto tx = view["TxPower"];
+			txs[id.get_int32()] = tx.get_double();
+		}
+	}
+}
+
+
+std::vector<Location>
+ConfigureInOut::ReadHandovers(std::vector<uint16_t> cells)
+{
+	std::vector<Location> data;
+	SetCollection("handover_log");
+
+	// TODO: Find out how to use or statement in driver!
+	for(unsigned int i = 0; i < cells.size(); i++)
+	{
+		mongocxx::cursor cursor1 = mongoCollection->find(bsoncxx::builder::stream::document{} << "CellID" << cells[i] << bsoncxx::builder::stream::finalize);
+		for(auto view : cursor1)
+		{
+			auto x = view["LocationX"];
+			auto y = view["LocationY"];
+			Location l = Location(x.get_int32(), y.get_int32());
+			data.push_back(l);
+		}
+		mongocxx::cursor cursor2 = mongoCollection->find(bsoncxx::builder::stream::document{} << "TargetCellID" << cells[i] << bsoncxx::builder::stream::finalize);
+		for(auto view : cursor2)
+		{
+			auto x = view["LocationX"];
+			auto y = view["LocationY"];
+			Location l = Location(x.get_int32(), y.get_int32());
+			data.push_back(l);
+		}
+	}
+	return data;
+}
+
+void
+ConfigureInOut::SaveCellsStates(double txs[], int noCells, int stepId)
+{
+	SetCollection("Ns3TransmissionPowers");
+	std::vector<bsoncxx::document::value> documents;
+
+	for(int i = 1; i < noCells+1; i++)
+	{
+		bsoncxx::builder::stream::document doc {};
+		doc << "CellId" << i << "TxPower" << txs[i] << "Step" << stepId;
+		documents.push_back(doc << bsoncxx::builder::stream::finalize);
+	}
+	mongoCollection->insert_many(documents);
+}
+
+
+void
+ConfigureInOut::ReadSimulationState(uint32_t& nMacroEnbSites, uint32_t& nMacroEnbSitesX, double& interSiteDistances, int32_t& pid)
+{
+	SetCollection("Ns3StateSettings");
+
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);
+	for(auto view : cursor)
+	{
+		auto macro = view["nMacroEnbSites"];
+		auto macroX = view["nMacroEnbSitesX"];
+		auto interSite = view["interSiteDistance"];
+		auto pidDb = view["pid"];
+
+		nMacroEnbSites = (uint32_t)macro.get_int32();
+		nMacroEnbSitesX = (uint32_t)macroX.get_int32();
+		pid = (int32_t)pidDb.get_int32();
+		interSiteDistances = interSite.get_double();
+	}
+}
+
+void
+ConfigureInOut::SaveSimulationState(uint32_t nMacroEnbSites, uint32_t nMacroEnbSitesX, double interSiteDistance, int pid)
+{
+	SetDatabase("5gopt");
+	SetCollection("Ns3StateSettings");
+
+	std::vector<bsoncxx::document::value> documents;
+	bsoncxx::builder::stream::document doc {};
+
+	doc << "nMacroEnbSites" << (int32_t)nMacroEnbSites << "nMacroEnbSitesX" << (int32_t)nMacroEnbSitesX << "interSiteDistance" << interSiteDistance << "pid" << pid;
+	documents.push_back(doc << bsoncxx::builder::stream::finalize);
+	mongoCollection->insert_many(documents);
+}
+
 void
 ConfigureInOut::ClearAllLogs()
 {
@@ -365,6 +536,8 @@ ConfigureInOut::ClearAllLogs()
 	sinrsLog.clear();
 	throughputsLog.clear();
 	mainKpisLog.clear();
+	remLog.clear();
+	mainKpisWithLabelLog.clear();
 //	eventsLogCol.Clear();
 //	handoversLogCol.Clear();
 //	sinrsLogCol.Clear();
@@ -380,7 +553,11 @@ ConfigureInOut::RunMongoStartScript()
 	std::string dbpath = "./home/tupevarj/Downloads/mongodb-linux-x86_64-rhel70-3.4.10/bin/data/db";
 
 	command = command + " " + dbpath;
-	system(command.c_str());
+	int success = system(command.c_str());
+	if(success == -1)
+	{
+		std::cout << "Error running script.. " << std::endl;
+	}
 	return true;
 }
 
@@ -405,7 +582,11 @@ ConfigureInOut::RunMatlabKpiScript()
 	std::string nexMapName = "\"/home/tupevarj/NS3SimulatorData/kuva1.bmp\"";
 
 	command = command + " " + nexMapName;
-	system(command.c_str());
+	int success = system(command.c_str());
+	if(success == -1)
+	{
+		std::cout << "Error running script.. " << std::endl;
+	}
 }
 
 void
@@ -418,5 +599,35 @@ ConfigureInOut::RunMatlabRemScript()
 	std::string nexMapName = "\"/home/tupevarj/NS3SimulatorData/kuva" + convert.str() + ".bmp\"";
 
 	//command = command + " " + nexMapName;
-	system(command.c_str());
+	int success = system(command.c_str());
+	if(success == -1)
+	{
+		std::cout << "Error running script.. " << std::endl;
+	}
+}
+
+void
+ConfigureInOut::RunREMGeneratorScript(int stepId)
+{
+	std::string command = "./run_REM_generator.sh";
+	std::ostringstream s;
+	s << stepId;
+	std::string stepString(s.str());
+
+	command = command + " " + stepString;
+	int success = system(command.c_str());
+	if(success == -1)
+	{
+		std::cout << "Error running script.. " << std::endl;
+	}
+}
+
+void
+ConfigureInOut::ClearSimulationState()
+{
+	SetCollection("Ns3StateSettings");
+	mongoCollection->drop();
+//	SetCollection("Ns3StateSettings");
+
+
 }

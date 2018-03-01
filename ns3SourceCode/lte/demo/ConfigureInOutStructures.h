@@ -17,6 +17,7 @@
 #include <cstdlib>
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////
 //	CONFIGURATION FOR SINGLE CELL
 ////////////////////////////////////////////////////////////////////////////////////
@@ -36,19 +37,19 @@ struct CellConfiguration
 ////////////////////////////////////////////////////////////////////////////////////
 
 
-enum SonEngineMethod
-{
-	Normal,
-	Outage,
-	COC,
-	CCO,
-	MRO,
-	MLB
-};
-
 
 struct SONEngineConfiguration
 {
+	enum SonEngineMethod
+	{
+		Normal,
+		Outage,
+		COC,
+		CCO,
+		MRO,
+		MLB
+	};
+
 	SonEngineMethod method;
 	u_int16_t cellId;
 
@@ -133,6 +134,11 @@ struct REMLog : public WritableLog
 		doc << "x" << x << "y" << y << "z" << z << "sinr" << sinr;
 		return doc;
 	}
+
+	static std::string GetFileName()
+	{
+		return "rem_log";
+	}
 };
 
 /*
@@ -152,8 +158,8 @@ struct EventLog : public WritableLog
 	///////////////////////////////////
 
 	double time;
-	double x;
-	double y;
+	int x;
+	int y;
 	double rsr;
 	uint64_t imsi;
 	uint16_t cellId;
@@ -164,7 +170,7 @@ struct EventLog : public WritableLog
 	///////////////////////////////////
 
 	EventLog(double time, double x, double y, double rsr, uint64_t imsi, uint16_t cellId, EventName e)
-		: time(time), x(x), y(x), rsr(rsr), imsi(imsi), cellId(cellId), e(e)
+		: time(time), x(x), y(y), rsr(rsr), imsi(imsi), cellId(cellId), e(e)
 	{
 
 	}
@@ -186,7 +192,7 @@ struct EventLog : public WritableLog
 
 	static std::string GetFileName()
 	{
-		return "event_log.csv";
+		return "event_log";
 	}
 };
 
@@ -207,8 +213,8 @@ struct HandoverLog : public WritableLog
 	///////////////////////////////////
 
 	double time;
-	double x;
-	double y;
+	int x;
+	int y;
 	uint64_t imsi;
 	uint16_t cellId;
 	uint16_t targetCellId;
@@ -219,7 +225,7 @@ struct HandoverLog : public WritableLog
 	///////////////////////////////////
 
 	HandoverLog(double time, double x, double y, uint64_t imsi, uint16_t cellId, uint16_t targetCellId, HandoverEventName e)
-			: time(time), x(x), y(x), imsi(imsi), cellId(cellId), targetCellId(targetCellId), e(e)
+			: time(time), x(x), y(y), imsi(imsi), cellId(cellId), targetCellId(targetCellId), e(e)
 	{
 
 	}
@@ -241,7 +247,7 @@ struct HandoverLog : public WritableLog
 	}
 	static std::string GetFileName()
 	{
-		return "handover_log.csv";
+		return "handover_log";
 	}
 };
 
@@ -290,7 +296,7 @@ struct SinrLog : public WritableLog
 
 	static std::string GetFileName()
 	{
-		return "sinr_log.csv";
+		return "sinr_log";
 	}
 };
 
@@ -339,9 +345,10 @@ struct ThrouhgputLog : public WritableLog
 
 	static std::string GetFileName()
 	{
-		return "throughput_log.csv";
+		return "throughput_log";
 	}
 };
+
 
 /*
  *  Output file structure foe main KPIs:
@@ -366,13 +373,14 @@ struct MainKpiLog : public WritableLog
 	double rsrq;
 	uint64_t imsi;
 	uint16_t cellId;
+	bool connected;
 
 	///////////////////////////////////
 	// PUBLIC METHODS
 	///////////////////////////////////
 
-	MainKpiLog(double time, double x, double y, double rsrp, double rsrq, uint64_t imsi, uint16_t cellId)
-			: time(time), x(x), y(x), rsrp(rsrp), rsrq(rsrq), imsi(imsi), cellId(cellId)
+	MainKpiLog(double time, double x, double y, double rsrp, double rsrq, uint64_t imsi, uint16_t cellId, bool connected)
+			: time(time), x(x), y(y), rsrp(rsrp), rsrq(rsrq), imsi(imsi), cellId(cellId), connected(connected)
 	{
 
 	}
@@ -380,7 +388,7 @@ struct MainKpiLog : public WritableLog
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
-		strs << time << "," << x << "," << y << "," << imsi << "," << cellId << "," << rsrp << "," << rsrq;
+		strs << time << "," << x << "," << y << "," << imsi << "," << cellId << "," << rsrp << "," << rsrq << "," << connected;
 		return strs.str();
 	}
 
@@ -388,28 +396,65 @@ struct MainKpiLog : public WritableLog
 	{
 		bsoncxx::builder::stream::document doc {};
 		doc << "Time" << time << "LocationX" << x << "LocationY" << y << "UserID" << (int64_t)imsi
-			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq;
+			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected;
 		return doc;
 	}
 
 
-
+	/* Fake data for throughput graph */
 //	bsoncxx::builder::stream::document ConvertToBSON() override
-//		{
+//	{
 //
-//			int randomNumber = std::rand() % 100;
+//		int randomNumber = std::rand() % 100;
 //
-//
-//			bsoncxx::builder::stream::document doc {};
-//			doc << "Time" << time << "UserThR" << randomNumber << "LocationX" << x << "UserID" << (int)imsi
-//				<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "SINR" << randomNumber << "LocationY" << y;
-//			return doc;
-//		}
+//		bsoncxx::builder::stream::document doc {};
+//		doc << "Time" << time << "UserThR" << randomNumber << "LocationX" << x << "UserID" << (int)imsi
+//			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "SINR" << randomNumber << "LocationY" << y;
+//		return doc;
+//	}
 
 
 	static std::string GetFileName()
 	{
-		return "main_log.csv";
+		return "main_log";
+	}
+};
+
+/*
+ * 	Main KPIs log for training
+ *
+ */
+struct MainKpiWithLabelLog : public MainKpiLog
+{
+	bool label;
+
+	///////////////////////////////////
+	// PUBLIC METHODS
+	///////////////////////////////////
+
+	MainKpiWithLabelLog(double time, double x, double y, double rsrp, double rsrq, uint64_t imsi, uint16_t cellId, bool connected, bool label)
+				: MainKpiLog(time, x, y, rsrp, rsrq, imsi, cellId, connected), label(label)
+	{
+
+	}
+
+	std::string ConvertToCSV() override
+	{
+		std::ostringstream strs;
+		strs << time << "," << x << "," << y << "," << imsi << "," << cellId << "," << rsrp << "," << rsrq << "," << connected << "," << label;
+		return strs.str();
+	}
+
+	bsoncxx::builder::stream::document ConvertToBSON() override
+	{
+		bsoncxx::builder::stream::document doc {};
+		doc << "Time" << time << "LocationX" << x << "LocationY" << y << "UserID" << (int64_t)imsi
+			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected << "LABEL" << label;
+			return doc;
+	}
+	static std::string GetFileName()
+	{
+		return "main_log_with_labels";
 	}
 };
 
@@ -428,14 +473,31 @@ struct ConfigurationLog
 	// PUBLIC METHODS
 	///////////////////////////////////
 
+	ConfigurationLog()
+	{
+
+	}
+
+
 	ConfigurationLog(mongocxx::cursor& cursor)
 	{
 		for(auto view : cursor)
 		{
-			auto cellId = view["CellId"];
+			auto cellId = view["CellID"];
 			auto txp = view["TxPower"];
-			configurations.push_back(CellConfiguration(cellId.get_int32() - 1, txp.get_double()));
+			configurations.push_back(CellConfiguration(cellId.get_int32(), txp.get_double()));
 		}
+	}
+
+	void
+	Clone(ConfigurationLog log)
+	{
+		configurations.clear();
+		for(unsigned int i = 0; i < log.configurations.size(); i++)
+		{
+			configurations.push_back(log.configurations[i]);
+		}
+
 	}
 };
 
@@ -483,88 +545,97 @@ struct SONEngineLog
 		{
 			auto cellId = view["cellID"];
 
-//
-//			///////////////////////////////////
-//			// IF DOUBLE
-//			///////////////////////////////////
-//
-//			auto method = view["normal"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::Normal));
-//				continue;
-//			}
-//			method = view["outage"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::Outage));
-//				continue;
-//			}
-//			method = view["coc"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::COC));
-//				continue;
-//			}
-//			method = view["cco"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::CCO));
-//				continue;
-//			}
-//			method = view["mro"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::MRO));
-//				continue;
-//			}
-//			method = view["mlb"];
-//			if(method.get_double() == 1)
-//			{
-//				configurations.push_back(SONEngineConfiguration(cellId.get_double(), SonEngineMethod::MLB));
-//				continue;
-//			}
+			bsoncxx::document::element element = view["normal"];
 
 
-			///////////////////////////////////
-			// IF INTEGER
-			///////////////////////////////////
+			if(element.type() == bsoncxx::type::k_double)
+			{
 
-			auto method = view["normal"];
-			if(method.get_int32() == 1)
-			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::Normal));
-				continue;
+				///////////////////////////////////
+				// IF DOUBLE
+				///////////////////////////////////
+
+				auto method = view["normal"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::Normal));
+					continue;
+				}
+				method = view["outage"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::Outage));
+					continue;
+				}
+				method = view["coc"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::COC));
+					continue;
+				}
+				method = view["cco"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::CCO));
+					continue;
+				}
+				method = view["mro"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::MRO));
+					continue;
+				}
+				method = view["mlb"];
+				if(method.get_double() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_double(), SONEngineConfiguration::SonEngineMethod::MLB));
+					continue;
+				}
 			}
-			method = view["outage"];
-			if(method.get_int32() == 1)
+
+
+			else if(element.type() == bsoncxx::type::k_int32)
 			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::Outage));
-				continue;
-			}
-			method = view["coc"];
-			if(method.get_int32() == 1)
-			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::COC));
-				continue;
-			}
-			method = view["cco"];
-			if(method.get_int32() == 1)
-			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::CCO));
-				continue;
-			}
-			method = view["mro"];
-			if(method.get_int32() == 1)
-			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::MRO));
-				continue;
-			}
-			method = view["mlb"];
-			if(method.get_int32() == 1)
-			{
-				configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SonEngineMethod::MLB));
-				continue;
+				///////////////////////////////////
+				// IF INTEGER
+				///////////////////////////////////
+
+				auto method = view["normal"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::Normal));
+					continue;
+				}
+				method = view["outage"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::Outage));
+					continue;
+				}
+				method = view["coc"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::COC));
+					continue;
+				}
+				method = view["cco"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::CCO));
+					continue;
+				}
+				method = view["mro"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::MRO));
+					continue;
+				}
+				method = view["mlb"];
+				if(method.get_int32() == 1)
+				{
+					configurations.push_back(SONEngineConfiguration(cellId.get_int32(), SONEngineConfiguration::SonEngineMethod::MLB));
+					continue;
+				}
 			}
 		}
 	}

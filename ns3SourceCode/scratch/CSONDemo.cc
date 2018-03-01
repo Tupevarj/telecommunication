@@ -15,13 +15,146 @@
 #include <ns3/point-to-point-helper.h>
 #include <ns3/applications-module.h>
 #include <ns3/log.h>
+#include <signal.h>
+#include <unistd.h>
+#include <thread>
+#include <algorithm>
 
 ConfigureInOut confInOut;
 
 using namespace ns3;
 
-const int NUMBER_OF_UES = 20;	// todo: HANKKIUDU EROON!!!
+const int NUMBER_OF_UES = 105;	// number of users
+int remStep = 0;		// Step number for REM generating
+//int lastStepRem = -1;	// For preventing to create same REM multiple times in a row
+volatile sig_atomic_t flag = 0;
+bool remReady = true;
+bool createRem = false;
+ConfigurationLog confPrevious;
+std::thread threadRem;
 
+// FOR LABELING:
+bool labeling = false;
+bool labelingStarted = false;
+bool labelings[200] = { false };
+
+//float max[2];
+//float min[2];
+//Vector3D userLocations[NUMBER_OF_UES]; // TODO: MAKE THIS!
+
+struct Triangle
+{
+	Location A = {0,0};
+	Location B = {0,0};
+	Location C = {0,0};
+};
+
+Triangle triangle;
+float triangleA = std::numeric_limits<float>::min();
+float triangleB = std::numeric_limits<float>::min();
+float triangleC = std::numeric_limits<float>::max();
+
+/*  ////////////////////////////////
+ * 	//  LABELING
+ *  ////////////////////////////////
+ *
+ * 	Five first rounds -> Check handovers and calculate rectangle based on handovers
+ *	TODO: Check correctness of rectangle.
+ *
+ *	After rectangle created, create outage
+ *	Check anyone moving that area -> mark labels
+ */
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	MACHINE LEARNING
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+float TriangleArea(Triangle t)
+{
+	 return 0.5 *(-t.B.y*t.C.x + t.A.y*(-t.B.x + t.C.x) + t.A.x*(t.B.y - t.C.y) + t.B.x*t.C.y);
+}
+float sign (Triangle t)
+{
+    return (t.A.x - t.C.x) * (t.B.y - t.C.y) - (t.B.x - t.C.x) * (t.A.y - t.C.y);
+}
+
+bool
+IsPointInsideTriangle(Triangle t, Location p)
+{
+	float s1 = 1/(2*TriangleArea(t))*(t.A.y*t.C.x - t.A.x*t.C.y + (t.C.y - t.A.y)*p.x + (t.A.x - t.C.x)*p.y);
+	float t1 = 1/(2*TriangleArea(t))*(t.A.x*t.B.y - t.A.y*t.B.x + (t.A.y - t.B.y)*p.x + (t.B.x - t.A.x)*p.y);
+
+	if(s1 < 0) return false;
+	if(t1 < 0) return false;
+	if((1 - s1 - t1) < 0) return false;
+	return true;
+}
+
+void
+CreateTriangle()
+{
+	std::vector<uint16_t> cells;
+	cells.push_back(10);
+	cells.push_back(11);
+	cells.push_back(12);
+	std::vector<Location> locations = confInOut.ReadHandovers(cells);
+
+	for(unsigned int i = 0; i < locations.size(); i++)
+	{
+		// TRIANGLE
+		if(locations[i].x > triangleA)
+		{
+			triangleA = locations[i].x;
+			triangle.A = locations[i];
+		}
+		if(locations[i].y > triangleB)
+		{
+			triangleB = locations[i].y;
+			triangle.B = locations[i];
+		}
+		if(locations[i].y < triangleC)
+		{
+			triangleC = locations[i].y;
+			triangle.C = locations[i];
+		}
+	}
+	std::cout << "Triangle is { A: " << triangle.A.x << " : " << triangle.A.y << " B: " << triangle.B.x << " : " << triangle.B.y << " C: " << triangle.C.x << " : " << triangle.C.y << " } " << "\n";
+}
+
+
+std::vector<u_int16_t> outaged;
+
+void
+SignalHandler(int signum)
+{
+
+	if(signum == SIGUSR1)
+	{
+		remReady = true;
+	}
+	else
+	{
+		flag = 0;
+	}
+//	else if(signum == SIGINT)
+//	{
+//		pid_t pid = fork();
+//		if(pid == 0)
+//		{
+//
+//		}
+//		else
+//		{
+//			kill(pid, SIGINT);
+//		}
+//		flag = 0;
+//		signal(SIGINT, SIG_DFL);
+//		kill(::getpid(), SIGINT);
+//		raise(SIGINT);
+//		exit(0);
+//	}
+}
 
 Vector3D
 GetUeLocation(uint64_t imsi)
@@ -82,6 +215,66 @@ SetCellTransmissionPower(u_int16_t cellId, double power)
 }
 
 
+/*
+ *  Changes cells transmission power
+ */
+double
+GetCellTransmissionPower(u_int16_t cellId)
+{
+	// Loop through all the nodes:
+	for(NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+	{
+		Ptr<Node> node = *it;
+		int nDevices = node->GetNDevices();
+
+		// Loop through all devices on node:
+		for(int i = 0; i < nDevices; i++)
+		{
+			Ptr<LteEnbNetDevice> enbDevice = node->GetDevice(i)->GetObject<LteEnbNetDevice>();
+
+			// test NULL
+			if(enbDevice && enbDevice->GetCellId() == cellId)
+			{
+				Ptr<LteEnbPhy> phy = enbDevice->GetPhy();
+
+				// get attribute directly:
+				return phy->GetTxPower();
+			}
+		}
+	}
+	return -1.0;
+}
+
+
+/*
+ *  Changes cells transmission power
+ */
+void
+GetTransmissionPowerOfAllCells(double txs[])
+{
+	// Loop through all the nodes:
+	for(NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+	{
+		Ptr<Node> node = *it;
+		int nDevices = node->GetNDevices();
+
+		// Loop through all devices on node:
+		for(int i = 0; i < nDevices; i++)
+		{
+			Ptr<LteEnbNetDevice> enbDevice = node->GetDevice(i)->GetObject<LteEnbNetDevice>();
+
+			// test NULL
+			if(enbDevice)
+			{
+				Ptr<LteEnbPhy> phy = enbDevice->GetPhy();
+
+				// get attribute directly:
+				txs[enbDevice->GetCellId()] = (phy->GetTxPower());
+			}
+		}
+	}
+}
+
 uint16_t
 GetConnectedCell(uint64_t imsi)
 {
@@ -115,68 +308,118 @@ GetConnectedCell(uint64_t imsi)
 void
 HandoverEndOkCallback(std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-	confInOut.LogHandover(Simulator::Now().GetSeconds(), (int)GetUeLocation(imsi).x, (int)GetUeLocation(imsi).y, imsi, HandoverStart, cellId, 0);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogHandover(Simulator::Now().GetSeconds(), (int)location.x, (int)location.y, imsi, HandoverEndOK, cellId, 0);
 }
 
 
 void
 HandoverStartCallback(std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti, uint16_t targetCellId)
 {
-	confInOut.LogHandover(Simulator::Now().GetSeconds(), (int)GetUeLocation(imsi).x, (int)GetUeLocation(imsi).y, imsi, HandoverStart, cellid, targetCellId);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogHandover(Simulator::Now().GetSeconds(), location.x, location.y, imsi, HandoverStart, cellid, targetCellId);
 }
 
 void
 A2RsrqEnterCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrq)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, A2RSRQEnter, cellId, rsrq);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, A2RSRQEnter, cellId, rsrq);
 }
 
 void
 A2RsrpEnterCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrq)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, A2RSRPEnter, cellId, rsrq);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, A2RSRPEnter, cellId, rsrq);
 }
 
 void
 A2RsrpLeaveCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsr)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, A2RSRPLeave, cellId, rsr);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, A2RSRPLeave, cellId, rsr);
 }
 
 void
 A2RsrqLeaveCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsr)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, A2RSRQLeave, cellId, rsr);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, A2RSRQLeave, cellId, rsr);
 }
 
 void
 A3RsrpEnterCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, A3RSRPEnter, cellId, rsrp);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, A3RSRPEnter, cellId, rsrp);
 }
 
 void
 OutOfSynchCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp, double thresh)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, OutOfSynch, cellId, rsrp);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, OutOfSynch, cellId, rsrp);
 }
 
 void
 RadioLinkFailureCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp)
 {
-	confInOut.LogEvent(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, RLF, cellId, rsrp);
+	Vector3D location = GetUeLocation(imsi);
+	confInOut.LogEvent(Simulator::Now().GetSeconds(), location.x, location.y, imsi, RLF, cellId, rsrp);
 }
 
 void
-KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq)
+KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, uint16_t connected)
 {
-	confInOut.LogMainKpis(Simulator::Now().GetSeconds(), GetUeLocation(imsi).x, GetUeLocation(imsi).y, imsi, cellId, rsrp, rsrq);
+	Vector3D location = GetUeLocation(imsi);
+	bool conn = false;
+	if(connected == cellId)
+	{
+		conn = true;
+	}
+	if(labeling)
+	{
+		bool label = false;
+		if(labelingStarted)
+		{
+			if(IsPointInsideTriangle(triangle, Location(location.x, location.y)))
+			{
+				label = true;
+			}
+		}
+//		if(labelings[imsi]) label = true;
+//		else
+//		{
+//			if(std::find(outaged.begin(), outaged.end(), connected) != outaged.end())
+//			{
+//				label = true;
+//				labelings[imsi] = true;
+//			}
+//		}
+		confInOut.LogMainKpisWithLabeling(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn, label);
+	}
+	else confInOut.LogMainKpis(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn);
+
 }
+
+// For getting rid of double calls // TODO: reason for double calls?
+uint64_t lastImsi = 0;
 
 void
 ReportUeSinr(double time, uint64_t imsi, uint16_t cellId, double sinr)
 {
-	confInOut.LogSinr(time, imsi, cellId, sinr); // Converted into dBs in PhyStatsCalculator class.
+	if(imsi != lastImsi)
+		confInOut.LogSinr(time, imsi, cellId, sinr); // Converted into dBs in PhyStatsCalculator class.
+	lastImsi = imsi;
+}
+
+void
+ReportEnbSinr(double time, uint64_t imsi, uint16_t cellId, double sinr)
+{
+//	if(imsi != lastImsi)
+//		confInOut.LogSinr(time, imsi, cellId, sinr); // Converted into dBs in PhyStatsCalculator class.
+//	lastImsi = imsi;
 }
 
 void
@@ -185,20 +428,14 @@ RemCallback(double x, double y, double z, double sinr)
 	confInOut.LogREM(x, y, z, sinr);
 }
 
+
 void
 WriteUeThroughPut(Ptr<RadioBearerStatsCalculator> rlcStats)
 {
-	// last measured throughput for Ues.
-	static double lastThrs[NUMBER_OF_UES];
-
 	for(int i = 1; i <= NUMBER_OF_UES; ++i)
 	{
-		double rxBytes = rlcStats->GetUlRxData(i , 4) * 0.001; // kilobytes		TODO: // SELVITÄ VIELÄ Logical Chanel ID   < LCID!
-		double timeNow = Simulator::Now().GetSeconds();
-
-		confInOut.LogThroughput(timeNow, uint64_t(i), GetConnectedCell(i), (rxBytes- lastThrs[i-1]) /0.200);
-
-		lastThrs[i-1] =  rxBytes;
+		double rxBytes = rlcStats->GetDlRxData(i , 4) * 8.0; // bits
+		confInOut.LogThroughput(Simulator::Now().GetSeconds(), uint64_t(i), GetConnectedCell(i), rxBytes);
 	}
 	Simulator::Schedule(MilliSeconds (200), &WriteUeThroughPut, rlcStats);
 }
@@ -237,47 +474,148 @@ ApplySONEngineMethods(SONEngineLog confData)
 {
 	for(uint i = 0; i < confData.configurations.size(); ++i)
 	{
-		//std::cout << "Cell ID: " << confData.configurations[i].cellId <<  std::endl;
-		std::cout << "SON ENGINE start method: \"" << SONEngineLog::GetMethodName(confData.configurations[i].method) <<
+		std::cout << "Clicked: \"" << SONEngineLog::GetMethodName(confData.configurations[i].method) <<
 				"\" for cell " << confData.configurations[i].cellId << std::endl;
+		double oldTxPower = GetCellTransmissionPower(confData.configurations[i].cellId);
+
+
+		if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Outage)
+		{
+			SetCellTransmissionPower(confData.configurations[i].cellId, 0.0);
+			std::cout << "Outage created at cell " << confData.configurations[i].cellId << ": decreased transmission power from "
+					  << oldTxPower << " to " << 0.0 << std::endl;
+
+			confInOut.UpdateTxPower(confData.configurations[i].cellId, 0.0);
+		}
+//		else if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Normal)
+//		{
+//			SetCellTransmissionPower(confData.configurations[i].cellId, 46.0);
+//						std::cout << "OPERATIONS TAKEN: lowered cells " << confData.configurations[i].cellId << " transmission power from "
+//								  << oldTxPower << " to " << 46.0 << std::endl;
+//		}
+
+//		if(oldTxPower >= 0)
+//		{
+//			double newTxPower = oldTxPower - 1.0;
+//			if(newTxPower < 0) newTxPower = 0.0;
+//			SetCellTransmissionPower(confData.configurations[i].cellId, newTxPower);
+//
+//			std::cout << "OPERATIONS TAKEN: lowered cells " << confData.configurations[i].cellId << " transmission power from "
+//				<< oldTxPower << " to " << newTxPower << std::endl;
+//		}
+//		else
+//		{
+//			std::cout << "ERROR: cell number " << confData.configurations[i].cellId << " doesn't exist " << std::endl;
+//		}
 	}
 }
 
-//static int fileNumber = 0;
-
-/* Reads changes from configuration file and apply changes if updated */
-void Update()
+/* Saves cell states to database TODO: maybe would only be called when setup is changed */
+void
+UpdateCellStates(int noCells)
 {
-	SONEngineLog conf = confInOut.ReadSONEngineMethodsFromDatabase();
-	ApplySONEngineMethods(conf);
-	//ConfigurationLog conf = confInOut.ReadConfigurationFromDatabase();
-	//ApplyChanges(conf);
-
-//	std::stringstream strs;
-//	strs << fileNumber;
-//	std::string postFix = strs.str();
-//
-//	fileNumber++;
-	Simulator::Schedule (MilliSeconds (3000), &Update);
+	double txPowerOfAllCells[noCells +1];
+	GetTransmissionPowerOfAllCells(txPowerOfAllCells);
+	confInOut.SaveCellsStates(txPowerOfAllCells, noCells, remStep);
+	remStep++;
 }
 
-#include <unistd.h>
+bool
+CheckIfSameConfigurations(ConfigurationLog conf1, ConfigurationLog conf2)
+{
+	if(conf1.configurations.size() != conf2.configurations.size()) return false;
 
+	for(unsigned int i = 0; i < conf1.configurations.size(); i++)
+	{
+		if(conf1.configurations[i].txPower != conf2.configurations[i].txPower
+				&& conf1.configurations[i].cellId == conf2.configurations[i].cellId) return false;
+	}
+	return true;
+}
+
+/* Reads changes from configuration file and apply changes if updated */
+void Update(int nMacroEnbSites)
+{
+	SONEngineLog confSON = confInOut.ReadSONEngineMethodsFromDatabase();
+	ApplySONEngineMethods(confSON);
+	ConfigurationLog conf = confInOut.ReadConfigurationFromDatabase();
+	// Check if same
+	if(CheckIfSameConfigurations(confPrevious, conf))
+	{
+		createRem = false;
+	}
+	else
+	{
+		confPrevious.Clone(conf);
+		ApplyChanges(conf);
+		createRem = true;
+	}
+	UpdateCellStates(nMacroEnbSites*3);
+}
+
+/* Maybe not needed: should be part of update routine reading from db */
 void
 WaitSonEngine()
 {
 	// todo: wait SON engine to make new configuration..
 	// currently waiting 1 seconds:
-	usleep(1000000);
+	//usleep(1000000);
 }
 
+/* Creates outage in cells 10, 11, 12 */
 void
 CellOutage()
 {
+	outaged.push_back(10);
+	outaged.push_back(11);
+	outaged.push_back(12);
 	SetCellTransmissionPower(10, 0.0);
 	SetCellTransmissionPower(11, 0.0);
 	SetCellTransmissionPower(12, 0.0);
 }
+
+/* Saves simulation setup. This will be done once, at the start of the simulation */
+void
+SaveSimulationState(int nMacroEnbSites, int nMacroEnbSitesX, double interSiteDistance)
+{
+	// Do we need to save number of UES?
+	int pid = ::getpid();
+	confInOut.SaveSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, pid);
+	UpdateCellStates(nMacroEnbSites*3);
+}
+
+void
+RunSimulation(double seconds, Ptr<RadioBearerStatsCalculator> rlcStats)
+{
+    Simulator::Stop (Seconds (seconds));
+	Simulator::Run ();
+	rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (rlcStats->GetEpoch().GetSeconds() + seconds)));
+}
+
+void
+RunREMGeneratorScript()
+{
+	// prevent for creating same REM multiple times a row
+//	if(lastStepRem != remStep)
+//	{
+//		std::cout << "LAST STEP: " << lastStepRem << "   STEP: " << remStep << std::endl;
+//		lastStepRem = remStep;
+		confInOut.RunREMGeneratorScript(remStep);
+//	}
+}
+
+void
+RunREMGenerator()
+{
+	if(threadRem.joinable())
+	{
+		threadRem.join();
+	}
+	remReady = false;
+	threadRem = std::thread(RunREMGeneratorScript);
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		GLOBAL VALUES
@@ -289,11 +627,11 @@ static ns3::GlobalValue g_simTime ("simTime",
                                    ns3::MakeDoubleChecker<double> ());
 static ns3::GlobalValue g_nMacroEnbSites ("nMacroEnbSites",
                                           "How many macro sites there are",
-                                          ns3::UintegerValue (3),
+                                          ns3::UintegerValue (7),
                                           ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_nMacroEnbSitesX ("nMacroEnbSitesX",
                                            "(minimum) number of sites along the X-axis of the hex grid",
-                                           ns3::UintegerValue (1),
+                                           ns3::UintegerValue (2),
                                            ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_interSiteDistance ("interSiteDistance",
                                              "min distance between two nearby macro cell sites",
@@ -306,7 +644,15 @@ static ns3::GlobalValue g_epc ("epc",
                                "If false, only the LTE radio access will be simulated with RLC SM. ",
                                ns3::BooleanValue (true),
                                ns3::MakeBooleanChecker ());
+static ns3::GlobalValue g_labeling ("labeling",
+                               	   "If true, simulation will be running 10 rounds, 5 rounds with normal,"
+                               	   "and 5 rounds after outage. Users affected by outage will be label"
+                               	   "with LABEL : true.",
+								   ns3::BooleanValue (false),
+								   ns3::MakeBooleanChecker ());
 
+
+// TODO: Should add more global values!
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END:		GLOBAL VALUES
@@ -319,7 +665,6 @@ main (int argc, char *argv[])
 	cmd.Parse (argc, argv);
 	ConfigStore inputConfig;
 	inputConfig.ConfigureDefaults ();
-	// parse again so you can override input file default values via command line
 	cmd.Parse (argc, argv);
 
 	DoubleValue doubleValue;
@@ -335,9 +680,12 @@ main (int argc, char *argv[])
 	double interSiteDistance = doubleValue.Get ();
 	GlobalValue::GetValueByName ("epc", booleanValue);
 	bool epc = booleanValue.Get ();
-
+	GlobalValue::GetValueByName ("labeling", booleanValue);
+	labeling = booleanValue.Get ();
+	double txPower = 40.0;
 
 	Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
+	lteHelper->SetHandoverAlgorithmType("ns3::A3RsrpHandoverAlgorithm");
 	Ptr<PointToPointEpcHelper> epcHelper;
 	MobilityHelper mobility;
 	Box macroUeBox;
@@ -349,7 +697,7 @@ main (int argc, char *argv[])
 	// CREATE TOPOLOGY
 	///////////////////////////////////////////////
 
-	DemoHelper::CreateHexagonalTopology(epcHelper, mobility, macroUeBox, lteHelper, nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, epc, 43.0, 100, 25);
+	DemoHelper::CreateHexagonalTopology(epcHelper, mobility, macroUeBox, lteHelper, nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, epc, txPower, 100, 25);
 
 	///////////////////////////////////////////////
 	// CREATE USERS
@@ -363,11 +711,11 @@ main (int argc, char *argv[])
 
 	if(epc)
 	{
-		DemoHelper::CreateEPC(epcHelper, lteHelper, macroUes, true, true, true, 1);
+		DemoHelper::CreateEPC(epcHelper, lteHelper, macroUes, false, true, true, 1);
 	}
 	else
 	{
-		//todo:
+		// Todo: Probably not needed
 		DemoHelper::NoEPC();
 	}
 
@@ -377,23 +725,17 @@ main (int argc, char *argv[])
 
 	confInOut.CreateConnectionToDataBase();
 	confInOut.SetDatabase("5gopt");
-//	confInOut.SetCollection("collectionII");
 
 	///////////////////////////////////////////////
 	// SET CALLBACKS
 	///////////////////////////////////////////////
 
-	lteHelper->EnablePhyTraces ();
-	lteHelper->EnableDlPhyTraces();
-	lteHelper->EnableUlPhyTraces();
-	lteHelper->EnableMacTraces ();
-	lteHelper->EnableRlcTraces ();
-	lteHelper->EnablePdcpTraces ();
+	lteHelper->EnableTraces();
 
 	// Throuhput
 	Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
 	rlcStats->SetAttribute ("StartTime", TimeValue (Seconds (0)));
-	rlcStats->SetAttribute ("EpochDuration", TimeValue (MilliSeconds (200)));
+//	rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (99999999999)));
 	Simulator::Schedule(MilliSeconds (200), &WriteUeThroughPut, rlcStats);
 
 	// RLF events
@@ -413,35 +755,69 @@ main (int argc, char *argv[])
 	Config::Connect("/NodeList/*/DeviceList/*/LteUeRrc/KpiTest",  MakeCallback(&KpiTestCallback));
 	// SINR
 	Ptr<PhyStatsCalculator> phyStats = lteHelper->GetPhyStatsCalculator();
-	phyStats->TraceConnectWithoutContext("SinrTrace", MakeCallback(&ReportUeSinr));
-
-
-//	Ptr<RadioEnvironmentMapHelper> remHelper;
-//	remHelper = CreateObject<RadioEnvironmentMapHelper> ();
-//	remHelper->SetAttribute("StopWhenDone", BooleanValue(false));
-//    remHelper->TraceConnectWithoutContext("RemTrace", MakeCallback(&RemCallback));
-//	// Generate REM
-//	GenerateRemMap(remHelper, macroUeBox);
+	phyStats->TraceConnectWithoutContext("SinrUeTrace", MakeCallback(&ReportUeSinr));
+	phyStats->TraceConnectWithoutContext("SinrEnbTrace", MakeCallback(&ReportEnbSinr));
 
 	///////////////////////////////////////////////
 	// DEMO LOOP
 	///////////////////////////////////////////////
 
-//    int rounds = 0;
-	while(true)
+//	// Register signal handler
+	signal(SIGUSR1, SignalHandler);
+	signal(SIGINT, SIG_DFL);
+
+
+	// Clear state to database for the REM
+	confInOut.ClearSimulationState();
+	confInOut.InitializeCellConfigurations(txPower, nMacroEnbSites * 3);
+
+	// Save state to database for the REM
+	SaveSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance);
+
+	// Generate REM
+	RunREMGenerator();
+
+
+//	// Initialize locations:
+//	for(int i = 0; i< NUMBER_OF_USERS; i++)
+//	{
+//		userLocations[i] = Vector
+//	}
+
+	int rounds = 0;
+	while(flag == 0 && rounds < 12)
 	{
 		// read configuration from database:
-		Update(); // HUOM! requires connection to database
+		Update(nMacroEnbSites); 	// Note! requires connection to database
+
+		// Create REM
+		if(remReady && createRem)
+		{
+			RunREMGenerator();
+		}
+
 		// run simulation:
-	    Simulator::Stop (Seconds (simTime));
-		Simulator::Run ();
+		RunSimulation(simTime, rlcStats);
+		// Updates cell states to database:
+		UpdateCellStates(nMacroEnbSites*3); // <- IF REM
 		// write KPIs into database:
 		confInOut.FlushLogs();
-		// wait for new configuration from SON engine:
-		WaitSonEngine();
-//		rounds++;
+		std::cout << "Measurements are written to database.." << std::endl;
+
+		if(labeling)
+		{
+			rounds++;
+			if(rounds <= 6)
+			{
+				CreateTriangle();
+			}
+			if(rounds == 6)
+			{
+				CellOutage();
+				labelingStarted = true;
+			}
+		}
 	}
-//	confInOut.RunMatlabKpiScript();
 	lteHelper = 0;
 	Simulator::Destroy ();
 

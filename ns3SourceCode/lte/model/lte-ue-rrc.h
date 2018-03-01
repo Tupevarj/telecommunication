@@ -670,7 +670,7 @@ private:
   TracedCallback<uint64_t, uint16_t, double> m_A2RsrpEnterTrace;
   TracedCallback<uint64_t, uint16_t, double> m_A3RsrpTrace;
 
-  TracedCallback<uint64_t, uint16_t, double, double> m_KpiTrace;
+  TracedCallback<uint64_t, uint16_t, double, double, uint16_t> m_KpiTrace;
 
   TracedCallback<uint64_t, uint16_t, double> m_A2RsrqLeaveTrace;
   TracedCallback<uint64_t, uint16_t, double> m_A2RsrpLeaveTrace;
@@ -686,7 +686,7 @@ private:
 //   typedef void (* A2DTracedCallback)
 //      (uint64_t imsi, double rsrq, uint16_t cellId, double thresh);
 typedef void (*KpiTraceCallback)
-		(double, double);
+		(uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, uint16_t connected);
 
 
    typedef void (* OutOfSynchCallback)

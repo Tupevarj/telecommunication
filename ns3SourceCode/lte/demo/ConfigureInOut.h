@@ -1,6 +1,7 @@
+
+#pragma once
 #include <string>
 #include <vector>
-#pragma once
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -10,6 +11,17 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include "ConfigureInOutStructures.h"
+
+
+struct Location
+{
+	int x;
+	int y;
+
+	Location(int x, int y) : x(x), y(y) {};
+};
+
+
 
 // ConfigureInOut class:
 // Communicates with mongoDB
@@ -59,13 +71,30 @@ public:
 	void LogThroughput(double time, uint64_t imsi, uint16_t cellId, double thr);
 
 	/* Adds environment measure to cache */
-	void LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq);
+	void LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected);
+
+	/* Adds environment measure to cache with labeling */
+	void LogMainKpisWithLabeling(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected, bool label);
 
 	/* Adds REM measurement */
 	void LogREM(double x, double y, double z, double sinr);
 
+	/* Save simulation state into database */
+	void SaveSimulationState(uint32_t nMacroEnbSites, uint32_t nMacroEnbSitesX, double interSiteDistance, int pid);
+	void ReadSimulationState(uint32_t& nMacroEnbSites, uint32_t& nMacroEnbSitesX, double& interSiteDistances, int32_t& pid);
+
+	/* Save cells transmission powers into database */
+	void SaveCellsStates(double txs[], int noCells, int stepId);
+	void ReadCellsStates(double txs[], int noCells, int stepId);
+	void InitializeCellConfigurations(double txPower, int noCells);
+
+	/* Clears state collection from database */
+	void ClearSimulationState();
+
 	/* Writes all the logs into database/csv files and CLEARS LOG FILES */
 	void FlushLogs();
+
+	std::vector<Location> ReadHandovers(std::vector<uint16_t> cells);
 
 	/* Reads SONEngine instructions from database  FOR TESTING ONLY!! */
 	SONEngineLog ReadSONEngineMethodsFromDatabase();
@@ -75,6 +104,14 @@ public:
 
 	/* Returns current configuration settings */
 	const ConfigurationLog& GetConfigurationData();
+
+	void UpdateTxPower(u_int16_t cellId, double tx);
+
+	/* Start REMgenerator */
+	void RunREMGeneratorScript(int stepId);
+
+	/* Sets post fix for CSV files */
+	void SetPostFixCSV(std::string postFix);
 
 private:
 
@@ -105,6 +142,7 @@ private:
 	mongocxx::collection* mongoCollection;
 
 	std::string outputFolder = "/home/tupevarj/NS3SimulatorData/";
+	std::string postFix = "";
 
 //	LogCollection eventsLogCol = {std::vector<WritableLog> {}};
 //	LogCollection handoversLogCol = {std::vector<WritableLog> {}};
@@ -117,6 +155,7 @@ private:
 	std::vector<SinrLog> sinrsLog;
 	std::vector<ThrouhgputLog> throughputsLog;
 	std::vector<MainKpiLog> mainKpisLog;
+	std::vector<MainKpiWithLabelLog> mainKpisWithLabelLog;
 	std::vector<REMLog> remLog;
 
 	int64_t numberOfSONLogsInDB = 0;
