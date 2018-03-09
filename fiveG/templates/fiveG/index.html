@@ -558,7 +558,7 @@
                  <div class="col-lg-12 col-md-12">
                      <div>
                          <div class="heading">
-                             <h2 class="wow fadeInLeftBig">display data demo</h2>
+                             <h2 class="wow fadeInLeftBig">NS-3 Simulation Demo</h2>
                          </div>
                          <div class="col-lg-6 col-md-12" style="height: 800px; overflow:scroll" id="anormalCellDectionDisplay">
                                         <table id="alarmTable" data-toggle="table"
@@ -579,7 +579,7 @@
                                             </thead>
                                         </table>
                          </div>
-                        <div class="col-lg-6 col-md-12" id="dominationMapDisplay">
+                        {% comment %}<div class="col-lg-6 col-md-12" id="dominationMapDisplay">
                             <div class="panel panel-primary">
                                 <div class="panel-heading text-center">
                                     DOMINACE MAP
@@ -588,7 +588,7 @@
                                     <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">
                                 </div>
                             </div>
-                        </div>
+                        </div>{% endcomment %}
                      </div>
 
                  </div>
@@ -643,7 +643,7 @@
                  <div id="rsrpPerCellChartContainer" class="col-md-12 col-lg-12"></div>
                  <div class="col-lg-12 col-md-12"></div>
                      <div class="centered text-center">
-                         <button class="btn btn-primary" id="updateCharts" >Update</button>
+                        <!-- <button class="btn btn-primary" id="updateCharts" >Update</button> -->
                      </div>
              </div>
 
@@ -1333,17 +1333,17 @@
     <!-- Custom js-->
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
      <script>
-
-         $(document).ready(function () {
-             d = new Date();
-             setInterval(function () {
-                 $.get('/loadNewestDominateMap',
-                     function (data) {
-                         $('#dominateMap').attr("src", "http://127.0.0.1:8000/media/dominationMap.png"+"?"+Math.random());
-                     });
-             }, 2000);
-         });
-
+{##}
+{#         $(document).ready(function () {#}
+{#             d = new Date();#}
+{#             setInterval(function () {#}
+{#                 $.get('/loadNewestDominateMap',#}
+{#                     function (data) {#}
+{#                         $('#dominateMap').attr("src", "http://127.0.0.1:8000/media/dominationMap.png"+"?"+Math.random());#}
+{#                     });#}
+{#             }, 2000);#}
+{#         });#}
+{##}
 
 
          function cellStyle(value, row, index) {

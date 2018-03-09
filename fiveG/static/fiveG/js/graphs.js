@@ -7,17 +7,16 @@ var chartRsrpColumn;
 var chartRem;
 
 
-
 /*
     Initialize charts and start timer for updating charts
  */
 $(document).ready(function ()
 {
     // Initialize charts:
-    drawTotalThroughputChart(throughtputDict);
-    drawRsrpLineChart(rsrpDict);
-    drawRsrpColumnChart(rsrpPerCellList);
-    drawRemChart(dominanceMap);
+    if(Object.keys(throughtputDict).length > 0) drawTotalThroughputChart(throughtputDict);
+    if(rsrpDict["Time"].length > 0) drawRsrpLineChart(rsrpDict);
+    if(rsrpPerCellList.length > 0) drawRsrpColumnChart(rsrpPerCellList);
+    if(dominanceMap["Points"].length > 0) drawRemChart(dominanceMap);
 
     setInterval(function ()
     {
@@ -30,21 +29,35 @@ $(document).ready(function ()
             if(parsed["TotalThroughput"] != undefined) {
                 // TODO: REMOVE DOUBLE PARSING (DOUBLE DUMPS)
                 var tThr = JSON.parse(parsed["TotalThroughput"]);
-                updateTotalThroughputChart(tThr);
+                if(chartTotalThr != undefined)
+                    updateTotalThroughputChart(tThr);
+                else
+                    drawTotalThroughputChart(tThr); // Initialize if chart is undefined
             }
             if(parsed["RSRP"] != undefined) {
                 var rsrp = JSON.parse(parsed["RSRP"]);
+                if(chartRsrpLine != undefined)
+                    updateRsrpLineChart(rsrp);
+                else
+                    drawRsrpLineChart(rsrp);
+            }
+            if(parsed["RsrpPerCell"] != undefined) {
                 var rsrpCell = parsed["RsrpPerCell"];
-                updateRsrpLineChart(rsrp);
-                updateRsrpColumnChart(rsrpCell);
+                if(chartRsrpColumn != undefined)
+                    updateRsrpColumnChart(rsrpCell);
+                else
+                    drawRsrpColumnChart(rsrpCell);
             }
             if(parsed["DominanceMap"] != undefined) {
                 var map = JSON.parse(parsed["DominanceMap"]);
-                drawRemChart(map);
+                if(chartRem != undefined)
+                    updateRemChart(map);
+                else
+                    drawRemChart(map);
             }
 
         });
-    }, 10000);
+    }, 3000);
 });
 
 //////////////////////////////////////////////////////////////
@@ -116,13 +129,17 @@ function updateRsrpColumnChart(listRsrp)
 
 function updateRemChart(listValues)
 {
+    var listPoints = listValues["Points"];
+
     var series = chartRem.series[0];
-    for(var j = 0; j < listValues.length; j++)
+    for(var j = 0; j < listPoints.length; j++)
     {
-       // series.addPoint(listValues[j], false, false);
-        series.update({ value: listValues[j][2]}, false);
+       // data.concat(data.map(listValues[j]));
+        // series.addPoint(listValues[j], false, false);
+        series.data[j].value = listPoints[j][2];
+       // series.update({ value: listValues[j][2]}, false);
     }
-    //series.setData(listValues, false, false, true);
+    chartRem.yAxis[0].isDirty = true;
     chartRem.redraw();
 
 }
@@ -232,19 +249,6 @@ function drawRemChart(listValues) {
 
      var listPoints = listValues['Points'];
 
-     // Create series for REM
-    // var series = [{
-    //     'name': 'x, y, SINR',
-    //     'data': [],
-    //     'colsize': 16,
-    //     'rowsize' : 16
-    //     }];
-
-    //series[0].data = listPoints;
-     // for(var i = 0; i < listX.length; i++) {
-     //       series[0].data.push([listX[i], listY[i], listSinr[i]]);
-     //  }
-
     chartRem = Highcharts.chart('dominanceMapContainer', {
 
     chart: {
@@ -297,12 +301,12 @@ function drawRemChart(listValues) {
     },
     colorAxis: {
         stops: [
-                [0, '#2e3436'],
-                [0.4, '#57b2dd'],
-                [0.7, '#addffa'],
-                [1.0, '#EFEFFF']
+                [0.35, '#00ddff'],
+                [0.45, '#00ff8d'],
+                [0.6, '#efff00'],
+                [0.9, '#ff3700']
         ],
-        min: -5,
+        min: -10,
         max: 20,
         startOnTick: false,
         endOnTick: false,
