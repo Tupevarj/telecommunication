@@ -15,6 +15,7 @@
 #include <ns3/point-to-point-helper.h>
 #include <ns3/applications-module.h>
 #include <ns3/log.h>
+#include <ns3/rng-seed-manager.h>
 #include <signal.h>
 #include <unistd.h>
 #include <thread>
@@ -29,9 +30,10 @@ int remStep = 0;		// Step number for REM generating
 //int lastStepRem = -1;	// For preventing to create same REM multiple times in a row
 volatile sig_atomic_t flag = 0;
 bool remReady = true;
-bool createRem = false;
+bool createRem = true;
 ConfigurationLog confPrevious;
 std::thread threadRem;
+u_int16_t labelDefault = 0;
 
 // FOR LABELING:
 bool labeling = false;
@@ -73,10 +75,6 @@ float triangleC = std::numeric_limits<float>::max();
 float TriangleArea(Triangle t)
 {
 	 return 0.5 *(-t.B.y*t.C.x + t.A.y*(-t.B.x + t.C.x) + t.A.x*(t.B.y - t.C.y) + t.B.x*t.C.y);
-}
-float sign (Triangle t)
-{
-    return (t.A.x - t.C.x) * (t.B.y - t.C.y) - (t.B.x - t.C.x) * (t.A.y - t.C.y);
 }
 
 bool
@@ -380,12 +378,12 @@ KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp
 	}
 	if(labeling)
 	{
-		bool label = false;
+		u_int16_t label = labelDefault;
 		if(labelingStarted)
 		{
 			if(IsPointInsideTriangle(triangle, Location(location.x, location.y)))
 			{
-				label = true;
+				label = 3;
 			}
 		}
 //		if(labelings[imsi]) label = true;
@@ -611,6 +609,7 @@ RunREMGenerator()
 	{
 		threadRem.join();
 	}
+	createRem = false;
 	remReady = false;
 	threadRem = std::thread(RunREMGeneratorScript);
 }
@@ -682,7 +681,7 @@ main (int argc, char *argv[])
 	bool epc = booleanValue.Get ();
 	GlobalValue::GetValueByName ("labeling", booleanValue);
 	labeling = booleanValue.Get ();
-	double txPower = 40.0;
+	double txPower = 46.0;
 
 	Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
 	lteHelper->SetHandoverAlgorithmType("ns3::A3RsrpHandoverAlgorithm");
@@ -691,7 +690,9 @@ main (int argc, char *argv[])
 	Box macroUeBox;
 	NetDeviceContainer macroUeDevs;
 	NodeContainer macroUes;
+	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (160));
 
+	//RngSeedManager::SetSeed(213);
 
 	///////////////////////////////////////////////
 	// CREATE TOPOLOGY
@@ -775,7 +776,7 @@ main (int argc, char *argv[])
 	SaveSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance);
 
 	// Generate REM
-	RunREMGenerator();
+	//RunREMGenerator();
 
 
 //	// Initialize locations:
@@ -785,37 +786,73 @@ main (int argc, char *argv[])
 //	}
 
 	int rounds = 0;
-	while(flag == 0 && rounds < 12)
+	while(flag == 0)
 	{
 		// read configuration from database:
-		Update(nMacroEnbSites); 	// Note! requires connection to database
+		Update(nMacroEnbSites); 	// Note! requires connection to database TEMPORARY TURNED OFF
+
+
+//		double txPowersII[22] = {};
+//		GetTransmissionPowerOfAllCells(txPowersII);
+//		std::cout << "TxPowers:\n";
+//		for(unsigned int k = 1; k <= 21; k++)
+//		{
+//			 std::cout << "Cell " << k << ": " << txPowersII[k] << std::endl;
+//		}
+
+		// run simulation:
+		RunSimulation(simTime, rlcStats);
+		// Updates cell states to database:
+		//UpdateCellStates(nMacroEnbSites*3); // <- IF REM
+		// write KPIs into database:
+		confInOut.FlushLogs();
+		std::cout << "Measurements are written to database.." << std::endl;
+
+		rounds++;
+		if(labeling)
+		{
+			//rounds++;
+			if(rounds <= 15)
+			{
+				CreateTriangle();
+			}
+			if(rounds == 5)
+			{
+				labelDefault = 1;
+				for(unsigned int i = 1; i <= 21; i++)
+				{
+					SetCellTransmissionPower(i, 43.0);
+				}
+			}
+			if(rounds == 10)
+			{
+				labelDefault = 2;
+				for(unsigned int i = 1; i <= 21; i++)
+				{
+					SetCellTransmissionPower(i, 40.0);
+				}
+			}
+			if(rounds == 15)
+			{
+				labelDefault = 0;
+				for(unsigned int i = 1; i <= 21; i++)
+				{
+					SetCellTransmissionPower(i, 46.0);
+				}
+				labelingStarted = false;
+			}
+			if(rounds == 20)
+			{
+				CellOutage();
+				labelingStarted = true;
+			}
+			if(rounds == 25) break;
+		}
 
 		// Create REM
 		if(remReady && createRem)
 		{
 			RunREMGenerator();
-		}
-
-		// run simulation:
-		RunSimulation(simTime, rlcStats);
-		// Updates cell states to database:
-		UpdateCellStates(nMacroEnbSites*3); // <- IF REM
-		// write KPIs into database:
-		confInOut.FlushLogs();
-		std::cout << "Measurements are written to database.." << std::endl;
-
-		if(labeling)
-		{
-			rounds++;
-			if(rounds <= 6)
-			{
-				CreateTriangle();
-			}
-			if(rounds == 6)
-			{
-				CellOutage();
-				labelingStarted = true;
-			}
 		}
 	}
 	lteHelper = 0;

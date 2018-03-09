@@ -33,10 +33,10 @@ GenerateRemMap(Ptr<RadioEnvironmentMapHelper> remHelper, Box macroUeBox)
 	remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
 	remHelper->SetAttribute ("YMin", DoubleValue (macroUeBox.yMin));
 	remHelper->SetAttribute ("YMax", DoubleValue (macroUeBox.yMax));
-	remHelper->SetAttribute ("XRes", UintegerValue (100));
-	remHelper->SetAttribute ("YRes", UintegerValue (100));
+	remHelper->SetAttribute ("XRes", UintegerValue (150));
+	remHelper->SetAttribute ("YRes", UintegerValue (150));
 	remHelper->SetAttribute ("Z", DoubleValue (1.5));
-    	remHelper->Install();
+    remHelper->Install();
 }
 
 /*
@@ -131,6 +131,7 @@ main (int argc, char *argv[])
 
 		confInOut.ReadSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, pid);
 
+		std::cout << "Macro site: " << nMacroEnbSites << " X: " << nMacroEnbSitesX << std::endl;
 		PID = pid;
 
 		Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
