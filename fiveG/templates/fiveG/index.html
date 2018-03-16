@@ -13,8 +13,10 @@
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/png" href="img/favicon.png"/>
+    <!-- Bootstrap -->
 
 
+{#    <script src="../../static/fiveG/js/bootstrap-table.js"></script>#}
 
     <!-- CSS
     ================================================== -->       
@@ -63,7 +65,7 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
-  <body> 
+  <body>
      <!-- BEGAIN PRELOADER -->
     <div id="preloader">
       <div id="status">&nbsp;</div>
@@ -553,58 +555,160 @@
     <!--=========== END WORKS SECTION ================-->
 
      <section>
+          <div class="row">
+            <div class="col-lg-12 col-md-12">
+             <div class="container">
+                <div class="heading">
+                  <h2 class="wow fadeInLeftBig" style="margin-top: 25px;">NS-3 Simulation Demo</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="container">
+                <div class="heading">
+                  <h3 class="wow fadeInLeftBig" style="margin-top: 25px; color: #313338; font-size: 30px;">Machine Learning Training Phase</h3>
+                </div>
+          </div>
          <div class="container">
-             <div class="row">
-                 <div class="col-lg-12 col-md-12">
-                     <div>
-                         <div class="heading">
-                             <h2 class="wow fadeInLeftBig">NS-3 Simulation Demo</h2>
-                         </div>
-                         <div class="col-lg-6 col-md-12" style="height: 800px; overflow:scroll" id="anormalCellDectionDisplay">
-                                        <table id="alarmTable" data-toggle="table"
-                                            data-url = "{% url 'show_normal_col_in_table' %}"
-                                            data-method = "get" data-page-size=10
-                                            data-pagination = "true" data-show-columns="true"
-                                            data-side-pagination = "server" data-striped="true"
-                                            >
-                                            <thead>
-                                                <tr>
-                                                    <td>Severity</td>
-                                                    <th data-field="CellID">CellID</th>
-                                                        <th data-field="Severity" data-cell-style="cellStyle">Severity</th>
-                                                    <th data-field="Created">Created</th>
-                                                    <th data-field="Problem Class">Problem Class</th>
-                                                    <th data-field="Service Class">Service Class</th>
-                                                </tr>
-                                            </thead>
-                                        </table>
-                         </div>
-                        {% comment %}<div class="col-lg-6 col-md-12" id="dominationMapDisplay">
-                            <div class="panel panel-primary">
-                                <div class="panel-heading text-center">
-                                    DOMINACE MAP
-                                </div>
-                                <div class="panel-body text-center">
-                                    <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">
-                                </div>
-                            </div>
-                        </div>{% endcomment %}
-                     </div>
-
+                 <div class="col-lg-12 col-md-12" style="min-width: 450px;">
                  </div>
 
              </div>
-
-             </div>
          <div class="container" style="margin-top: 2cm;">
-             <div class="row">
-                 <div id="testChartContainer" class="col-md-12 col-lg-12"></div>
-                 <div class="col-lg-12 col-md-12"></div>
-                     <div class="centered text-center"></div>
+             <div style="overflow:hidden;">
+                  <div class="col-lg-6 col-md-12" id="anormalCellDectionDisplay" style="float:left; width:550px;">
+                                <table id="alarmTable" class="table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Algorithm</th>
+                                            <th scope="col">AUC Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>Simple Regression Model</th>
+                                            <th id="simpleReg"></th>
+                                        </tr>
+                                        <tr>
+                                            <th>Random Forest Regression</th>
+                                            <th id="rfReg"></th>
+                                        </tr>
+                                        <tr>
+                                            <th>SVC Classifier</th>
+                                            <th id="svcClass"></th>
+                                        </tr>
+                                        <tr>
+                                            <th>Decision Tree</th>
+                                            <th id="decTree"></th>
+                                        </tr>
+                                  </tbody>
+                                </table>
+                         </div>
              </div>
+           </div>
+{#         </div>#}
+{#         <div class="container" style="margin-top: 2cm;">#}
+{#             <div class="row">#}
+{#                 <div id="regressionChartContainer" class="col-md-12 col-lg-12"></div>#}
+{#                 <div class="col-lg-12 col-md-12"></div>#}
+{#                     <div class="centered text-center"></div>#}
+{#             </div>#}
+{##}
+{#         </div>#}
+{#         <div class="container" style="margin-top: 2cm;">#}
+{#             <div class="row">#}
+{#                 <div id="regressionRfChartContainer" class="col-md-12 col-lg-12"></div>#}
+{#                 <div class="col-lg-12 col-md-12"></div>#}
+{#                     <div class="centered text-center"></div>#}
+{#             </div>#}
+{##}
+{#         </div>#}
 
+           <div class="container" style="margin-top: 2cm;">
+                 <div style="overflow:hidden;" >
+                      <div id="regressionChartContainer" align="left" class="col-md-12 col-lg-12" style="float:left; width:550px;"></div>
+                     <div id="regressionRfChartContainer"align="right"  class="col-md-12 col-lg-12" style="float:right; width:550px;"></div>
+                 </div>
+
+             </div>
+             <div class="container" style="margin-top: 2cm;">
+                 <div style="overflow:hidden;" >
+                      <div id="regressionSvrChartContainer" align="left" class="col-md-12 col-lg-12" style="float:left; width:550px;"></div>
+                     <div id="regressionDtChartContainer"align="right"  class="col-md-12 col-lg-12" style="float:right; width:550px;"></div>
+                 </div>
+
+             </div>
+         <div class="container" style="margin-top: 2cm;" style="width:800px; margin:0 auto;">
+             <div class="row" style="width:800px; margin:0 auto;">
+                 <div id="zScoreChartContainer" class="col-md-12 col-lg-12" style="width:800px; margin:0 auto;"></div>
+                 <div class="col-lg-12 col-md-12">
+                     <div class="centered text-center"></div>
+                 </div>
+             </div>
+         </div>
+         <div class="centered text-center" style="margin-top:20px; margin-bottom:50px;">
+             <button class="btn btn-primary" id="updateML">Create Models</button>
          </div>
 
+         <div class="container">
+                <div class="heading">
+                  <h3 class="wow fadeInLeftBig" style="margin-top: 25px; color: #313338; font-size: 30px;">Machine Learning Results</h3>
+                </div>
+          </div>
+
+{#         <div class="container">#}
+{#             <div class="row">#}
+{#                 <div class="col-lg-12 col-md-12">#}
+{#                        <table id="mlTable"#}
+{#                            data-url = "{% url 'update_ml_table' %}"#}
+{#                            data-method = "get" class="table" >#}
+{#                            <thead>#}
+{#                                <tr>#}
+{#                                    <th data-field="algorithm">Algorithm</th>#}
+{#                                    <th data-field="score">AUC Score</th>#}
+{#                                </tr>#}
+{#                            </thead>#}
+{#                        </table>#}
+{#                         <div class="col-lg-6 col-md-12" style="height: 800px; overflow:scroll">#}
+{#                                <table id="alarmTable2" data-toggle="table"#}
+{#                                    data-url = "{% url 'show_normal_col_in_table' %}"#}
+{#                                    data-method = "get" data-page-size=10#}
+{#                                    data-pagination = "true" data-show-columns="true"#}
+{#                                    data-side-pagination = "server" data-striped="true"#}
+{#                                    >#}
+{#                                    <thead>#}
+{#                                        <tr>#}
+{#                                            <td>Severity</td>#}
+{#                                            <th data-field="CellID">CellID</th>#}
+{#                                                <th data-field="Severity" data-cell-style="cellStyle">Severity</th>#}
+{#                                            <th data-field="Created">Created</th>#}
+{#                                            <th data-field="Problem Class">Problem Class</th>#}
+{#                                            <th data-field="Service Class">Service Class</th>#}
+{#                                        </tr>#}
+{#                                    </thead>#}
+{#                                </table>#}
+{#                         </div>#}
+{#                        {% comment %}<div class="col-lg-6 col-md-12" id="dominationMapDisplay">#}
+{#                            <div class="panel panel-primary">#}
+{#                                <div class="panel-heading text-center">#}
+{#                                    DOMINACE MAP#}
+{#                                </div>#}
+{#                                <div class="panel-body text-center">#}
+{#                                    <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>{% endcomment %}#}
+{##}
+{#                 </div>#}
+{##}
+{#             </div>#}
+{##}
+{#             </div>#}
+          <div class="container">
+                <div class="heading">
+                  <h3 class="wow fadeInLeftBig" style="margin-top: 100px; color: #313338; font-size: 30px;">Networks Performance</h3>
+                </div>
+          </div>
          </div>
          <div class="container" style="margin-top: 2cm;">
              <div class="row">
@@ -615,7 +719,7 @@
 
          </div>
 
-         <div class="container style="margin-top: 2cm; " style="margin-top: 2cm;">
+         <div class="container" style="margin-top: 2cm;" style="margin-top: 2cm;">
              <div class="row">
                  <div id="throughputChartContainer" class="col-md-12 col-lg-12"></div>
                  <div class="col-lg-12 col-md-12">
@@ -661,7 +765,7 @@
                          </div>
                          <div class="panel-body col-lg-12">
                              <div class="row col-lg-offset-1">
-                                 <label for="" class="col-lg-3">Enter Cell ID</label><input type="text" class="input-sm col-md-3 col-lg-3" name="cellID">
+                                 <label for="" class="col-lg-3">Enter Basestation ID</label><input type="text" class="input-sm col-md-3 col-lg-3" name="cellID">
                              </div>
                              <div class="row col-lg-offset-1 col-lg-10 col-md-10">
                                  <label for="" class="col-lg-3 col-md-3">SelfHealing</label>
@@ -1309,6 +1413,7 @@
     <script src="{% static 'fiveG/js/wow.min.js' %}"></script> 
     <!-- Bootstrap js -->
     <script src="{% static 'fiveG/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'fiveG/js/bootstrap-table.js' %}"></script>
     <!-- superslides slider -->
     <script src="{% static 'fiveG/js/jquery.superslides.min.js' %}" type="text/javascript"></script>
     <!-- slick slider -->
@@ -1320,12 +1425,20 @@
     <script src="{% static 'fiveG/js/classie.js' %}"></script>
     <script src="{% static 'fiveG/js/elastic_grid.min.js' %}"></script>
     <script src="{% static 'fiveG/js/portfolio_slider.js' %}"></script>
+
+
      <!-- Draw charts -->
      <script>
          var dominanceMap = {{ DominanceMap | safe }};
          var throughtputDict = {{ TotalThroughput | safe }}; // Need to use safe
          var rsrpDict = {{ RSRP | safe }}; // Need to use safe
          var rsrpPerCellList = {{ RsrpPerCell | safe }}; // Need to use safe
+         var regression = {{  Regression | safe }};
+         var regressionDt = {{  RegressionDT | safe }};
+         var regressionRf = {{  RegressionRF | safe }};
+         var regressionSvr = {{  RegressionSVR | safe }};
+         var regressionZScores = {{  ZScores | safe }};
+         //var knAuc = {{  knAUC | safe }};
      </script>
     <script src="{% static 'fiveG/js/graphs.js' %}"></script>
      <!-- Buttons -->
@@ -1345,6 +1458,73 @@
 {#         });#}
 {##}
 
+
+         $("#updateML").click(function () {
+             $.ajax({
+                 url: "updateRegressionChart",
+                 type: 'GET',
+                 success: function (data) {
+                     var parsed = JSON.parse(data);
+
+                    if (parsed["sRegAUC"] != undefined) {
+
+                        document.getElementById("simpleReg").innerHTML = parsed["sRegAUC"].substring(0,4);
+                    }
+                    if (parsed["rfRegAUC"] != undefined) {
+
+                        document.getElementById("rfReg").innerHTML = parsed["rfRegAUC"].substring(0,4);
+                    }
+                    if (parsed["svcRegAUC"] != undefined) {
+
+                        document.getElementById("svcClass").innerHTML = parsed["svcRegAUC"].substring(0,4);
+                    }
+                    if (parsed["dtRegAUC"] != undefined) {
+
+                        document.getElementById("decTree").innerHTML = parsed["dtRegAUC"].substring(0,4);
+                    }
+
+                    if (parsed["Regression"] != undefined) {
+                      var map = JSON.parse(parsed["Regression"]);
+                      if (chartRegression != undefined)
+                          updateSimpleRegressionChart(map);
+                      else
+                          drawSimpleRegressionChart(map);
+                    }
+                    if (parsed["RegressionDT"] != undefined) {
+                      var map = JSON.parse(parsed["RegressionDT"]);
+                      if (chartDtRegression != undefined)
+                          updateDtRegressionChart(map);
+                      else
+                          drawDtRegressionChart(map);
+                    }
+                    if (parsed["RegressionRF"] != undefined) {
+                      var map = JSON.parse(parsed["RegressionRF"]);
+                      if (chartRfRegression != undefined)
+                          updateRfRegressionChart(map);
+                      else
+                          drawRfRegressionChart(map);
+                    }
+                    if (parsed["RegressionSVR"] != undefined) {
+                      var map = JSON.parse(parsed["RegressionSVR"]);
+                      if (chartSvrRegression != undefined)
+                          updateSvrRegressionChart(map);
+                      else
+                          drawSvrRegressionChart(map);
+                    }
+                    if (parsed["ZScores"] != undefined) {
+                      var map = JSON.parse(parsed["ZScores"]);
+                      if (chartZScoreColumn != undefined)
+                          updateZScoreColumnChart(map);
+                      else
+                          drawZScoreColumnChart(map);
+                    }
+                 },
+                 failure: function (data) {
+                     alert("got a error, we are fixing");
+
+                 }
+             });
+         });
 
          function cellStyle(value, row, index) {
              if (value === "Normal") {

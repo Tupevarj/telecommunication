@@ -117,7 +117,7 @@ CreateTriangle()
 			triangle.C = locations[i];
 		}
 	}
-	std::cout << "Triangle is { A: " << triangle.A.x << " : " << triangle.A.y << " B: " << triangle.B.x << " : " << triangle.B.y << " C: " << triangle.C.x << " : " << triangle.C.y << " } " << "\n";
+	//std::cout << "Triangle is { A: " << triangle.A.x << " : " << triangle.A.y << " B: " << triangle.B.x << " : " << triangle.B.y << " C: " << triangle.C.x << " : " << triangle.C.y << " } " << "\n";
 }
 
 
@@ -209,6 +209,63 @@ SetCellTransmissionPower(u_int16_t cellId, double power)
 				return;
 			}
 		}
+	}
+}
+
+/*
+ *  Changes basestations transmission power
+ */
+void
+SetBaseStationTransmissionPower(u_int16_t bs, double power, int &firstCell)
+{
+	if(bs == 1)
+	{
+		firstCell = 1;
+		SetCellTransmissionPower(1, power);
+		SetCellTransmissionPower(2, power);
+		SetCellTransmissionPower(3, power);
+	}
+	else if(bs == 2)
+	{
+		firstCell = 4;
+		SetCellTransmissionPower(4, power);
+		SetCellTransmissionPower(5, power);
+		SetCellTransmissionPower(6, power);
+	}
+	else if(bs == 3)
+	{
+		firstCell = 7;
+		SetCellTransmissionPower(7, power);
+		SetCellTransmissionPower(8, power);
+		SetCellTransmissionPower(9, power);
+	}
+	else if(bs == 4)
+	{
+		firstCell = 10;
+		SetCellTransmissionPower(10, power);
+		SetCellTransmissionPower(11, power);
+		SetCellTransmissionPower(12, power);
+	}
+	else if(bs == 5)
+	{
+		firstCell = 13;
+		SetCellTransmissionPower(13, power);
+		SetCellTransmissionPower(14, power);
+		SetCellTransmissionPower(15, power);
+	}
+	else if(bs == 6)
+	{
+		firstCell = 16;
+		SetCellTransmissionPower(16, power);
+		SetCellTransmissionPower(17, power);
+		SetCellTransmissionPower(18, power);
+	}
+	else if(bs == 7)
+	{
+		firstCell = 19;
+		SetCellTransmissionPower(19, power);
+		SetCellTransmissionPower(20, power);
+		SetCellTransmissionPower(21, power);
 	}
 }
 
@@ -378,12 +435,13 @@ KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp
 	}
 	if(labeling)
 	{
-		u_int16_t label = labelDefault;
+//		u_int16_t label = labelDefault;
+		bool label = false;
 		if(labelingStarted)
 		{
 			if(IsPointInsideTriangle(triangle, Location(location.x, location.y)))
 			{
-				label = 3;
+				label = true;
 			}
 		}
 //		if(labelings[imsi]) label = true;
@@ -397,7 +455,7 @@ KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp
 //		}
 		confInOut.LogMainKpisWithLabeling(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn, label);
 	}
-	else confInOut.LogMainKpis(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn);
+	else confInOut.LogMainKpisWithLabeling(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn, false);
 
 }
 
@@ -479,11 +537,16 @@ ApplySONEngineMethods(SONEngineLog confData)
 
 		if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Outage)
 		{
-			SetCellTransmissionPower(confData.configurations[i].cellId, 0.0);
-			std::cout << "Outage created at cell " << confData.configurations[i].cellId << ": decreased transmission power from "
+			int firstCell = 0;
+			// TODO: continue here: 15.3
+			SetBaseStationTransmissionPower(confData.configurations[i].cellId, 0.0, firstCell);
+//			SetCellTransmissionPower(confData.configurations[i].cellId, 0.0);
+			std::cout << "Outage created at basestation " << confData.configurations[i].cellId << ": decreased transmission power of basestation from "
 					  << oldTxPower << " to " << 0.0 << std::endl;
 
-			confInOut.UpdateTxPower(confData.configurations[i].cellId, 0.0);
+			confInOut.UpdateTxPower(firstCell, 0.0);
+			confInOut.UpdateTxPower(firstCell+1, 0.0);
+			confInOut.UpdateTxPower(firstCell+2, 0.0);
 		}
 //		else if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Normal)
 //		{
@@ -570,6 +633,7 @@ CellOutage()
 	SetCellTransmissionPower(10, 0.0);
 	SetCellTransmissionPower(11, 0.0);
 	SetCellTransmissionPower(12, 0.0);
+	createRem = true;
 }
 
 /* Saves simulation setup. This will be done once, at the start of the simulation */
@@ -726,6 +790,8 @@ main (int argc, char *argv[])
 
 	confInOut.CreateConnectionToDataBase();
 	confInOut.SetDatabase("5gopt");
+	confInOut.dropDatabase();
+	confInOut.SetDatabase("5gopt");
 
 	///////////////////////////////////////////////
 	// SET CALLBACKS
@@ -767,7 +833,6 @@ main (int argc, char *argv[])
 	signal(SIGUSR1, SignalHandler);
 	signal(SIGINT, SIG_DFL);
 
-
 	// Clear state to database for the REM
 	confInOut.ClearSimulationState();
 	confInOut.InitializeCellConfigurations(txPower, nMacroEnbSites * 3);
@@ -808,45 +873,59 @@ main (int argc, char *argv[])
 		confInOut.FlushLogs();
 		std::cout << "Measurements are written to database.." << std::endl;
 
-		rounds++;
+		//rounds++;
 		if(labeling)
 		{
-			//rounds++;
-			if(rounds <= 15)
+			if(rounds < 25)
 			{
 				CreateTriangle();
 			}
-			if(rounds == 5)
-			{
-				labelDefault = 1;
-				for(unsigned int i = 1; i <= 21; i++)
-				{
-					SetCellTransmissionPower(i, 43.0);
-				}
-			}
-			if(rounds == 10)
-			{
-				labelDefault = 2;
-				for(unsigned int i = 1; i <= 21; i++)
-				{
-					SetCellTransmissionPower(i, 40.0);
-				}
-			}
-			if(rounds == 15)
-			{
-				labelDefault = 0;
-				for(unsigned int i = 1; i <= 21; i++)
-				{
-					SetCellTransmissionPower(i, 46.0);
-				}
-				labelingStarted = false;
-			}
-			if(rounds == 20)
+			if(rounds == 25)
 			{
 				CellOutage();
 				labelingStarted = true;
 			}
-			if(rounds == 25) break;
+			if(rounds == 50)
+			{
+				std::cout << "Training Phase Ended" << std::endl;
+				break;
+			}
+			rounds++;
+//			if(rounds <= 15)
+//			{
+//				CreateTriangle();
+//			}
+//			if(rounds == 5)
+//			{
+//				labelDefault = 1;
+//				for(unsigned int i = 1; i <= 21; i++)
+//				{
+//					SetCellTransmissionPower(i, 43.0);
+//				}
+//			}
+//			if(rounds == 10)
+//			{
+//				labelDefault = 2;
+//				for(unsigned int i = 1; i <= 21; i++)
+//				{
+//					SetCellTransmissionPower(i, 40.0);
+//				}
+//			}
+//			if(rounds == 15)
+//			{
+//				labelDefault = 0;
+//				for(unsigned int i = 1; i <= 21; i++)
+//				{
+//					SetCellTransmissionPower(i, 46.0);
+//				}
+//				labelingStarted = false;
+//			}
+//			if(rounds == 20)
+//			{
+//				CellOutage();
+//				labelingStarted = true;
+//			}
+//			if(rounds == 25) break;
 		}
 
 		// Create REM

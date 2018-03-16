@@ -113,7 +113,14 @@ public:
 	/* Sets post fix for CSV files */
 	void SetPostFixCSV(std::string postFix);
 
+	void dropDatabase();
+
 private:
+
+	// Database synchronization
+	bool IsDatabaseUnlocked(bool read);
+	void LockDatabase(bool read);
+	void UnlockDatabase(bool read);
 
 	/* Sets current mongo collection in database */
 	void SetCollection(std::string coll);

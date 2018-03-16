@@ -7,7 +7,8 @@
 #include <cstdlib>
 #include <string>
 #include <mongocxx/cursor.hpp>
-
+#include <unistd.h>
+#include <time.h>
 
 ConfigureInOut::ConfigureInOut() : mongoClient(NULL), mongoDatabase(NULL), mongoCollection(NULL)
 {
@@ -313,8 +314,14 @@ ConfigureInOut::WriteLogsToDatabase()
 SONEngineLog
 ConfigureInOut::ReadSONEngineMethodsFromDatabase()
 {
+	while(!IsDatabaseUnlocked(true))
+	{
+		usleep(100);
+	}
+	LockDatabase(true);
 	SetCollection("controlpanel");
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "outage" << 1 << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize);
+
 
 	SONEngineLog configuration =  SONEngineLog(cursor);
 
@@ -323,7 +330,7 @@ ConfigureInOut::ReadSONEngineMethodsFromDatabase()
 			mongoCollection->update_many(bsoncxx::builder::stream::document{} << "dirty_flag" << 0 << bsoncxx::builder::stream::finalize,
 					bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document << "dirty_flag" << 1 <<
 					bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
-
+	UnlockDatabase(true);
 
 
 	return configuration;
@@ -334,6 +341,11 @@ ConfigureInOut::ReadSONEngineMethodsFromDatabase()
 ConfigurationLog
 ConfigureInOut::ReadConfigurationFromDatabase()
 {
+	while(!IsDatabaseUnlocked(true))
+	{
+		usleep(100);
+	}
+	LockDatabase(true);
 	//int confNo = 0;// todo: GetConfigurationNumber() ++
 //
 	SetDatabase("CellConfigurations");
@@ -343,7 +355,7 @@ ConfigureInOut::ReadConfigurationFromDatabase()
 
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);
 	ConfigurationLog configuration =  ConfigurationLog(cursor);
-
+	UnlockDatabase(true);
 	//TODO: SET LAST DATABASE
 	SetDatabase("5gopt");
 	return configuration;
@@ -353,7 +365,11 @@ ConfigureInOut::ReadConfigurationFromDatabase()
 void
 ConfigureInOut::UpdateTxPower(u_int16_t cellId, double tx)
 {
-
+	while(!IsDatabaseUnlocked(false))
+	{
+		usleep(100);
+	}
+	LockDatabase(false);
 	SetDatabase("CellConfigurations");
 	SetCollection("TxPowers");
 	// Update
@@ -361,6 +377,7 @@ ConfigureInOut::UpdateTxPower(u_int16_t cellId, double tx)
 				bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document <<
 				"TxPower" << tx << bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
 
+	UnlockDatabase(false);
 	SetDatabase("5gopt");
 }
 
@@ -379,22 +396,95 @@ ConfigureInOut::SetOutPutFolder(std::string path)
 }
 
 
+bool
+ConfigureInOut::IsDatabaseUnlocked(bool read)
+{
+	SetDatabase("5gopt"); // TODO: use differenttrue db?
+	SetCollection("Locks");
+	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);
+	int count = 0;
+	for(auto view : cursor)
+	{
+		count++;
+		auto type = view["Type"];
+	//	auto timeStamp = view["Time"];   // TODO: maybe use timestamp to find if lock is created long time a ago
+
+	//	time_t time = std::time(0);
+		int t = type.get_int32();
+
+		//  && (timeStamp + 1) < time
+		if(t == 0) return true;
+		if(read && t > 0) return true;
+	}
+	if(count == 0) return true;
+	return false;
+}
+
+void
+ConfigureInOut::LockDatabase(bool read)
+{
+	SetDatabase("5gopt"); // TODO: use different db?
+	SetCollection("Locks");
+
+	//int type = 1;
+	//if(!read) type = -1;
+
+	time_t time = std::time(0);
+
+	mongocxx::options::update options;
+    options.upsert(true);
+
+	if(read)
+	{
+		mongoCollection->update_one(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize,
+		bsoncxx::builder::stream::document{} << "$inc" << bsoncxx::builder::stream::open_document << "Type" << 1 << "Time" << time <<
+		bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize, options);
+	}
+	else
+	{
+		mongoCollection->update_one(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize,
+		bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document << "Type" << -1 << "Time" << time <<
+		bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize, options);
+	}
+	// TODO: Check correctness of find()!
+}
+
+
+void
+ConfigureInOut::UnlockDatabase(bool read)
+{
+	SetDatabase("5gopt"); // TODO: use different db?
+	SetCollection("Locks");
+
+	if(read)
+	{
+		mongoCollection->update_one(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize,
+		bsoncxx::builder::stream::document{} << "$inc" << bsoncxx::builder::stream::open_document << "Type" << -1 <<
+		bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
+	}
+	else
+	{
+		mongoCollection->update_one(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize,
+		bsoncxx::builder::stream::document{} << "$set" << bsoncxx::builder::stream::open_document << "Type" << 0 <<
+		bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize);
+	}
+}
+
 void
 ConfigureInOut::FlushLogs()
 {
 	if(mongoClient)
 	{
-		// ei ehkä tarpeellista:
-		if(CheckConnectionToDatabase())
+		// TODO:
+		while(!IsDatabaseUnlocked(false))
 		{
-			WriteLogsToDatabase();
-			WriteAllLogsToCSVFiles(outputFolder); // <- DEBUG
-			ClearAllLogs();
+			usleep(10000);
 		}
-		else
-		{
-			// todo: virheilmoitus, re-try..
-		}
+		LockDatabase(false);
+		WriteLogsToDatabase();
+		//	WriteAllLogsToCSVFiles(outputFolder); // <- DEBUG
+		ClearAllLogs();
+		UnlockDatabase(false);
 	}
 	else
 	{
@@ -413,6 +503,12 @@ ConfigureInOut::SetPostFixCSV(std::string postFix)
 void
 ConfigureInOut::InitializeCellConfigurations(double txPower, int noCells)
 {
+	while(!IsDatabaseUnlocked(false))
+	{
+		usleep(100);
+	}
+	LockDatabase(false);
+
 	SetDatabase("CellConfigurations");
 	SetCollection("TxPowers");
 	mongoCollection->drop();
@@ -426,12 +522,19 @@ ConfigureInOut::InitializeCellConfigurations(double txPower, int noCells)
 		documents.push_back(doc << bsoncxx::builder::stream::finalize);
 	}
 	mongoCollection->insert_many(documents);
+	UnlockDatabase(false);
 }
 
 
 void
 ConfigureInOut::ReadCellsStates(double txs[], int noCells,  int stepId)
 {
+	while(!IsDatabaseUnlocked(true))
+	{
+		usleep(100);
+	}
+	LockDatabase(true);
+
 	SetCollection("Ns3TransmissionPowers");
 
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << "Step" << stepId << bsoncxx::builder::stream::finalize);
@@ -446,12 +549,18 @@ ConfigureInOut::ReadCellsStates(double txs[], int noCells,  int stepId)
 			txs[id.get_int32()] = tx.get_double();
 		}
 	}
+	UnlockDatabase(true);
 }
 
 
 std::vector<Location>
 ConfigureInOut::ReadHandovers(std::vector<uint16_t> cells)
 {
+	while(!IsDatabaseUnlocked(true))
+	{
+			usleep(100);
+	}
+	LockDatabase(true);
 	std::vector<Location> data;
 	SetCollection("handover_log");
 
@@ -475,12 +584,18 @@ ConfigureInOut::ReadHandovers(std::vector<uint16_t> cells)
 			data.push_back(l);
 		}
 	}
+	UnlockDatabase(true);
 	return data;
 }
 
 void
 ConfigureInOut::SaveCellsStates(double txs[], int noCells, int stepId)
 {
+	while(!IsDatabaseUnlocked(false))
+	{
+		usleep(100);
+	}
+	LockDatabase(false);
 	SetCollection("Ns3TransmissionPowers");
 	std::vector<bsoncxx::document::value> documents;
 
@@ -491,12 +606,18 @@ ConfigureInOut::SaveCellsStates(double txs[], int noCells, int stepId)
 		documents.push_back(doc << bsoncxx::builder::stream::finalize);
 	}
 	mongoCollection->insert_many(documents);
+	UnlockDatabase(false);
 }
 
 
 void
 ConfigureInOut::ReadSimulationState(uint32_t& nMacroEnbSites, uint32_t& nMacroEnbSitesX, double& interSiteDistances, int32_t& pid)
 {
+	while(!IsDatabaseUnlocked(true))
+	{
+		usleep(100);
+	}
+	LockDatabase(true);
 	SetCollection("Ns3StateSettings");
 
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);
@@ -512,11 +633,18 @@ ConfigureInOut::ReadSimulationState(uint32_t& nMacroEnbSites, uint32_t& nMacroEn
 		pid = (int32_t)pidDb.get_int32();
 		interSiteDistances = interSite.get_double();
 	}
+	UnlockDatabase(true);
 }
 
 void
 ConfigureInOut::SaveSimulationState(uint32_t nMacroEnbSites, uint32_t nMacroEnbSitesX, double interSiteDistance, int pid)
 {
+	while(!IsDatabaseUnlocked(false))
+	{
+		usleep(100);
+	}
+	LockDatabase(false);
+
 	SetDatabase("5gopt");
 	SetCollection("Ns3StateSettings");
 
@@ -526,6 +654,7 @@ ConfigureInOut::SaveSimulationState(uint32_t nMacroEnbSites, uint32_t nMacroEnbS
 	doc << "nMacroEnbSites" << (int32_t)nMacroEnbSites << "nMacroEnbSitesX" << (int32_t)nMacroEnbSitesX << "interSiteDistance" << interSiteDistance << "pid" << pid;
 	documents.push_back(doc << bsoncxx::builder::stream::finalize);
 	mongoCollection->insert_many(documents);
+	UnlockDatabase(false);
 }
 
 void
@@ -604,6 +733,13 @@ ConfigureInOut::RunMatlabRemScript()
 	{
 		std::cout << "Error running script.. " << std::endl;
 	}
+}
+
+
+void
+ConfigureInOut::dropDatabase()
+{
+	mongoDatabase->drop();
 }
 
 void

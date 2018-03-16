@@ -121,6 +121,7 @@ struct REMLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -128,6 +129,7 @@ struct REMLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -175,6 +177,7 @@ struct EventLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -182,6 +185,7 @@ struct EventLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -230,6 +234,7 @@ struct HandoverLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -237,6 +242,7 @@ struct HandoverLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -279,6 +285,7 @@ struct SinrLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -286,6 +293,7 @@ struct SinrLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -328,6 +336,7 @@ struct ThrouhgputLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -335,6 +344,7 @@ struct ThrouhgputLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -385,6 +395,7 @@ struct MainKpiLog : public WritableLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -392,6 +403,7 @@ struct MainKpiLog : public WritableLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
@@ -438,6 +450,7 @@ struct MainKpiWithLabelLog : public MainKpiLog
 
 	}
 
+	inline
 	std::string ConvertToCSV() override
 	{
 		std::ostringstream strs;
@@ -445,11 +458,12 @@ struct MainKpiWithLabelLog : public MainKpiLog
 		return strs.str();
 	}
 
+	inline
 	bsoncxx::builder::stream::document ConvertToBSON() override
 	{
 		bsoncxx::builder::stream::document doc {};
 		doc << "Time" << time << "LocationX" << x << "LocationY" << y << "UserID" << (int64_t)imsi
-			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected << "LABEL" << label;
+			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected << "LABEL" << (uint16_t)label;
 			return doc;
 	}
 	static std::string GetFileName()

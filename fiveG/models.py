@@ -48,6 +48,47 @@ def get_collection_count(collection):
     return count
 
 
+def is_database_unlocked(read):
+    global mongo_conn
+    global mongo_db
+    cursor = mongo_conn[mongo_db]["Locks"].find()
+    cursor_list = list(cursor)
+    if len(cursor_list) == 0:
+        return True
+
+    lock_type = cursor_list[0]["Type"]
+    if lock_type == 0:
+        return True
+    if read and lock_type > 0:
+        return True
+    return False
+
+
+def lock_database(read):
+    global mongo_conn
+    global mongo_db
+
+   # lock_type = 1
+    #if not read:
+    #    lock_type = 2
+
+    if read:
+        mongo_conn[mongo_db]["Locks"].update_one({}, {'$inc': {'Type': 1}}, upsert=True)
+    else:
+        mongo_conn[mongo_db]["Locks"].update_one({}, {'$set': {'Type': -1}}, upsert=True)
+
+
+def unlock_database(read):
+    global mongo_conn
+    global mongo_db
+    if read:
+        mongo_conn[mongo_db]["Locks"].update({}, {'$inc': {'Type': -1}})
+    else:
+        mongo_conn[mongo_db]["Locks"].update({}, {'$set': {'Type': 0}})
+
+
+
+
 def read_collection_as_list_mongo(collection, query={}, skip=0, limit=0):
     """ Returns mongo collection as list """
     global mongo_conn
