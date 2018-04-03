@@ -58,14 +58,14 @@ if(first) {
                 // TODO: REMOVE DOUBLE PARSING (DOUBLE DUMPS)
                 var tThr = JSON.parse(parsed["TotalThroughput"]);
                 if (chartTotalThr != undefined)
-                    updateTotalThroughputChart(tThr);
+                    updateTotalThroughputChart(tThr, parsed['Initialize'] == 'true');
                 else
                     drawTotalThroughputChart(tThr); // Initialize if chart is undefined
             }
             if (parsed["RSRP"] != undefined) {
                 var rsrp = JSON.parse(parsed["RSRP"]);
                 if (chartRsrpLine != undefined)
-                    updateRsrpLineChart(rsrp);
+                    updateRsrpLineChart(rsrp, parsed['Initialize'] == 'true');
                 else
                     drawRsrpLineChart(rsrp);
             }
@@ -154,7 +154,7 @@ if(first) {
 /*
     Updates total throughput chart from dictionary
  */
-function updateTotalThroughputChart(dictThr)
+function updateTotalThroughputChart(dictThr, clean)
 {
     // var thrTime = dictThr["time"];
     // var thrTotal = dictThr["throughput"];
@@ -167,6 +167,10 @@ function updateTotalThroughputChart(dictThr)
     // }
 
     var series = chartTotalThr.series[0];
+    if(series == undefined || clean)
+    {
+        drawTotalThroughputChart(dictThr);
+    }
 
     for(var i = 0; i < dictThr.length; i++)
     {
@@ -224,12 +228,13 @@ function updateSvrRegressionChart(listReg)
 /*
     Updates RSRP line chart from dictionary
  */
-function updateRsrpLineChart(dictRsrp)
+function updateRsrpLineChart(dictRsrp, clean)
 {
+
     var series = chartRsrpLine.series;
 
     // Initialize all the series:
-    if(series[0] == undefined)
+    if(series[0] == undefined || clean)
     {
         drawRsrpLineChart(dictRsrp);
     }
@@ -280,7 +285,6 @@ function updateRemChart(listValues)
     }
     chartRem.yAxis[0].isDirty = true;
     chartRem.redraw();
-
 }
 
 
@@ -341,11 +345,6 @@ function drawZScoreColumnChart(listZscore) {
             pointFormat: '{point.y:.1f} dB'
         },
         yAxis: {
-            max: -50,
-            title: {
-            text: 'RSRP [dB]'
-
-            }
         },
         legend: {
             enabled: false

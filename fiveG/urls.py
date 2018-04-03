@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^demo', views.displayDemo, name='displayDemo'),
     url(r'^show_normal_col_in_table', views.show_normal_col_in_table, name="show_normal_col_in_table"),
+    url(r'^updata_alarm_gui', views.updata_alarm_gui, name="updata_alarm_gui"),
     url(r'^update_ml_table', views.update_ml_table, name="update_ml_table"),
     url(r'^updateCharts', views.update_charts, name="updateCharts"),
     url(r'^updateRegressionChart', views.update_reg_chart, name="update_reg_chart"),

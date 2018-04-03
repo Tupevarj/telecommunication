@@ -229,6 +229,29 @@ svrRegressor = SVR(kernel='rbf')
 linRegressor = LinearRegression()
 
 
+#
+# def preprocess_training_set_locations_dict(dict_x, dict_y, data_frame):
+#     # Converting RSRP and RSRQ values into floats
+#
+#     # Find start index
+#     start = 0
+#     for i in range(0, len(data_frame)):
+#         if not np.isnan(data_frame.iloc[i]['RSRQ_1']):
+#             start = i
+#             break
+#
+#     dict_x = data_frame[['Time', 'UserID', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']][start:].to_dict()
+#     dict_y = data_frame[['LABEL']][start:].to_dict()
+#
+#     # i_max = len(data_frame)
+#     # for i in range(0, i_max):
+#     #     dataset_row = data_frame.iloc[i][['Time', 'UserID', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
+#     #
+#     #     if not np.isnan(dataset_row['RSRQ_1']):
+#     #         df_x.append([dataset_row['Time'], dataset_row['UserID'], dataset_row['RSRP_1'], dataset_row['RSRQ_1'], dataset_row['RSRP_2'], dataset_row['RSRQ_2'], dataset_row['RSRP_3'], dataset_row['RSRQ_3'], dataset_row['RSRP_4'], dataset_row['RSRQ_4']])
+#     #         df_y.append(bool(data_frame.iloc[i]["LABEL"]))
+#
+
 def preprocess_training_set_locations(array_x, array_y, data_frame):
     # Converting RSRP and RSRQ values into floats
     i_max = len(data_frame)
@@ -238,15 +261,26 @@ def preprocess_training_set_locations(array_x, array_y, data_frame):
         if not np.isnan(dataset_row['RSRQ_1']):
             array_x.append([dataset_row['Time'], dataset_row['UserID'], dataset_row['RSRP_1'], dataset_row['RSRQ_1'], dataset_row['RSRP_2'], dataset_row['RSRQ_2'], dataset_row['RSRP_3'], dataset_row['RSRQ_3'], dataset_row['RSRP_4'], dataset_row['RSRQ_4']])
             array_y.append(bool(data_frame.iloc[i]["LABEL"]))
-        #
-        # # print(dataset.iloc[i])
-        # for j in range(0, 10):
-        #     value = float(dataset_row[j])
-        #     if not np.isnan(value):
-        #         row.append(float(dataset_row[j]))
-        #     else:
-        #         skip = True
-        # if not skip:
+
+
+def preprocess_training_set_8_dim(array_x, array_x_II, array_y, data_frame):
+    """ Preprocess data to two arrays, columns:
+           -     array_x : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           - array_x_II  : Time UserID RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           -     array_y : LABEL """
+
+    for identity, group in data_frame.groupby(["Time", "UserID"]):
+        # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
+        top_4_row = group.sort_values(by=["RSRP"], ascending=False)[:4]
+        if not np.isnan(top_4_row.iloc[0]["RSRQ"]):
+            array_x.append([top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
+                                    top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
+                                    top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
+            array_x_II.append([identity[0], identity[1], top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
+                                    top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
+                                    top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
+            array_y.append(group["LABEL"].iloc[0])
+
 
 
 def preprocess_training_set(array_x, array_y, data_frame):
@@ -340,19 +374,16 @@ def train_and_test_decision_tree(array_x, array_y, roc_auc):
     return list_points
 
 
-def train_and_test_svr(array_x, array_y, roc_auc):
-    """ Training for SVR (regression?)"""
+def train_and_test_svr_without_split(x_train, x_test, y_train, y_test, roc_auc):
+
     global svrRegressor
-    # splitting of data
-    # X_train, X_test, y_train, y_test= train_test_split(array_x,array_y,test_size = 0.2, random_state=0)
-
     # Fitting SVR to the dataset
-    svrRegressor.fit(array_x, array_y)
+    svrRegressor.fit(x_train, y_train)
 
-    y_pred = svrRegressor.predict(np.asarray(array_x))
+    y_pred = svrRegressor.predict(np.asarray(x_test))
 
     # print (len(y_test))
-    actual = array_y
+    actual = y_test
     predictions = y_pred
 
     false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
@@ -366,96 +397,144 @@ def train_and_test_svr(array_x, array_y, roc_auc):
     return list_points
 
 
+def train_and_test_svr(array_x, array_y, roc_auc):
+    """ Training for SVR (regression?)"""
+    global svrRegressor
+    # splitting of data
+    X_train, X_test, y_train, y_test= train_test_split(array_x,array_y,test_size = 0.2, random_state=0)
+
+    # Fitting SVR to the dataset
+    svrRegressor.fit(X_train, y_train)
+
+    y_pred = svrRegressor.predict(np.asarray(X_test))
+
+    # print (len(y_test))
+    actual = y_test
+    predictions = y_pred
+
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
+
+    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
+
+    list_points = list()
+    for i in range(0, len(false_positive_rate)):
+        list_points.append([false_positive_rate[i], true_positive_rate[i]])
+
+    return list_points
+    #return train_and_test_svr_without_split(X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test, roc_auc=roc_auc)
+
+
 def train_and_test_distance(array_x, array_y, dataset_stimulation):
     """ Training for distance???"""
     global linRegressor
     # splitting of data
-    X_train, X_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
+    x_train, X_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
 
     # Regression Classification
-    linRegressor.fit(np.asarray(X_train), np.asarray(y_train))
+    linRegressor.fit(np.asarray(x_train), np.asarray(y_train))
 
-    y_pred = linRegressor.predict(np.asarray(X_test))
+    predictions = linRegressor.predict(np.asarray(X_test))
 
-    store_pred = []
-    actual = y_test
-    predictions = y_pred
-    y_pred_lenght = len(y_pred)
-    for i in range(0, y_pred_lenght):
-        store_pred.append(y_pred[i])
-
-    index_values = []
-    for i in range(0, len(store_pred)):
-        if store_pred[i] >= 0.1:
-            # print ( store_pred[i])
-            index_values.append([X_test[i][0], X_test[i][1], store_pred[i]])
-
-    # print (index_values)   # user loc + user id + predicted value    abnormal users
-
-    dataset_basestations = pd.read_csv("/home/tupevarj/Desktop/basestations.csv")  # TODO: read data from csv file
-
-    bsatations = []
-
-    for i in range(0, 7):
-        dict_base_station = dict()
-        dict_base_station['base_station_id'] = dataset_basestations['Basestation'][i]
-        dict_base_station['LocationX'] = dataset_basestations['LocationX'][i]
-        dict_base_station['LocationY'] = dataset_basestations['LocationY'][i]
-        string_cell_ids = dataset_basestations['CellIDs'][i].split(',')
-        ids_int = list()
-        for id in range(0, 3):
-            ids_int.append(int(string_cell_ids[id]))
-        dict_base_station['Cellids'] = ids_int
-        bsatations.append(dict_base_station)
-
-
-    # TODO: CHANGE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # dataset_stimulation = pd.read_csv("/home/buzafar/Documents/simulation_data.csv")
-    array_user = []
-
-    for i in range(0, len(index_values)):
-        id_user = int(index_values[i][1]) - 1
-        time_stamp = index_values[i][0]  # 200 milliseconds
-
-        adfs = time_stamp / 0.2
-        int_adfs = int(adfs)
-        modulo = adfs % int_adfs
-        if modulo > 0.5:
-            adfs = math.ceil(adfs)
-        else:
-            adfs = int_adfs
-        actual_index = int(105 * (adfs - 1) + id_user)
-        array_user.append([dataset_stimulation.iloc[actual_index][0], dataset_stimulation.iloc[actual_index][1],
-                           dataset_stimulation.iloc[actual_index][2], dataset_stimulation.iloc[actual_index][3]])
-
-    l = []  # list to store user_id,basestation_id,computed distance, time of user
-    Matrix = []
-
-    for i in range(0, len(array_user)):  # rows
-        pb = array_user[i][2], array_user[i][3]
-        # row = []
-        min_distance = sys.float_info.max
-        base_station_id = -1
-        all_distances = []
-        for station in range(0, 7):  # base stations columns
-            pa = bsatations[station]["LocationX"], bsatations[station]["LocationY"]
-            distance = math.sqrt(((pa[0] - pb[0]) ** 2) + ((pa[1] - pb[1]) ** 2))
-            all_distances.append(distance)
-            if distance < min_distance:
-                min_distance = distance
-                base_station_id = station + 1
-
-        Matrix.append(all_distances)
-
-        l.append([array_user[i][0], array_user[i][1], base_station_id, min_distance])
+    dataset_basestations = pd.read_csv("/home/tupevarj/Desktop/basestations.csv")  # TODO: make it read from DB
 
     dict_users_per_bs = dict()
     for i in range(0, 7):
         dict_users_per_bs["BS" + str(i + 1)] = 0
 
-    for i in range(0, len(l)):
-        key = "BS" + str(l[i][2])
-        dict_users_per_bs[key] += 1
+    for i in range(0, len(predictions)):
+        if predictions[i] >= 0.1:
+            # Calculate index
+            id_user = int(X_test[i][1]) - 1
+            time_stamp = X_test[i][0]  # 200 milliseconds
+
+            time_index = time_stamp / 0.2
+            int_time_index = int(time_index)
+            modulo = time_index % int_time_index
+            if modulo > 0.5:
+                time_index = math.ceil(time_index)
+            else:
+                time_index = int_time_index
+            actual_index = int(105 * (time_index - 1) + id_user)
+
+            pb = dataset_stimulation.iloc[actual_index][2], dataset_stimulation.iloc[actual_index][3]
+            # row = []
+            min_distance = sys.float_info.max
+            base_station_id = -1
+            # all_distances = []
+            for j, bs in dataset_basestations.iterrows():
+                distance = math.sqrt(((bs["LocationX"] - pb[0]) ** 2) + ((bs["LocationY"] - pb[1]) ** 2))
+                if distance < min_distance:
+                    min_distance = distance
+                    base_station_id = j + 1
+
+            key = "BS" + str(base_station_id)
+            dict_users_per_bs[key] += 1
+
+    # print (index_values)   # user loc + user id + predicted value    abnormal users
+
+
+
+    # bsatations = []
+    #
+    # for i in range(0, 7):
+    #     dict_base_station = dict()
+    #     dict_base_station['base_station_id'] = dataset_basestations['Basestation'][i]
+    #     dict_base_station['LocationX'] = dataset_basestations['LocationX'][i]
+    #     dict_base_station['LocationY'] = dataset_basestations['LocationY'][i]
+    #     string_cell_ids = dataset_basestations['CellIDs'][i].split(',')
+    #     ids_int = list()
+    #     for id in range(0, 3):
+    #         ids_int.append(int(string_cell_ids[id]))
+    #     dict_base_station['Cellids'] = ids_int
+    #     bsatations.append(dict_base_station)
+
+
+    # TODO: CHANGE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # dataset_stimulation = pd.read_csv("/home/buzafar/Documents/simulation_data.csv")
+    # array_user = []
+    #
+    # for i in range(0, len(index_values)):
+    #     id_user = int(index_values[i][1]) - 1
+    #     time_stamp = index_values[i][0]  # 200 milliseconds
+    #
+    #     adfs = time_stamp / 0.2
+    #     int_adfs = int(adfs)
+    #     modulo = adfs % int_adfs
+    #     if modulo > 0.5:
+    #         adfs = math.ceil(adfs)
+    #     else:
+    #         adfs = int_adfs
+    #     actual_index = int(105 * (adfs - 1) + id_user)
+    #     array_user.append([dataset_stimulation.iloc[actual_index][0], dataset_stimulation.iloc[actual_index][1],
+    #                        dataset_stimulation.iloc[actual_index][2], dataset_stimulation.iloc[actual_index][3]])
+
+   #  l = []  # list to store user_id,basestation_id,computed distance, time of user
+   # # Matrix = []
+   #
+   #  for i in range(0, len(array_user)):  # rows
+   #      pb = array_user[i][2], array_user[i][3]
+   #      # row = []
+   #      min_distance = sys.float_info.max
+   #      base_station_id = -1
+   #      #all_distances = []
+   #      for j, bs in dataset_basestations.iterrows():
+   #          distance = math.sqrt(((bs["LocationX"] - pb[0]) ** 2) + ((bs["LocationY"] - pb[1]) ** 2))
+   #       #   all_distances.append(distance)
+   #          if distance < min_distance:
+   #              min_distance = distance
+   #              base_station_id = j + 1
+   #
+   #     # Matrix.append(all_distances)
+   #
+   #      l.append([array_user[i][0], array_user[i][1], base_station_id, min_distance])
+   #
+   #  dict_users_per_bs = dict()
+   #  for i in range(0, 7):
+   #      dict_users_per_bs["BS" + str(i + 1)] = 0
+
+    # for i in range(0, len(l)):
+    #     key = "BS" + str(l[i][2])
+    #     dict_users_per_bs[key] += 1
 
     # calculate z-score
 
@@ -478,39 +557,53 @@ def train_and_test_distance(array_x, array_y, dataset_stimulation):
     return z1score
 
 
-def do_z_score_regression(data_frame, data_unprocessed):
-    array_x = []
-    array_y = []
-    preprocess_training_set_locations(array_x, array_y, data_frame)
-    data = data_frame[['Time', 'UserID', 'LocationX', 'LocationY', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
-    return train_and_test_distance(array_x=array_x, array_y=array_y,dataset_stimulation=data)
+def do_all_regressions(array_x, array_y, roc_auc):
+    """ Get points and auc values for each classifier """
+    dict_points = dict()
+    # split the data:
+    x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
 
 
-def do_svr_regression(data_frame, roc_auc):
-    array_x = []
-    array_y = []
-    preprocess_training_set(array_x, array_y, data_frame)
+    roc_auc['SVR']
+    points_svr = train_and_test_svr_without_split(x_train, x_test, y_train, y_test)
+
+    return dict_points
+
+
+def do_z_score_regression(array_x, array_y, data):
+    #array_x = []
+   # array_y = []
+
+   # preprocess_training_set_locations(array_x, array_y, data_frame)
+    data_p = data[['Time', 'UserID', 'LocationX', 'LocationY', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
+    return train_and_test_distance(array_x=array_x, array_y=array_y,dataset_stimulation=data_p)
+
+
+def do_svr_regression(array_x, array_y, roc_auc):
+   # array_x = []
+  #  array_y = []
+  #  preprocess_training_set(array_x, array_y, data_frame)
     return train_and_test_svr(array_x, array_y, roc_auc)
 
 
-def do_decision_tree_regression(data_frame, roc_auc):
-    array_x = []
-    array_y = []
-    preprocess_training_set(array_x, array_y, data_frame)
+def do_decision_tree_regression(array_x, array_y, roc_auc):
+   # array_x = []
+   # array_y = []
+   # preprocess_training_set(array_x, array_y, data_frame)
     return train_and_test_decision_tree(array_x, array_y, roc_auc)
 
 
-def do_random_forest_regression(data_frame, roc_auc):
-    array_x = []
-    array_y = []
-    preprocess_training_set(array_x, array_y, data_frame)
+def do_random_forest_regression(array_x, array_y, roc_auc):
+  #  array_x = []
+  #  array_y = []
+  #  preprocess_training_set(array_x, array_y, data_frame)
     return train_and_test_random_forest_regression(array_x, array_y, roc_auc)
 
 
-def do_simple_regression(data_frame, roc_auc):
-    array_x = []
-    array_y = []
-    preprocess_training_set(array_x, array_y, data_frame)
+def do_simple_regression(array_x, array_y, roc_auc):
+   # array_x = []
+   # array_y = []
+   # preprocess_training_set(array_x, array_y, data_frame)
     return train_and_test_simple_regression(array_x, array_y, roc_auc)
 
 

@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from .ml import calculate_total_throughput, displayDominateMap, detectUnnormalCell, \
     get_rsrp_per_cell_from_collection_II, calculate_total_throughput_II, \
     initialize_ml, preprocess_data_8_dim, do_simple_regression, do_decision_tree_regression, \
-    do_random_forest_regression, do_svr_regression, do_z_score_regression
+    do_random_forest_regression, do_svr_regression, do_z_score_regression, preprocessed_data_to_csv_file, \
+    preprocess_training_set, preprocess_training_set_8_dim
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -58,22 +59,35 @@ def is_update_needed_for_dominance_map():
     """ Checks if there is new data in DB for dominance map """
     global last_read_dominance
     count_map = get_collection_count(collection="dominationmap")
-    if last_read_dominance >= count_map:
+    if last_read_dominance == count_map:
         return False
+    elif last_read_dominance > count_map:    # DB dropped
+        last_read_dominance = 0
+        return True
     else:
         return True
 
 
-def is_update_needed_for_charts():
-    """ Checks if there is new data in DB in main_kpis_log_labels or in throughput_log """
+def is_update_needed_for_charts(context):
+    """ Checks if there is new data in DB in main_kpis_log_labels or in throughput_log
+        In addition checks if collection in DB has been dropped and based on that knowledge
+        saves Initialize value to context """
     global last_read_rsrp
     global last_read_thr
     count_rsrp = get_collection_count(collection="main_kpis_log_labels")
 
     count_thr = get_collection_count(collection="throughput_log")
-    if last_read_rsrp >= count_rsrp and last_read_thr >= count_thr: # Not should need to use and
+    if last_read_rsrp == count_rsrp and last_read_thr == count_thr:  # Not should need to use and
+        context['Initialize'] = json.dumps(False)
         return False
+    elif last_read_rsrp > count_rsrp and last_read_thr > count_thr:  # DB dropped
+        last_read_rsrp = 0
+        last_read_thr = 0
+        initialize_ml()     # TODO: move elsewhere
+        context['Initialize'] = json.dumps(True)
+        return True
     else:
+        context['Initialize'] = json.dumps(False)
         return True
 
 
@@ -88,10 +102,11 @@ def update_dominance_map(context):
     dict_dominance = dict()
     dict_dominance["Points"] = list()
 
+    list_dominance_II = list_dominance[-22500:]
     # Create dictionary from dominance map values:  TODO: Make this as separate function!
-    for i in range(0, len(list_dominance)):
-        dict_dominance["Points"].append([int(round(list_dominance[i]['x'])), int(round(list_dominance[i]['y'])),
-                                        10*np.log10(list_dominance[i]['sinr'])])
+    for i in range(0, len(list_dominance_II)):    # FIXME: Hard coded pixel count!!!
+        dict_dominance["Points"].append([int(round(list_dominance_II[i]['x'])), int(round(list_dominance_II[i]['y'])),
+                                        10*np.log10(list_dominance_II[i]['sinr'])])
 
     context['DominanceMap'] = json.dumps(dict_dominance)
 
@@ -111,18 +126,25 @@ def update_regression_chart(context):
                 roc_auc2 = [1]
                 roc_auc3 = [1]
                 roc_auc4 = [1]
-                processed = preprocess_data_8_dim(data)
-                points1 = do_simple_regression(processed, roc_auc1)
-                points2 = do_svr_regression(processed, roc_auc2)
-                points3 = do_decision_tree_regression(processed, roc_auc3)
-                points4 = do_random_forest_regression(processed, roc_auc4)
-                z_scores = do_z_score_regression(data_frame=processed, data_unprocessed=data)
+
+                array_x = []
+                array_y = []
+                array_x_II = []
+                preprocess_training_set_8_dim(array_x=array_x, array_x_II=array_x_II, array_y=array_y, data_frame=data)
+               # processed = preprocess_data_8_dim(data)
+              #  preprocess_training_set(array_x, array_y, processed)
+
+               # z_scores = do_z_score_regression(array_x=array_x_II, array_y=array_y, data=data)
+                points1 = do_simple_regression(array_x, array_y, roc_auc1)
+                points2 = do_svr_regression(array_x, array_y, roc_auc2)
+                points3 = do_decision_tree_regression(array_x, array_y, roc_auc3)
+                points4 = do_random_forest_regression(array_x, array_y, roc_auc4)
 
                 context['Regression'] = json.dumps(points1)
                 context['RegressionSVR'] = json.dumps(points2)
                 context['RegressionDT'] = json.dumps(points3)
                 context['RegressionRF'] = json.dumps(points4)
-                context['ZScores'] = json.dumps(z_scores)
+               # context['ZScores'] = json.dumps(z_scores)
 
                 context['sRegAUC'] = json.dumps(roc_auc1[0])
                 context['rfRegAUC'] = json.dumps(roc_auc4[0])
@@ -186,7 +208,7 @@ def update_charts(request):
         if is_database_unlocked(True):
             # TODO: USE THIS: time.sleep ??
             lock_database(True)
-            if is_update_needed_for_charts():
+            if is_update_needed_for_charts(context):
                 update_charts_data(context)
             if is_update_needed_for_dominance_map():
                 update_dominance_map(context)
@@ -317,6 +339,7 @@ def index(request):
         time.sleep(0.1)
 
     lock_database(True)
+    #preprocessed_data_to_csv_file("/home/tupevarj/NS3SimulatorData/realphase/")
     update_charts_data(context)
     update_dominance_map(context)
     unlock_database(True)
@@ -329,6 +352,21 @@ def index(request):
     context['ZScores'] = json.dumps([0, 0, 0, 0, 0, 0, 0])  # TODO: Get rid of this
 
     return render(request, 'fiveG/index.html', context)
+
+
+def updata_alarm_gui(request):
+    if request.method == "GET":
+        response_data = {'total': 1, 'rows': []}
+
+        for i in range(1, 8):
+            response_data['rows'].append({
+                "bsID": i,
+                "created": "TEST2",
+                "severity": "TEST3",
+                "problem": "TEST4",
+                "service": "TEST5"})
+
+        return HttpResponse(json.dumps(response_data))
 
 
 ##############################################################

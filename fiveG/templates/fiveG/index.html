@@ -576,8 +576,8 @@
              </div>
          <div class="container" style="margin-top: 2cm;">
              <div style="overflow:hidden;">
-                  <div class="col-lg-6 col-md-12" id="anormalCellDectionDisplay" style="float:left; width:550px;">
-                                <table id="alarmTable" class="table">
+                  <div class="col-lg-6 col-md-12" style="float:left; width:550px;">
+                                <table class="table">
                                     <thead>
                                         <tr>
                                             <th scope="col">Algorithm</th>
@@ -652,10 +652,22 @@
 
          <div class="container">
                 <div class="heading">
-                  <h3 class="wow fadeInLeftBig" style="margin-top: 25px; color: #313338; font-size: 30px;">Machine Learning Results</h3>
+                  <h3 class="wow fadeInLeftBig" style="margin-top: 25px; color: #313338; font-size: 30px;">Alarm Table</h3>
                 </div>
           </div>
-
+            <div class="container" style="margin-top: 2cm; width: 800px;">
+                    <table id="alarmTable" class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col" data-field="bsID">Basestation ID</th>
+                                <th scope="col" data-field="severity" data-cell-style="cellStyle">Severity</th>
+                                <th scope="col" data-field="created">Created</th>
+                                <th scope="col" data-field="problem">Problem Class</th>
+                                <th scope="col" data-field="service">Service Class</th>
+                            </tr>
+                        </thead>
+                    </table>
+             </div>
 {#         <div class="container">#}
 {#             <div class="row">#}
 {#                 <div class="col-lg-12 col-md-12">#}
@@ -1459,6 +1471,106 @@
 {##}
 
 
+        $(document).ready(function() {
+             var dataInit = [{ bsID: "1",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "2",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "3",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "4",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "5",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "6",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"},
+                    { bsID: "7",
+                    created: new Date().toLocaleString(),
+                    severity: "Normal",
+                    problem: "Normal Traffic",
+                    service: "eUTRAN"}];
+                $('#alarmTable').bootstrapTable({});
+                $('#alarmTable').bootstrapTable("load", dataInit);
+
+
+                setInterval(function () {
+                    $.get('/updata_alarm_gui', function (data) {
+                        var parsed = JSON.parse(data);
+                        if (parsed['rows'] != undefined) {
+                            var rowData = [];
+                            for(var i = 0; i < parsed['rows'].length; i++) {
+                                rowData.push({ bsID: parsed['rows'][i]['bsID'],
+                                    created: new Date().toLocaleString(),
+                                    severity: "Normal",
+                                    problem: "Normal Traffic",
+                                    service: "eUTRAN"})
+                            }
+                        }
+                    $('#alarmTable').bootstrapTable({});
+                    $('#alarmTable').bootstrapTable("load", rowData);
+
+                });
+                }, 10000);
+        } );
+
+        function cellStyle(value, row, index) {
+            if(value == "Critical") {
+                return {css: {"background-color": "#ff7b80"}};
+            }
+            else if(value == "Normal") {
+                return {css: {"background-color":  "#92ffab"}};
+            }
+            else if(value == "Minor") {
+                return {css: {"background-color":  "#fff9a0"}};
+            }
+            return {};
+        }
+       // $(document).ready(function(){
+      //     $('.cellID').each(function(){
+     //         var cellIdValue = parseInt($(this).text());
+      //        if(cellIdValue > 0) {
+     //             $(this).css('color', 'red');
+    //          }
+   //        });
+  //      });
+
+         {#$('#alarmTable').bootstrapTable({});#}
+         {#   function load(){#}
+         {#       var data = [{ cellID: "1",#}
+         {#           created: "TEST4444",#}
+         {#           severity: "TEST4142",#}
+         {#           problem: "TEST4",#}
+         {#           service: "TEST5"}];#}
+         {#       $('#alarmTable').bootstrapTable("load", data);#}
+         {#   }#}
+         {#   function reload(){#}
+         {#       var data = [{ cellID: "1",#}
+         {#           created: "TEST4444",#}
+         {#           severity: "TEST4142",#}
+         {#           problem: "TEST4",#}
+         {#           service: "TEST5"}];#}
+         {#       $('#alarmTable').bootstrapTable("load", data);#}
+         {#   }#}
+
+
          $("#updateML").click(function () {
              $.ajax({
                  url: "updateRegressionChart",
@@ -1526,21 +1638,21 @@
              });
          });
 
-         function cellStyle(value, row, index) {
-             if (value === "Normal") {
-                 return {
-                     classes: "success"
-                 }
-             } else if (value === "Minor") {
-                 return {
-                     classes: "warning"
-                 }
-             } else {
-                 return {
-                     classes: ""
-                 }
-             }
-         }
+         {#function cellStyle(value, row, index) {#}
+         {#    if (value === "Normal") {#}
+         {#        return {#}
+         {#            classes: "success"#}
+         {#        }#}
+         {#    } else if (value === "Minor") {#}
+         {#        return {#}
+         {#            classes: "warning"#}
+         {#        }#}
+         {#    } else {#}
+         {#        return {#}
+         {#            classes: ""#}
+         {#        }#}
+         {#    }#}
+         {#}#}
 
      </script>
   </body>
