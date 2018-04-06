@@ -19,6 +19,8 @@ from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
 import math
 import sys
+from sklearn.model_selection import cross_val_score,cross_val_predict
+from sklearn import metrics
 
 prev_thr = 0.0
 last_time = 200
@@ -227,214 +229,156 @@ dtRegressor = DecisionTreeRegressor(random_state=0)
 rfRegressor = RandomForestRegressor(n_estimators=10, random_state=0)
 svrRegressor = SVR(kernel='rbf')
 linRegressor = LinearRegression()
+z_scores_ref = list()
+training_done = False
+
+#######################################
+#   TRAIN REGRESSORS
+#######################################
+
+def train_simple_regressor(x_train, y_train):
+    """ Train simple regressor """
+    global simpleRegressor
+    simpleRegressor.fit(x_train, y_train)
 
 
-#
-# def preprocess_training_set_locations_dict(dict_x, dict_y, data_frame):
-#     # Converting RSRP and RSRQ values into floats
-#
-#     # Find start index
-#     start = 0
-#     for i in range(0, len(data_frame)):
-#         if not np.isnan(data_frame.iloc[i]['RSRQ_1']):
-#             start = i
-#             break
-#
-#     dict_x = data_frame[['Time', 'UserID', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']][start:].to_dict()
-#     dict_y = data_frame[['LABEL']][start:].to_dict()
-#
-#     # i_max = len(data_frame)
-#     # for i in range(0, i_max):
-#     #     dataset_row = data_frame.iloc[i][['Time', 'UserID', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
-#     #
-#     #     if not np.isnan(dataset_row['RSRQ_1']):
-#     #         df_x.append([dataset_row['Time'], dataset_row['UserID'], dataset_row['RSRP_1'], dataset_row['RSRQ_1'], dataset_row['RSRP_2'], dataset_row['RSRQ_2'], dataset_row['RSRP_3'], dataset_row['RSRQ_3'], dataset_row['RSRP_4'], dataset_row['RSRQ_4']])
-#     #         df_y.append(bool(data_frame.iloc[i]["LABEL"]))
-#
-
-def preprocess_training_set_locations(array_x, array_y, data_frame):
-    # Converting RSRP and RSRQ values into floats
-    i_max = len(data_frame)
-    for i in range(0, i_max):
-        dataset_row = data_frame.iloc[i][['Time', 'UserID', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
-
-        if not np.isnan(dataset_row['RSRQ_1']):
-            array_x.append([dataset_row['Time'], dataset_row['UserID'], dataset_row['RSRP_1'], dataset_row['RSRQ_1'], dataset_row['RSRP_2'], dataset_row['RSRQ_2'], dataset_row['RSRP_3'], dataset_row['RSRQ_3'], dataset_row['RSRP_4'], dataset_row['RSRQ_4']])
-            array_y.append(bool(data_frame.iloc[i]["LABEL"]))
+def train_decision_tree_regressor(x_train, y_train):
+    """ Train decision tree regressor """
+    global dtRegressor
+    dtRegressor.fit(x_train, y_train)
 
 
-def preprocess_training_set_8_dim(array_x, array_x_II, array_y, data_frame):
+def train_random_forest_regressor(x_train, y_train):
+    """ Train random forest regressor """
+    global rfRegressor
+    rfRegressor.fit(x_train, y_train)
+
+
+def train_svr_regressor(x_train, y_train):
+    """ Train svr regressor """
+    global svrRegressor
+    svrRegressor.fit(x_train, y_train)
+
+
+def train_linear_regressor(x_train, y_train):
+    """ Train linear regressor """
+    global linRegressor
+    linRegressor.fit(x_train, y_train)
+
+
+#######################################
+#   TEST REGRESSORS
+#######################################
+
+def test_regressor(regressor, test_data, correct_answers, points):
+    """ Test regressor with test set and correct answers
+        Returns Area Under the Curve (AUC)
+        Also writes points for graph in points parameter"""
+    predictions = cross_val_predict(regressor, test_data, correct_answers, cv=6)
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(correct_answers, predictions)
+
+    points.append(zip(false_positive_rate, true_positive_rate))
+    return auc(false_positive_rate, true_positive_rate)
+
+
+def test_simple_regressor(x_test, actual, points):
+    """ Test simple regressor with test set and correct answers
+        Returns Area Under the Curve (AUC)
+        Also writes points for graph in points parameter"""
+    global simpleRegressor
+    return test_regressor(simpleRegressor, x_test, actual, points)
+
+
+def test_decision_tree_regressor(x_test, actual, points):
+    """ Test decision tree regressor with test set and correct answers
+        Returns Area Under the Curve (AUC)
+        Also writes points for graph in points parameter"""
+    global dtRegressor
+    return test_regressor(dtRegressor, x_test, actual, points)
+
+
+def test_random_forest_regressor(x_test, actual, points):
+    """ Test random forest regressor with test set and correct answers
+        Returns Area Under the Curve (AUC)
+        Also writes points for graph in points parameter"""
+    global rfRegressor
+    return test_regressor(rfRegressor, x_test, actual, points)
+
+
+def test_svr_regressor(x_test, actual, points):
+    """ Test SVR regressor with test set and correct answers
+        Returns Area Under the Curve (AUC)
+        Also writes points for graph in points parameter"""
+    global svrRegressor
+    return test_regressor(svrRegressor, x_test, actual, points)
+
+
+def preprocess_training_set_to_8_and_10_dimensions(dim_8_list, dim_10_list, labels, data_frame):
     """ Preprocess data to two arrays, columns:
-           -     array_x : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
-           - array_x_II  : Time UserID RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
-           -     array_y : LABEL """
+           -     dim_8_list : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           -   dim_10_list  : Time UserID RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           -        array_y : LABEL
+           Using numpy arrays is about 5 times faster """
 
     for identity, group in data_frame.groupby(["Time", "UserID"]):
         # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
-        top_4_row = group.sort_values(by=["RSRP"], ascending=False)[:4]
-        if not np.isnan(top_4_row.iloc[0]["RSRQ"]):
-            array_x.append([top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
-                                    top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
-                                    top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
-            array_x_II.append([identity[0], identity[1], top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
-                                    top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
-                                    top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
-            array_y.append(group["LABEL"].iloc[0])
+        numpy_array = np.array(group.values)
+
+        if not np.isnan(numpy_array[0][6]):
+            # sort
+            numpy_array = numpy_array[numpy_array[:, 5].argsort()]
+            dim_8_list.append([numpy_array[-1][5], numpy_array[-1][6], numpy_array[-2][5], numpy_array[-2][6],
+                               numpy_array[-3][5], numpy_array[-3][6], numpy_array[-4][5], numpy_array[-4][6]])
+
+            dim_10_list.append([identity[0], identity[1], numpy_array[0][3], numpy_array[0][4], numpy_array[-1][5], numpy_array[-1][6], numpy_array[-2][5],
+                                numpy_array[-2][6], numpy_array[-3][5], numpy_array[-3][6], numpy_array[-4][5],
+                                numpy_array[-4][6]])
+
+            labels.append(numpy_array[0][2])
+
+        # OLD CODE - SLOW
+        # top_4_row = group.sort_values(by=["RSRP"], ascending=False)[:4]
+        # if not np.isnan(top_4_row.iloc[0]["RSRQ"]):
+        #     array_x.append([top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
+        #                             top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
+        #                             top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
+        #     array_x_II.append([identity[0], identity[1], top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
+        #                             top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
+        #                             top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
+        #     array_y.append(group["LABEL"].iloc[0])
 
 
+def do_all_regressions(array_x, array_y, roc_auc):
+    """ Get points and auc values for each classifier """
+    global training_done
+    points = list()
+    # split the data:
+    x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
 
-def preprocess_training_set(array_x, array_y, data_frame):
-    """ Preprocess data-frame for training phase"""
-    i_max = len(data_frame)
-    for i in range(0, i_max):
-        row = []
-        skip = False
-        dataset_row = data_frame.iloc[i]
-        for j in range(5, 12):
-            value = float(dataset_row[j])
-            if not np.isnan(value):
-                row.append(float(dataset_row[j]))
-            else:
-                skip = True
-                break
-        if not skip:
-            array_x.append(row)
-            array_y.append(bool(data_frame['LABEL'][i]))
+    # Simple regressor
+    train_simple_regressor(x_train=x_train, y_train=y_train)
+    roc_auc["simple"] = test_simple_regressor(x_test=x_test, actual=y_test, points=points)
 
+    # Decision tree regressor
+    train_decision_tree_regressor(x_train=x_train, y_train=y_train)
+    roc_auc["dt"] = test_decision_tree_regressor(x_test=x_test, actual=y_test, points=points)
 
-def train_and_test_simple_regression(array_x, array_y, roc_auc):
-    """ Training for simple regression"""
-    global simpleRegressor
+    # Random forest regressor
+    train_random_forest_regressor(x_train=x_train, y_train=y_train)
+    roc_auc["rf"] = test_random_forest_regressor(x_test=x_test, actual=y_test, points=points)
 
-    x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=0)
+    # SVR regressor
+    train_svr_regressor(x_train=x_train, y_train=y_train)
+    roc_auc["svr"] = test_svr_regressor(x_test=x_test, actual=y_test, points=points)
 
-    simpleRegressor.fit(np.asarray(array_x), np.asarray(array_y))
-    y_pred = simpleRegressor.predict(np.asarray(x_test))
+    training_done = True
 
-    actual = y_test
-    predictions = y_pred
-
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
-
-    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
-
-    list_points = list()
-    for i in range(0, len(false_positive_rate)):
-        list_points.append([false_positive_rate[i], true_positive_rate[i]])
-
-    return list_points
+    return points
 
 
-def train_and_test_random_forest_regression(array_x, array_y, roc_auc):
-    """ Training for random forest regression"""
-    global rfRegressor
-
-    X_train, X_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=0)
-
-    rfRegressor.fit(X_train, y_train)
-    y_pred = rfRegressor.predict(np.asarray(X_test))
-
-    actual = y_test
-    predictions = y_pred
-
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
-
-    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
-
-    list_points = list()
-    for i in range(0, len(false_positive_rate)):
-        list_points.append([false_positive_rate[i], true_positive_rate[i]])
-
-    return list_points
-
-
-def train_and_test_decision_tree(array_x, array_y, roc_auc):
-    """ Training for random decision tree regression"""
-    global dtRegressor
-
-    # splitting of data
-    X_train, X_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=0)
-
-    dtRegressor.fit(X_train, y_train)
-
-    # pridicting a new result
-    y_pred = dtRegressor.predict(np.asarray(X_test))
-
-    actual = y_test
-    predictions = y_pred
-
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
-
-    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
-
-    list_points = list()
-    for i in range(0, len(false_positive_rate)):
-        list_points.append([false_positive_rate[i], true_positive_rate[i]])
-
-    return list_points
-
-
-def train_and_test_svr_without_split(x_train, x_test, y_train, y_test, roc_auc):
-
-    global svrRegressor
-    # Fitting SVR to the dataset
-    svrRegressor.fit(x_train, y_train)
-
-    y_pred = svrRegressor.predict(np.asarray(x_test))
-
-    # print (len(y_test))
-    actual = y_test
-    predictions = y_pred
-
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
-
-    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
-
-    list_points = list()
-    for i in range(0, len(false_positive_rate)):
-        list_points.append([false_positive_rate[i], true_positive_rate[i]])
-
-    return list_points
-
-
-def train_and_test_svr(array_x, array_y, roc_auc):
-    """ Training for SVR (regression?)"""
-    global svrRegressor
-    # splitting of data
-    X_train, X_test, y_train, y_test= train_test_split(array_x,array_y,test_size = 0.2, random_state=0)
-
-    # Fitting SVR to the dataset
-    svrRegressor.fit(X_train, y_train)
-
-    y_pred = svrRegressor.predict(np.asarray(X_test))
-
-    # print (len(y_test))
-    actual = y_test
-    predictions = y_pred
-
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(actual, predictions)
-
-    roc_auc[0] = auc(false_positive_rate, true_positive_rate)
-
-    list_points = list()
-    for i in range(0, len(false_positive_rate)):
-        list_points.append([false_positive_rate[i], true_positive_rate[i]])
-
-    return list_points
-    #return train_and_test_svr_without_split(X_train=X_train, X_test=X_test, y_train=y_train, y_test=y_test, roc_auc=roc_auc)
-
-
-def train_and_test_distance(array_x, array_y, dataset_stimulation):
-    """ Training for distance???"""
-    global linRegressor
-    # splitting of data
-    x_train, X_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
-
-    # Regression Classification
-    linRegressor.fit(np.asarray(x_train), np.asarray(y_train))
-
-    predictions = linRegressor.predict(np.asarray(X_test))
-
+def calculate_z_scores(predictions, x_test):
+    """ Calculates z-scores based on predictions from regressor,
+        also needs to have data containing user locations"""
     dataset_basestations = pd.read_csv("/home/tupevarj/Desktop/basestations.csv")  # TODO: make it read from DB
 
     dict_users_per_bs = dict()
@@ -443,100 +387,18 @@ def train_and_test_distance(array_x, array_y, dataset_stimulation):
 
     for i in range(0, len(predictions)):
         if predictions[i] >= 0.1:
-            # Calculate index
-            id_user = int(X_test[i][1]) - 1
-            time_stamp = X_test[i][0]  # 200 milliseconds
-
-            time_index = time_stamp / 0.2
-            int_time_index = int(time_index)
-            modulo = time_index % int_time_index
-            if modulo > 0.5:
-                time_index = math.ceil(time_index)
-            else:
-                time_index = int_time_index
-            actual_index = int(105 * (time_index - 1) + id_user)
-
-            pb = dataset_stimulation.iloc[actual_index][2], dataset_stimulation.iloc[actual_index][3]
-            # row = []
+            ue_location = [x_test[i][2], x_test[i][3]]
+            # Calculate min distance:
             min_distance = sys.float_info.max
             base_station_id = -1
-            # all_distances = []
             for j, bs in dataset_basestations.iterrows():
-                distance = math.sqrt(((bs["LocationX"] - pb[0]) ** 2) + ((bs["LocationY"] - pb[1]) ** 2))
+                distance = math.sqrt(((bs["LocationX"] - ue_location[0]) ** 2) + ((bs["LocationY"] - ue_location[1]) ** 2))
                 if distance < min_distance:
                     min_distance = distance
                     base_station_id = j + 1
 
             key = "BS" + str(base_station_id)
             dict_users_per_bs[key] += 1
-
-    # print (index_values)   # user loc + user id + predicted value    abnormal users
-
-
-
-    # bsatations = []
-    #
-    # for i in range(0, 7):
-    #     dict_base_station = dict()
-    #     dict_base_station['base_station_id'] = dataset_basestations['Basestation'][i]
-    #     dict_base_station['LocationX'] = dataset_basestations['LocationX'][i]
-    #     dict_base_station['LocationY'] = dataset_basestations['LocationY'][i]
-    #     string_cell_ids = dataset_basestations['CellIDs'][i].split(',')
-    #     ids_int = list()
-    #     for id in range(0, 3):
-    #         ids_int.append(int(string_cell_ids[id]))
-    #     dict_base_station['Cellids'] = ids_int
-    #     bsatations.append(dict_base_station)
-
-
-    # TODO: CHANGE HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # dataset_stimulation = pd.read_csv("/home/buzafar/Documents/simulation_data.csv")
-    # array_user = []
-    #
-    # for i in range(0, len(index_values)):
-    #     id_user = int(index_values[i][1]) - 1
-    #     time_stamp = index_values[i][0]  # 200 milliseconds
-    #
-    #     adfs = time_stamp / 0.2
-    #     int_adfs = int(adfs)
-    #     modulo = adfs % int_adfs
-    #     if modulo > 0.5:
-    #         adfs = math.ceil(adfs)
-    #     else:
-    #         adfs = int_adfs
-    #     actual_index = int(105 * (adfs - 1) + id_user)
-    #     array_user.append([dataset_stimulation.iloc[actual_index][0], dataset_stimulation.iloc[actual_index][1],
-    #                        dataset_stimulation.iloc[actual_index][2], dataset_stimulation.iloc[actual_index][3]])
-
-   #  l = []  # list to store user_id,basestation_id,computed distance, time of user
-   # # Matrix = []
-   #
-   #  for i in range(0, len(array_user)):  # rows
-   #      pb = array_user[i][2], array_user[i][3]
-   #      # row = []
-   #      min_distance = sys.float_info.max
-   #      base_station_id = -1
-   #      #all_distances = []
-   #      for j, bs in dataset_basestations.iterrows():
-   #          distance = math.sqrt(((bs["LocationX"] - pb[0]) ** 2) + ((bs["LocationY"] - pb[1]) ** 2))
-   #       #   all_distances.append(distance)
-   #          if distance < min_distance:
-   #              min_distance = distance
-   #              base_station_id = j + 1
-   #
-   #     # Matrix.append(all_distances)
-   #
-   #      l.append([array_user[i][0], array_user[i][1], base_station_id, min_distance])
-   #
-   #  dict_users_per_bs = dict()
-   #  for i in range(0, 7):
-   #      dict_users_per_bs["BS" + str(i + 1)] = 0
-
-    # for i in range(0, len(l)):
-    #     key = "BS" + str(l[i][2])
-    #     dict_users_per_bs[key] += 1
-
-    # calculate z-score
 
     z1score = list()
     for i in range(0, 7):
@@ -557,54 +419,37 @@ def train_and_test_distance(array_x, array_y, dataset_stimulation):
     return z1score
 
 
-def do_all_regressions(array_x, array_y, roc_auc):
-    """ Get points and auc values for each classifier """
-    dict_points = dict()
-    # split the data:
+def do_calculate_z_scores(array_x, array_y):
+    """ Calculates z-score for regressor
+        TODO: change the way that user decides which regressor to use"""
+    global rfRegressor
+    global z_scores_ref
     x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
+    predictions = rfRegressor.predict(np.asarray(x_test)[:,4:])
+    z_scores_ref = calculate_z_scores(predictions, x_test)
+    return z_scores_ref
 
 
-    roc_auc['SVR']
-    points_svr = train_and_test_svr_without_split(x_train, x_test, y_train, y_test)
+def run_ml(array_x):
+    """ Run machine learning once. Returns ID of broken cell.
+        Based on comparing reference and new z-scores
+        TODO: make not always return outage!"""
+    global z_scores_ref
+    global training_done
 
-    return dict_points
+    if not training_done:
+        return -1
+    predictions = rfRegressor.predict(np.asarray(array_x)[:, 4:])
+    z_scores_new = calculate_z_scores(predictions, array_x)
 
+    highest_z_score = -1
+    outage_id = 0
+    for i in range(0, 7):
+        if z_scores_new[i] >= z_scores_ref[i] and z_scores_new[i] > highest_z_score:
+            outage_id = i +1
+            highest_z_score = z_scores_new[i]
 
-def do_z_score_regression(array_x, array_y, data):
-    #array_x = []
-   # array_y = []
-
-   # preprocess_training_set_locations(array_x, array_y, data_frame)
-    data_p = data[['Time', 'UserID', 'LocationX', 'LocationY', 'RSRP_1', 'RSRQ_1', 'RSRP_2', 'RSRQ_2', 'RSRP_3', 'RSRQ_3', 'RSRP_4', 'RSRQ_4']]
-    return train_and_test_distance(array_x=array_x, array_y=array_y,dataset_stimulation=data_p)
-
-
-def do_svr_regression(array_x, array_y, roc_auc):
-   # array_x = []
-  #  array_y = []
-  #  preprocess_training_set(array_x, array_y, data_frame)
-    return train_and_test_svr(array_x, array_y, roc_auc)
-
-
-def do_decision_tree_regression(array_x, array_y, roc_auc):
-   # array_x = []
-   # array_y = []
-   # preprocess_training_set(array_x, array_y, data_frame)
-    return train_and_test_decision_tree(array_x, array_y, roc_auc)
-
-
-def do_random_forest_regression(array_x, array_y, roc_auc):
-  #  array_x = []
-  #  array_y = []
-  #  preprocess_training_set(array_x, array_y, data_frame)
-    return train_and_test_random_forest_regression(array_x, array_y, roc_auc)
-
-
-def do_simple_regression(array_x, array_y, roc_auc):
-   # array_x = []
-   # array_y = []
-   # preprocess_training_set(array_x, array_y, data_frame)
-    return train_and_test_simple_regression(array_x, array_y, roc_auc)
+    return outage_id
 
 
 def preprocess_data_8_dim(data):
@@ -685,112 +530,6 @@ def mds(data):
 ##############################################################
 #   NOT USED FUNCTIONS AND VARIABLES
 ##############################################################
-
-
-# NOT USED ANYMORE???? - TUUKKA 9.3
-def detectUnnormalCell():
-    '''
-    use RSRP variable to detect the whether the cell is normal or not
-    :return:
-    '''
-    # cellData = OrderedDict()
-    # cellData["CellID"] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-    # cellData["Severity"] = ["Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Minor","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Normal","Minor","Normal"]
-    # cellData["Created"] = ['2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51','2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51','2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51', '2017-12-04 12:34:51']
-    # cellData["Problem Class"] =["Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Temporary Low Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Normal Traffic","Temporary Low Traffic","Normal Traffic"]
-    # cellData["Service Class"] =["eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN","eUTRAN"]
-
-    # return cellData
-
-    # data = collection_read_mongo(collection="main_file_with_UserTHR")
-    # groupedData = data.groupby(["Time", "CellID"])["RSRP"].sum()
-    #
-    # rsrpUpper = getThreshold(groupedData, time_interval=30)["upper"]
-    # rsrpLower = getThreshold(groupedData)["lower"]
-
-    # this number should be decided by applying ML algorithm
-    data = collection_read_mongo(collection="TUUKKA_throughputs")
-    groupedData = data.groupby(["Time", "CellID"])["Throughput"]
-
-    trafficUPThreshold = 10000
-    trafficDOWNThreshold = 1000
-    records = list()
-    throughputList = list()
-    for k, throughput in groupedData:
-        record = list()
-        totalThroughput = sum(throughput)
-        throughputList.append(totalThroughput)
-        # k[1] means cell ID
-        record.append(k[1])
-        # k[0] is time variable
-        record.append(k[0])
-        record.append(totalThroughput)
-        if totalThroughput < trafficDOWNThreshold:
-            record.append("Minor")
-            record.append("Temporary Low Traffic")
-        elif totalThroughput > trafficUPThreshold:
-            record.append("Over")
-            record.append("Temporary high Traffic")
-        else:
-            record.append("Normal")
-            record.append("Normal Traffic")
-        record.append("eUTRAN")
-        records.append(record)
-    # create new dataframe which stores "Time", "CellID", "totalThroughputForThisCellAtThisTime"
-    df = pd.DataFrame(records, columns=["CellID", "Time", "totalThroughput","Severity", "Problem Class", "Service Class"])
-
-    return df
-
-
-# NOT USED ANYMORE???? - TUUKKA 9.3
-def getThreshold(data, time_interval=30):
-    '''
-    calculate the upper bound threshold and lower bound threshold
-    data["time"] list of time series
-    data["rsrp"] list of double
-    time_interval default 30 seconds, with containing 5 whole periods
-    :return dictionary
-
-    '''
-
-    upper = 0
-    lower = 0
-    avg = np.mean(data["rsrp"])
-    std = np.std(data["rsrp"])
-    k = 3
-    upper = avg + k * std
-    lower = avg + k * std
-
-    return {"upper": upper, "lower": lower}
-
-
-# NOT USED ANYMORE - TUUKKA 9.3
-def displayDominateMap():
-
-    data = collection_read_mongo(collection="dominationmap")
-
-    X = np.array(data["x"])
-    Y = np.array(data["y"])
-    Z = np.array(data["sinr"])
-
-    xi = np.linspace(float(X.min()), float(X.max()), 1000)
-    yi = np.linspace(Y.min(), Y.max(), 1000)
-    zi = griddata((X, Y), Z, (xi[None, :], yi[:, None]), method='cubic')
-
-    zmin = -8
-    zmax = 20
-    zi[(zi < zmin) | (zi > zmax)] = None
-
-    plt.contourf(xi, yi, zi, 15, cmap=plt.cm.rainbow, vmax=zmax, vmin=zmin)
-    try:
-        os.remove(settings.MEDIA_ROOT + "dominationMap.png")
-    except OSError:
-        pass
-    fig = plt.gcf()
-    fig.set_size_inches(4.8, 3.6)
-    fig.savefig(settings.MEDIA_ROOT+'dominationMap.png')
-
-    return len(data.index)
 
 
 ##############################################################

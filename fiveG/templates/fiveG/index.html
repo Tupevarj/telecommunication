@@ -1512,14 +1512,14 @@
 
 
                 setInterval(function () {
-                    $.get('/updata_alarm_gui', function (data) {
+                    $.get('/update_alarm_gui', function (data) {
                         var parsed = JSON.parse(data);
                         if (parsed['rows'] != undefined) {
                             var rowData = [];
                             for(var i = 0; i < parsed['rows'].length; i++) {
                                 rowData.push({ bsID: parsed['rows'][i]['bsID'],
                                     created: new Date().toLocaleString(),
-                                    severity: "Normal",
+                                    severity: parsed['rows'][i]['severity'],
                                     problem: "Normal Traffic",
                                     service: "eUTRAN"})
                             }
@@ -1528,7 +1528,7 @@
                     $('#alarmTable').bootstrapTable("load", rowData);
 
                 });
-                }, 10000);
+                }, 20000);
         } );
 
         function cellStyle(value, row, index) {
@@ -1652,7 +1652,6 @@
          {#            classes: ""#}
          {#        }#}
          {#    }#}
-         {#}#}
 
      </script>
   </body>

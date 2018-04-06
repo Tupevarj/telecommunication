@@ -7,11 +7,10 @@ import json
 import numpy as np
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from .ml import calculate_total_throughput, displayDominateMap, detectUnnormalCell, \
+from .ml import calculate_total_throughput, \
     get_rsrp_per_cell_from_collection_II, calculate_total_throughput_II, \
-    initialize_ml, preprocess_data_8_dim, do_simple_regression, do_decision_tree_regression, \
-    do_random_forest_regression, do_svr_regression, do_z_score_regression, preprocessed_data_to_csv_file, \
-    preprocess_training_set, preprocess_training_set_8_dim
+    initialize_ml, run_ml, do_calculate_z_scores, preprocessed_data_to_csv_file, \
+    preprocess_training_set_to_8_and_10_dimensions, do_all_regressions
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -122,34 +121,27 @@ def update_regression_chart(context):
             unlock_database(True)
             last_read_regression = len(data)
             if len(data) > 0:
-                roc_auc1 = [1]
-                roc_auc2 = [1]
-                roc_auc3 = [1]
-                roc_auc4 = [1]
 
-                array_x = []
-                array_y = []
-                array_x_II = []
-                preprocess_training_set_8_dim(array_x=array_x, array_x_II=array_x_II, array_y=array_y, data_frame=data)
-               # processed = preprocess_data_8_dim(data)
-              #  preprocess_training_set(array_x, array_y, processed)
+                array_8_dim = []
+                labels = []
+                array_10_dim = []
+                preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
+                                                               labels=labels, data_frame=data)
 
-               # z_scores = do_z_score_regression(array_x=array_x_II, array_y=array_y, data=data)
-                points1 = do_simple_regression(array_x, array_y, roc_auc1)
-                points2 = do_svr_regression(array_x, array_y, roc_auc2)
-                points3 = do_decision_tree_regression(array_x, array_y, roc_auc3)
-                points4 = do_random_forest_regression(array_x, array_y, roc_auc4)
+                auc_scores = dict()
+                points = do_all_regressions(array_8_dim, labels, auc_scores)
+                z_scores = do_calculate_z_scores(array_x=array_10_dim, array_y=labels)
 
-                context['Regression'] = json.dumps(points1)
-                context['RegressionSVR'] = json.dumps(points2)
-                context['RegressionDT'] = json.dumps(points3)
-                context['RegressionRF'] = json.dumps(points4)
-               # context['ZScores'] = json.dumps(z_scores)
+                context['Regression'] = json.dumps(list(points[0]))
+                context['RegressionSVR'] = json.dumps(list(points[3]))
+                context['RegressionDT'] = json.dumps(list(points[1]))
+                context['RegressionRF'] = json.dumps(list(points[2]))
+                context['ZScores'] = json.dumps(z_scores)
 
-                context['sRegAUC'] = json.dumps(roc_auc1[0])
-                context['rfRegAUC'] = json.dumps(roc_auc4[0])
-                context['svcRegAUC'] = json.dumps(roc_auc2[0])
-                context['dtRegAUC'] = json.dumps(roc_auc3[0])
+                context['sRegAUC'] = json.dumps(auc_scores["simple"])
+                context['rfRegAUC'] = json.dumps(auc_scores["rf"])
+                context['svcRegAUC'] = json.dumps(auc_scores["svr"])
+                context['dtRegAUC'] = json.dumps(auc_scores["dt"])
             ml_is_calculating = False
 
 
@@ -354,15 +346,29 @@ def index(request):
     return render(request, 'fiveG/index.html', context)
 
 
-def updata_alarm_gui(request):
+def update_alarm_gui(request):
     if request.method == "GET":
         response_data = {'total': 1, 'rows': []}
 
+        lock_database(True)
+        data = collection_read_mongo(collection="main_kpis_log_labels")
+        unlock_database(True)
+
+        array_8_dim = []
+        labels = []
+        array_10_dim = []
+        preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
+                                                       labels=labels, data_frame=data)
+        outage_id = run_ml(array_10_dim)
+
         for i in range(1, 8):
+            severity = "Normal"
+            if i == outage_id:
+                severity = "Critical"
             response_data['rows'].append({
                 "bsID": i,
                 "created": "TEST2",
-                "severity": "TEST3",
+                "severity": severity,
                 "problem": "TEST4",
                 "service": "TEST5"})
 
@@ -373,122 +379,6 @@ def updata_alarm_gui(request):
 #   NOT USED FUNCTIONS AND VARIABLES
 ##############################################################
 
-
-# declare global variables
-#throughputCapacityData = collection_read_mongo(collection="throughput_log")
-#initialRecordNum = len(throughputCapacityData)
-#cursorLocation = len(throughputCapacityData)
-#oneTimeExtraRecord = 2280
-#dominateMap_size = 0
-
-# NOT USED ANYMORE - TUUKKA 9.3
-def show_normal_col_in_table(request):
-    global auck
-    if request.method == "GET":
-        # print(request.GET)
-        # limit = request.GET.get('limit')  # how many items per page
-        # offset = request.GET.get('offset')  # how many items in total in the DB
-        # search = request.GET.get('search')
-        # sort_column = request.GET.get('sort')  # which column need to sort
-        # order = request.GET.get('order')  # ascending or descending
-        # if search:
-        #     # all_records = collection_read_mongo(collection="event_log")
-        #     all_records = detectUnnormalCell()
-        # else:
-        #     # all_records = collection_read_mongo(collection="event_log")
-        #     all_records = detectUnnormalCell()
-        #
-        # # all_records = all_records.insert(0, "order", range(0, len(all_records.index)))
-        #
-        # # all_records_count = len(all_records.index)
-        # all_records_count = 100
-        # if not offset:
-        #     offset = 0
-        # if not limit:
-        #     limit = 10
-        #
-        # all_records_list = all_records[:100].values.tolist()
-        # pageinator = Paginator(all_records_list, limit)
-        #
-        # page = int(int(offset) / int(limit) + 1)
-        # response_data = {'total': all_records_count, 'rows': []}
-        #
-        # for record in pageinator.page(page):
-        #     print(record)
-        #
-        #     response_data['rows'].append({
-        #         "CellID": record[0] if record[0] else "",
-        #         "Created": record[1] if record[1] else "",
-        #         "Severity": record[3] if record[3] else "",
-        #         "Problem Class": record[4] if record[4] else "",
-        #         "Service Class": record[5] if record[5] else ""
-        #     })
-
-        response_data = {'total': 1, 'rows': []}
-
-        response_data['rows'].append({
-            "CellID": auck,
-            "Created": "TEST2",
-            "Severity": "TEST3",
-            "Problem Class": "TEST4",
-            "Service Class": "TEST5"})
-
-        return HttpResponse(json.dumps(response_data))
-
-
-# NOT USED ANYMORE - TUUKKA 9.3
-def displayDemo(request):
-    template_names = "fiveG/displayDemo.html"
-    normalCol = normalCol_read_mongo()
-    context = {}
-    return render(request, template_names)
-
-
-# NOT USED ANYMORE - TUUKKA 9.3
-def loadNewestDominateMap(request):
-    if request.method == "GET":
-        global dominateMap_size
-        latest_size = calculate_dominatemap_size()
-        if latest_size > dominateMap_size:
-            #     generate new dominate map and then send it to the front end
-            displayDominateMap()
-            # update the global variable
-            dominateMap_size = latest_size
-            try:
-                # base_image = Image.open(settings.MEDIA_ROOT + "dominationMap.png")
-                with open(settings.MEDIA_ROOT + "dominationMap.png", "rb") as f:
-                    return HttpResponse(f.read(), content_type="image/png")
-            except IOError:
-                return HttpResponse('')
-        else:
-            return HttpResponse('')
-
-
-# WE ARE NOT USING THIS ANYMORE - TUUKKA 22.2 TODO: Delete
-def loadMore(request):
-    global cursorLocation
-    global oneTimeExtraRecord
-    if request.method == "GET":
-        nextCursorLocation = cursorLocation + oneTimeExtraRecord
-        # Load throughput log from DB
-        throughput_log_db = collection_read_mongo(collection="throughput_log")
-        # Load main_kpis log from DB
-        main_kpis_log_db = collection_read_mongo(collection="main_kpis_log_labels")
-        # Calculate throughput based on data from DB
-        throughput_result_dict = calculate_total_throughput(throughput_log_db[cursorLocation:nextCursorLocation])
-
-        # load more for cell RSRP graph
-        rsrp_result_dict = calculate_rsrp_per_cell(main_kpis_log_db[cursorLocation:nextCursorLocation])
-        result = {"throughputTime": throughput_result_dict["time"],
-                  "throughput": throughput_result_dict["throughput"],
-                  "rsrpTime":rsrp_result_dict["Time"],
-                  "RSRP_1": rsrp_result_dict["RSRP_1"],
-                  "RSRP_2": rsrp_result_dict["RSRP_2"],
-                  "RSRP_3": rsrp_result_dict["RSRP_3"]}
-        cursorLocation = nextCursorLocation
-        return HttpResponse(json.dumps(result))
-    else:
-        return 0
 
 
 ##############################################################
