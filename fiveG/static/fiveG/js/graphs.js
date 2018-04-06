@@ -10,6 +10,7 @@ var chartSvrRegression;
 var chartDtRegression;
 var chartRfRegression;
 var chartZScoreColumn;
+var chartNewZScoreColumn;
 var first = true;
 
 //
@@ -307,6 +308,50 @@ function updateZScoreColumnChart(listZscores)
 //  INITIALIZE CHART FUNCTIONS
 //////////////////////////////////////////////////////////////
 
+function drawZScoreColumnChart(listZscore) {
+
+      var seriesPerCell = [{
+        'name': 'Z-Score',
+        'data': []
+        }];
+
+     for(var i = 0; i < listZscore.length; i++) {
+         // let id = i.toString();  // Let is not supported
+          seriesPerCell[0].data.push(["BS " + (i+1).toString(), listZscore[i]]);
+     }
+
+     chartZScoreColumn = Highcharts.chart("newZScoreChartContainer", {
+         chart: {
+                 type: 'column',
+                width: 800
+         },
+         title: {
+            text: 'Z-score for each Basetation'
+         },
+         subtitle: {
+             text: 'Based on distance from basestations'
+         },
+         xAxis: {
+            type: 'category',
+             labels: {
+                rotation: -45,
+                style: {
+                    fontSize: '13px',
+                    fontFamily: 'Verdana, sans-serif'
+                }
+            }
+        },
+        tooltip: {
+            pointFormat: '{point.y:.1f} Z-score'
+        },
+        yAxis: {
+        },
+        legend: {
+            enabled: false
+        },
+         series: seriesPerCell
+     });
+}
 
 function drawZScoreColumnChart(listZscore) {
 
@@ -342,7 +387,7 @@ function drawZScoreColumnChart(listZscore) {
             }
         },
         tooltip: {
-            pointFormat: '{point.y:.1f} dB'
+            pointFormat: '{point.y:.1f} Z-score'
         },
         yAxis: {
         },
@@ -782,3 +827,57 @@ function drawRsrpColumnChart(listRsrp) {
      });
 }
 
+function drawRegressionCharts(parsed) {
+     if (parsed["sRegAUC"] != undefined) {
+
+        document.getElementById("simpleReg").innerHTML = parsed["sRegAUC"].substring(0,4);
+    }
+    if (parsed["rfRegAUC"] != undefined) {
+
+        document.getElementById("rfReg").innerHTML = parsed["rfRegAUC"].substring(0,4);
+    }
+    if (parsed["svcRegAUC"] != undefined) {
+
+        document.getElementById("svcClass").innerHTML = parsed["svcRegAUC"].substring(0,4);
+    }
+    if (parsed["dtRegAUC"] != undefined) {
+
+        document.getElementById("decTree").innerHTML = parsed["dtRegAUC"].substring(0,4);
+    }
+
+    if (parsed["Regression"] != undefined) {
+      var map = JSON.parse(parsed["Regression"]);
+      if (chartRegression != undefined)
+          updateSimpleRegressionChart(map);
+      else
+          drawSimpleRegressionChart(map);
+    }
+    if (parsed["RegressionDT"] != undefined) {
+      var map = JSON.parse(parsed["RegressionDT"]);
+      if (chartDtRegression != undefined)
+          updateDtRegressionChart(map);
+      else
+          drawDtRegressionChart(map);
+    }
+    if (parsed["RegressionRF"] != undefined) {
+      var map = JSON.parse(parsed["RegressionRF"]);
+      if (chartRfRegression != undefined)
+          updateRfRegressionChart(map);
+      else
+          drawRfRegressionChart(map);
+    }
+    if (parsed["RegressionSVR"] != undefined) {
+      var map = JSON.parse(parsed["RegressionSVR"]);
+      if (chartSvrRegression != undefined)
+          updateSvrRegressionChart(map);
+      else
+          drawSvrRegressionChart(map);
+    }
+    if (parsed["ZScores"] != undefined) {
+      var map = JSON.parse(parsed["ZScores"]);
+      if (chartZScoreColumn != undefined)
+          updateZScoreColumnChart(map);
+      else
+          drawZScoreColumnChart(map);
+    }
+}

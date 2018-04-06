@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from .ml import calculate_total_throughput, \
     get_rsrp_per_cell_from_collection_II, calculate_total_throughput_II, \
     initialize_ml, run_ml, do_calculate_z_scores, preprocessed_data_to_csv_file, \
-    preprocess_training_set_to_8_and_10_dimensions, do_all_regressions
+    preprocess_training_set_to_8_and_10_dimensions, do_all_regressions, save_all_regressors, \
+    load_all_regressors
 import pandas as pd
 #from PIL import Image
 from django.conf import settings
@@ -110,6 +111,23 @@ def update_dominance_map(context):
     context['DominanceMap'] = json.dumps(dict_dominance)
 
 
+def select_reg_model(request):
+    i = 0
+
+
+def create_context_for_reg_graphs(context, points, auc_scores):
+    """ Creates context for regression charts """
+    context['Regression'] = json.dumps(points[0])
+    context['RegressionSVR'] = json.dumps(points[3])
+    context['RegressionDT'] = json.dumps(points[1])
+    context['RegressionRF'] = json.dumps(points[2])
+
+    context['sRegAUC'] = json.dumps(auc_scores["simple"])
+    context['rfRegAUC'] = json.dumps(auc_scores["rf"])
+    context['svcRegAUC'] = json.dumps(auc_scores["svr"])
+    context['dtRegAUC'] = json.dumps(auc_scores["dt"])
+
+
 def update_regression_chart(context):
     global last_read_regression
     global ml_is_calculating
@@ -127,21 +145,11 @@ def update_regression_chart(context):
                 array_10_dim = []
                 preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
                                                                labels=labels, data_frame=data)
-
                 auc_scores = dict()
                 points = do_all_regressions(array_8_dim, labels, auc_scores)
                 z_scores = do_calculate_z_scores(array_x=array_10_dim, array_y=labels)
-
-                context['Regression'] = json.dumps(list(points[0]))
-                context['RegressionSVR'] = json.dumps(list(points[3]))
-                context['RegressionDT'] = json.dumps(list(points[1]))
-                context['RegressionRF'] = json.dumps(list(points[2]))
+                create_context_for_reg_graphs(context=context, points=points, auc_scores=auc_scores)
                 context['ZScores'] = json.dumps(z_scores)
-
-                context['sRegAUC'] = json.dumps(auc_scores["simple"])
-                context['rfRegAUC'] = json.dumps(auc_scores["rf"])
-                context['svcRegAUC'] = json.dumps(auc_scores["svr"])
-                context['dtRegAUC'] = json.dumps(auc_scores["dt"])
             ml_is_calculating = False
 
 
@@ -178,6 +186,23 @@ def update_charts_data(context):
     context['TotalThroughput'] = json.dumps(throughput_result_new)
     context['RSRP'] = json.dumps(dict_rsrp_graph)
     context['RsrpPerCell'] = list_rsrp_per_cell
+
+
+def load_ml_models(request):
+    if request.method == "GET" and request.path == '/loadMLModels':
+        auc_scores = dict()
+        points = load_all_regressors(auc_scores)
+        if points == 0:
+            return HttpResponse(json.dumps(0))
+        else:
+            context = dict()
+            create_context_for_reg_graphs(context=context, points=points, auc_scores=auc_scores)
+            return HttpResponse(json.dumps(context))
+
+
+def save_ml_models(request):
+    if request.method == "GET" and request.path == '/saveMLModels':
+        return HttpResponse(save_all_regressors())
 
 
 def update_reg_chart(request):

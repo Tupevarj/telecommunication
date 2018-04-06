@@ -20,6 +20,7 @@ from sklearn.linear_model import LinearRegression
 import math
 import sys
 from sklearn.model_selection import cross_val_score,cross_val_predict
+from sklearn.externals import joblib
 from sklearn import metrics
 
 prev_thr = 0.0
@@ -224,10 +225,11 @@ def write_data_frame_to_csv_file(data_frame, path):
 #   MACHINE LEARNING
 ##############################################################
 
-simpleRegressor = LinearRegression()
-dtRegressor = DecisionTreeRegressor(random_state=0)
-rfRegressor = RandomForestRegressor(n_estimators=10, random_state=0)
-svrRegressor = SVR(kernel='rbf')
+regressors_data = dict()
+simple_regressor = LinearRegression()
+dt_regressor = DecisionTreeRegressor(random_state=0)
+rf_regressor = RandomForestRegressor(n_estimators=10, random_state=0)
+svr_regressor = SVR(kernel='rbf')
 linRegressor = LinearRegression()
 z_scores_ref = list()
 training_done = False
@@ -238,26 +240,26 @@ training_done = False
 
 def train_simple_regressor(x_train, y_train):
     """ Train simple regressor """
-    global simpleRegressor
-    simpleRegressor.fit(x_train, y_train)
+    global simple_regressor
+    simple_regressor.fit(x_train, y_train)
 
 
 def train_decision_tree_regressor(x_train, y_train):
     """ Train decision tree regressor """
-    global dtRegressor
-    dtRegressor.fit(x_train, y_train)
+    global dt_regressor
+    dt_regressor.fit(x_train, y_train)
 
 
 def train_random_forest_regressor(x_train, y_train):
     """ Train random forest regressor """
-    global rfRegressor
-    rfRegressor.fit(x_train, y_train)
+    global rf_regressor
+    rf_regressor.fit(x_train, y_train)
 
 
 def train_svr_regressor(x_train, y_train):
     """ Train svr regressor """
-    global svrRegressor
-    svrRegressor.fit(x_train, y_train)
+    global svr_regressor
+    svr_regressor.fit(x_train, y_train)
 
 
 def train_linear_regressor(x_train, y_train):
@@ -285,32 +287,32 @@ def test_simple_regressor(x_test, actual, points):
     """ Test simple regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global simpleRegressor
-    return test_regressor(simpleRegressor, x_test, actual, points)
+    global simple_regressor
+    return test_regressor(simple_regressor, x_test, actual, points)
 
 
 def test_decision_tree_regressor(x_test, actual, points):
     """ Test decision tree regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global dtRegressor
-    return test_regressor(dtRegressor, x_test, actual, points)
+    global dt_regressor
+    return test_regressor(dt_regressor, x_test, actual, points)
 
 
 def test_random_forest_regressor(x_test, actual, points):
     """ Test random forest regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global rfRegressor
-    return test_regressor(rfRegressor, x_test, actual, points)
+    global rf_regressor
+    return test_regressor(rf_regressor, x_test, actual, points)
 
 
 def test_svr_regressor(x_test, actual, points):
     """ Test SVR regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global svrRegressor
-    return test_regressor(svrRegressor, x_test, actual, points)
+    global svr_regressor
+    return test_regressor(svr_regressor, x_test, actual, points)
 
 
 def preprocess_training_set_to_8_and_10_dimensions(dim_8_list, dim_10_list, labels, data_frame):
@@ -348,9 +350,91 @@ def preprocess_training_set_to_8_and_10_dimensions(dim_8_list, dim_10_list, labe
         #     array_y.append(group["LABEL"].iloc[0])
 
 
+def load_all_regressors(roc_auc):
+    """ Load all previously save regressors from hard drive"""
+    global simple_regressor
+    global dt_regressor
+    global rf_regressor
+    global svr_regressor
+    global training_done
+    global z_scores_ref
+    try:
+        simple_regressor = joblib.load('simple_reg.pkl')
+        dt_regressor = joblib.load('dt_reg.pkl')
+        rf_regressor = joblib.load('rf_reg.pkl')
+        svr_regressor = joblib.load('svr_reg.pkl')
+
+        points = list()
+        simple_data = pd.read_csv("data_simple_reg.csv")
+        points.append((np.array(simple_data)).tolist())
+        dt_data = pd.read_csv("data_dt_reg.csv")
+        points.append((np.array(dt_data)).tolist())
+        rf_data = pd.read_csv("data_rf_reg.csv")
+        points.append((np.array(rf_data)).tolist())
+        svr_data = pd.read_csv("data_svr_reg.csv")
+        points.append((np.array(svr_data)).tolist())
+        auc_data = pd.read_csv("regressors_aucs.csv", header=None)
+        z_scores = pd.read_csv("z_scores.csv", header=None)
+
+        z_scores_ref = (np.array(z_scores)).tolist()[0]
+        # TODO: DRAW Z-SCORE
+
+        roc_auc["simple"] = auc_data.iloc[0][0]
+        roc_auc["dt"] = auc_data.iloc[0][1]
+        roc_auc["rf"] = auc_data.iloc[0][2]
+        roc_auc["svr"] = auc_data.iloc[0][3]
+        training_done = True
+
+        return points
+    except:
+        return 0
+
+
+def write_xy_to_csv_file(list_xy, file_name):
+        file = open(file_name, 'w')
+        file.write("X,Y\n")
+        for i in range(0, len(list_xy)):
+            file.write(str(list_xy[i][0]) + "," + str(list_xy[i][1]) + "\n")
+        file.close()
+
+
+def save_all_regressors():
+    """ Save all trained regressors to hard drive"""
+    global training_done
+    if training_done:
+        global simple_regressor
+        global dt_regressor
+        global rf_regressor
+        global svr_regressor
+        global regressors_data
+
+        # Save regressors
+        joblib.dump(simple_regressor, 'simple_reg.pkl')
+        joblib.dump(dt_regressor, 'dt_reg.pkl')
+        joblib.dump(rf_regressor, 'rf_reg.pkl')
+        joblib.dump(svr_regressor, 'svr_reg.pkl')
+
+        # Save performance of regressors
+        write_xy_to_csv_file(regressors_data["pSimple"], "data_simple_reg.csv")
+        write_xy_to_csv_file(regressors_data["pDt"], "data_dt_reg.csv")
+        write_xy_to_csv_file(regressors_data["pRf"], "data_rf_reg.csv")
+        write_xy_to_csv_file(regressors_data["pSVR"], "data_svr_reg.csv")
+        file = open("regressors_aucs.csv", 'w')
+        file.write(str(regressors_data["AUCs"][0]) + "," + str(regressors_data["AUCs"][1]) + "," +
+                   str(regressors_data["AUCs"][2]) + "," + str(regressors_data["AUCs"][3]))
+        file.close()
+        file = open("z_scores.csv", 'w')
+        for i in range(0, len(z_scores_ref)):
+            file.write(str(z_scores_ref[i]) + ",")
+        file.close()
+        return 1
+    return 0
+
+
 def do_all_regressions(array_x, array_y, roc_auc):
     """ Get points and auc values for each classifier """
     global training_done
+    global regressors_data
     points = list()
     # split the data:
     x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
@@ -372,7 +456,13 @@ def do_all_regressions(array_x, array_y, roc_auc):
     roc_auc["svr"] = test_svr_regressor(x_test=x_test, actual=y_test, points=points)
 
     training_done = True
+    regressors_data["pSimple"] = list(points[0])
+    regressors_data["pDt"] = list(points[1])
+    regressors_data["pRf"] = list(points[2])
+    regressors_data["pSVR"] = list(points[3])
+    regressors_data["AUCs"] = [roc_auc["simple"], roc_auc["dt"], roc_auc["rf"], roc_auc["svr"]]
 
+    points = [regressors_data["pSimple"], regressors_data["pDt"], regressors_data["pRf"], regressors_data["pSVR"]]
     return points
 
 
@@ -422,10 +512,10 @@ def calculate_z_scores(predictions, x_test):
 def do_calculate_z_scores(array_x, array_y):
     """ Calculates z-score for regressor
         TODO: change the way that user decides which regressor to use"""
-    global rfRegressor
+    global rf_regressor
     global z_scores_ref
     x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
-    predictions = rfRegressor.predict(np.asarray(x_test)[:,4:])
+    predictions = rf_regressor.predict(np.asarray(x_test)[:, 4:])
     z_scores_ref = calculate_z_scores(predictions, x_test)
     return z_scores_ref
 
@@ -436,20 +526,45 @@ def run_ml(array_x):
         TODO: make not always return outage!"""
     global z_scores_ref
     global training_done
-
     if not training_done:
         return -1
-    predictions = rfRegressor.predict(np.asarray(array_x)[:, 4:])
+    predictions = rf_regressor.predict(np.asarray(array_x)[:, 4:])
     z_scores_new = calculate_z_scores(predictions, array_x)
 
-    highest_z_score = -1
-    outage_id = 0
-    for i in range(0, 7):
-        if z_scores_new[i] >= z_scores_ref[i] and z_scores_new[i] > highest_z_score:
-            outage_id = i +1
-            highest_z_score = z_scores_new[i]
+    #highest_z_score = -1
+    #outage_id = 0
 
-    return outage_id
+    high4 = ['BS0', -1, 0]
+    for i in range(0, 7):
+        if high4[1] < z_scores_new[i]:
+            high4[1] = z_scores_new[i]
+            high4[0] = 'BS' + str(i + 1)
+            high4[2] = z_scores_new[i]
+            score_outage = []
+    for i in range(0, 7):
+        if i == 3 and z_scores_new[i] == high4[2]:
+            score_outage.append(i)
+        if z_scores_new[i] >= z_scores_ref[i]:
+            score_outage.append(i)
+            maxval = ['BS0', -1, 0]
+
+    for i in range(0, len(score_outage)):
+        if maxval[1] < z_scores_new[score_outage[i]]:
+            maxval[1] = z_scores_new[score_outage[i]]
+            maxval[0] = 'BS' + str(score_outage[i] + 1)
+            maxval[2] = z_scores_new[score_outage[i]]
+
+    if maxval[2] >= 3:
+        return maxval[0]
+    else:
+        return 0
+
+    # OLD CODE
+    # for i in range(0, 7):
+    #     if z_scores_new[i] >= z_scores_ref[i] and z_scores_new[i] > highest_z_score:
+    #         outage_id = i +1
+    #         highest_z_score = z_scores_new[i]
+
 
 
 def preprocess_data_8_dim(data):
