@@ -3,16 +3,10 @@ this file deals with data analysis
 '''
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from .models import collection_read_mongo, insert_document
-from scipy.interpolate import griddata
-from collections import OrderedDict
-import os
-from django.conf import settings
+from .models import collection_read_mongo
 from sklearn import manifold
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve, auc
-from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
@@ -21,12 +15,13 @@ import math
 import sys
 from sklearn.model_selection import cross_val_score,cross_val_predict
 from sklearn.externals import joblib
-from sklearn import metrics
+from enum import Enum
 
 prev_thr = 0.0
 last_time = 200
 prev_time = 200
 previous_thr = 0.0
+
 
 def initialize_ml():
     global prev_thr
@@ -35,6 +30,7 @@ def initialize_ml():
     prev_thr = 0.0
     last_time = 200
     prev_time = 200
+
 
 
 ##############################################################
@@ -225,14 +221,32 @@ def write_data_frame_to_csv_file(data_frame, path):
 #   MACHINE LEARNING
 ##############################################################
 
-regressors_data = dict()
-simple_regressor = LinearRegression()
-dt_regressor = DecisionTreeRegressor(random_state=0)
-rf_regressor = RandomForestRegressor(n_estimators=10, random_state=0)
-svr_regressor = SVR(kernel='rbf')
-linRegressor = LinearRegression()
-z_scores_ref = list()
-training_done = False
+class Regressor(Enum):
+    SIMPLE_REG = 0
+    DECISION_TREE_REG = 1
+    RANDOM_FOREST_REG = 2
+    SVR_REG = 3
+
+
+sel_reg_enum = Regressor.SIMPLE_REG
+regressors_chart_data = [0, 0, 0, 0]
+regressors_table_data = [0, 0, 0, 0]
+z_scores_ref = [0, 0, 0, 0]
+regressors = [LinearRegression(), DecisionTreeRegressor(random_state=0), RandomForestRegressor(n_estimators=10, random_state=0),
+              SVR(kernel='rbf')]
+
+
+def get_ref_z_scores(reg_enum):
+    """ Return reference Z-scores based on enum value."""
+    global z_scores_ref
+    return z_scores_ref[reg_enum.value]
+
+
+def get_regressor(reg_enum):
+    """ Return regressor based on enum value. NOT NEEDED ANY LONGER!"""
+    global regressors
+    return regressors[reg_enum.value]
+
 
 #######################################
 #   TRAIN REGRESSORS
@@ -240,32 +254,26 @@ training_done = False
 
 def train_simple_regressor(x_train, y_train):
     """ Train simple regressor """
-    global simple_regressor
-    simple_regressor.fit(x_train, y_train)
+    global regressors
+    regressors[Regressor.SIMPLE_REG.value].fit(x_train, y_train)
 
 
 def train_decision_tree_regressor(x_train, y_train):
     """ Train decision tree regressor """
-    global dt_regressor
-    dt_regressor.fit(x_train, y_train)
+    global regressors
+    regressors[Regressor.DECISION_TREE_REG.value].fit(x_train, y_train)
 
 
 def train_random_forest_regressor(x_train, y_train):
     """ Train random forest regressor """
-    global rf_regressor
-    rf_regressor.fit(x_train, y_train)
+    global regressors
+    regressors[Regressor.RANDOM_FOREST_REG.value].fit(x_train, y_train)
 
 
 def train_svr_regressor(x_train, y_train):
     """ Train svr regressor """
-    global svr_regressor
-    svr_regressor.fit(x_train, y_train)
-
-
-def train_linear_regressor(x_train, y_train):
-    """ Train linear regressor """
-    global linRegressor
-    linRegressor.fit(x_train, y_train)
+    global regressors
+    regressors[Regressor.SVR_REG.value].fit(x_train, y_train)
 
 
 #######################################
@@ -287,48 +295,46 @@ def test_simple_regressor(x_test, actual, points):
     """ Test simple regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global simple_regressor
-    return test_regressor(simple_regressor, x_test, actual, points)
+    global regressors
+    return test_regressor(regressors[Regressor.SIMPLE_REG.value], x_test, actual, points)
 
 
 def test_decision_tree_regressor(x_test, actual, points):
     """ Test decision tree regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global dt_regressor
-    return test_regressor(dt_regressor, x_test, actual, points)
+    global regressors
+    return test_regressor(regressors[Regressor.DECISION_TREE_REG.value], x_test, actual, points)
 
 
 def test_random_forest_regressor(x_test, actual, points):
     """ Test random forest regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global rf_regressor
-    return test_regressor(rf_regressor, x_test, actual, points)
+    global regressors
+    return test_regressor(regressors[Regressor.RANDOM_FOREST_REG.value], x_test, actual, points)
 
 
 def test_svr_regressor(x_test, actual, points):
     """ Test SVR regressor with test set and correct answers
         Returns Area Under the Curve (AUC)
         Also writes points for graph in points parameter"""
-    global svr_regressor
-    return test_regressor(svr_regressor, x_test, actual, points)
+    global regressors
+    return test_regressor(regressors[Regressor.SVR_REG.value], x_test, actual, points)
 
 
 def preprocess_training_set_to_8_and_10_dimensions(dim_8_list, dim_10_list, labels, data_frame):
     """ Preprocess data to two arrays, columns:
            -     dim_8_list : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
            -   dim_10_list  : Time UserID RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
-           -        array_y : LABEL
-           Using numpy arrays is about 5 times faster """
+           -        array_y : LABEL """
 
     for identity, group in data_frame.groupby(["Time", "UserID"]):
         # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
         numpy_array = np.array(group.values)
 
         if not np.isnan(numpy_array[0][6]):
-            # sort
-            numpy_array = numpy_array[numpy_array[:, 5].argsort()]
+            numpy_array = numpy_array[numpy_array[:, 5].argsort()]  # sort
             dim_8_list.append([numpy_array[-1][5], numpy_array[-1][6], numpy_array[-2][5], numpy_array[-2][6],
                                numpy_array[-3][5], numpy_array[-3][6], numpy_array[-4][5], numpy_array[-4][6]])
 
@@ -338,132 +344,146 @@ def preprocess_training_set_to_8_and_10_dimensions(dim_8_list, dim_10_list, labe
 
             labels.append(numpy_array[0][2])
 
-        # OLD CODE - SLOW
-        # top_4_row = group.sort_values(by=["RSRP"], ascending=False)[:4]
-        # if not np.isnan(top_4_row.iloc[0]["RSRQ"]):
-        #     array_x.append([top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
-        #                             top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
-        #                             top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
-        #     array_x_II.append([identity[0], identity[1], top_4_row.iloc[0]["RSRP"], top_4_row.iloc[0]["RSRQ"], top_4_row.iloc[1]["RSRP"],
-        #                             top_4_row.iloc[1]["RSRQ"], top_4_row.iloc[2]["RSRP"], top_4_row.iloc[2]["RSRQ"],
-        #                             top_4_row.iloc[3]["RSRP"], top_4_row.iloc[3]["RSRQ"]])
-        #     array_y.append(group["LABEL"].iloc[0])
 
-
-def load_all_regressors(roc_auc):
+def load_all_regressors():
     """ Load all previously save regressors from hard drive"""
-    global simple_regressor
-    global dt_regressor
-    global rf_regressor
-    global svr_regressor
     global training_done
+    global regressors
+    global regressors_chart_data
+    global regressors_table_data
     global z_scores_ref
     try:
-        simple_regressor = joblib.load('simple_reg.pkl')
-        dt_regressor = joblib.load('dt_reg.pkl')
-        rf_regressor = joblib.load('rf_reg.pkl')
-        svr_regressor = joblib.load('svr_reg.pkl')
+        regressors[Regressor.SIMPLE_REG.value] = joblib.load('simple_reg.pkl')
+        regressors[Regressor.DECISION_TREE_REG.value] = joblib.load('dt_reg.pkl')
+        regressors[Regressor.RANDOM_FOREST_REG.value] = joblib.load('rf_reg.pkl')
+        regressors[Regressor.SVR_REG.value] = joblib.load('svr_reg.pkl')
 
-        points = list()
         simple_data = pd.read_csv("data_simple_reg.csv")
-        points.append((np.array(simple_data)).tolist())
+        regressors_chart_data[Regressor.SIMPLE_REG.value] = (np.array(simple_data)).tolist()
         dt_data = pd.read_csv("data_dt_reg.csv")
-        points.append((np.array(dt_data)).tolist())
+        regressors_chart_data[Regressor.DECISION_TREE_REG.value] = (np.array(dt_data)).tolist()
         rf_data = pd.read_csv("data_rf_reg.csv")
-        points.append((np.array(rf_data)).tolist())
+        regressors_chart_data[Regressor.RANDOM_FOREST_REG.value] = (np.array(rf_data)).tolist()
         svr_data = pd.read_csv("data_svr_reg.csv")
-        points.append((np.array(svr_data)).tolist())
+        regressors_chart_data[Regressor.SVR_REG.value] = (np.array(svr_data)).tolist()
+
         auc_data = pd.read_csv("regressors_aucs.csv", header=None)
         z_scores = pd.read_csv("z_scores.csv", header=None)
 
-        z_scores_ref = (np.array(z_scores)).tolist()[0]
-        # TODO: DRAW Z-SCORE
+        z_scores_ref = (np.array(z_scores)).tolist()
 
-        roc_auc["simple"] = auc_data.iloc[0][0]
-        roc_auc["dt"] = auc_data.iloc[0][1]
-        roc_auc["rf"] = auc_data.iloc[0][2]
-        roc_auc["svr"] = auc_data.iloc[0][3]
+        regressors_table_data[Regressor.SIMPLE_REG.value] = auc_data.iloc[0][0]
+        regressors_table_data[Regressor.DECISION_TREE_REG.value] = auc_data.iloc[0][1]
+        regressors_table_data[Regressor.RANDOM_FOREST_REG.value] = auc_data.iloc[0][2]
+        regressors_table_data[Regressor.SVR_REG.value] = auc_data.iloc[0][3]
+
         training_done = True
 
-        return points
+        return 1
+        #return points
     except:
         return 0
 
 
 def write_xy_to_csv_file(list_xy, file_name):
-        file = open(file_name, 'w')
-        file.write("X,Y\n")
-        for i in range(0, len(list_xy)):
-            file.write(str(list_xy[i][0]) + "," + str(list_xy[i][1]) + "\n")
-        file.close()
+    """ Writes list of tuples to CSV file """
+    file = open(file_name, 'w')
+    file.write("X,Y\n")
+    for i in range(0, len(list_xy)):
+        file.write(str(list_xy[i][0]) + "," + str(list_xy[i][1]) + "\n")
+    file.close()
+
+
+def set_regressor(reg_enum):
+    """ Sets current regressor """
+    global sel_reg_enum
+    sel_reg_enum = Regressor(reg_enum)
 
 
 def save_all_regressors():
     """ Save all trained regressors to hard drive"""
-    global training_done
-    if training_done:
-        global simple_regressor
-        global dt_regressor
-        global rf_regressor
-        global svr_regressor
-        global regressors_data
+   # global training_done
+    #if training_done:
+    global regressors
+    global regressors_chart_data
+    global regressors_table_data
 
-        # Save regressors
-        joblib.dump(simple_regressor, 'simple_reg.pkl')
-        joblib.dump(dt_regressor, 'dt_reg.pkl')
-        joblib.dump(rf_regressor, 'rf_reg.pkl')
-        joblib.dump(svr_regressor, 'svr_reg.pkl')
+    # Save regressors
+    joblib.dump(regressors[Regressor.SIMPLE_REG.value], 'simple_reg.pkl')
+    joblib.dump(regressors[Regressor.DECISION_TREE_REG.value], 'dt_reg.pkl')
+    joblib.dump(regressors[Regressor.RANDOM_FOREST_REG.value], 'rf_reg.pkl')
+    joblib.dump(regressors[Regressor.SVR_REG.value], 'svr_reg.pkl')
 
-        # Save performance of regressors
-        write_xy_to_csv_file(regressors_data["pSimple"], "data_simple_reg.csv")
-        write_xy_to_csv_file(regressors_data["pDt"], "data_dt_reg.csv")
-        write_xy_to_csv_file(regressors_data["pRf"], "data_rf_reg.csv")
-        write_xy_to_csv_file(regressors_data["pSVR"], "data_svr_reg.csv")
-        file = open("regressors_aucs.csv", 'w')
-        file.write(str(regressors_data["AUCs"][0]) + "," + str(regressors_data["AUCs"][1]) + "," +
-                   str(regressors_data["AUCs"][2]) + "," + str(regressors_data["AUCs"][3]))
-        file.close()
-        file = open("z_scores.csv", 'w')
-        for i in range(0, len(z_scores_ref)):
-            file.write(str(z_scores_ref[i]) + ",")
-        file.close()
-        return 1
-    return 0
+    # Save performance of regressors
+    write_xy_to_csv_file(regressors_chart_data[Regressor.SIMPLE_REG.value], "data_simple_reg.csv")
+    write_xy_to_csv_file(regressors_chart_data[Regressor.DECISION_TREE_REG.value], "data_dt_reg.csv")
+    write_xy_to_csv_file(regressors_chart_data[Regressor.RANDOM_FOREST_REG.value], "data_rf_reg.csv")
+    write_xy_to_csv_file(regressors_chart_data[Regressor.SVR_REG.value], "data_svr_reg.csv")
+    file = open("regressors_aucs.csv", 'w')
+    file.write(str(regressors_table_data[Regressor.SIMPLE_REG.value]) + "," + str(regressors_table_data[Regressor.DECISION_TREE_REG.value]) + "," +
+               str(regressors_table_data[Regressor.RANDOM_FOREST_REG.value]) + "," + str(regressors_table_data[Regressor.SVR_REG.value]))
+    file.close()
+    file = open("z_scores.csv", 'w')
+    for i in range(0, len(z_scores_ref)):
+        comma = ""
+        for j in range(0, len(z_scores_ref[i])):
+            file.write(comma + str(z_scores_ref[i][j]))
+            comma = ","
+        file.write("\n")
+    file.close()
+    return 1
 
 
-def do_all_regressions(array_x, array_y, roc_auc):
+def get_reg_chart_data():
+    global regressors_chart_data
+    return regressors_chart_data
+
+
+def get_auc_scores():
+    global regressors_table_data
+    return regressors_table_data
+
+
+def get_reg_z_scores():
+    global z_scores_ref
+    return z_scores_ref
+
+
+def get_current_z_scores():
+    global sel_reg_enum
+    return z_scores_ref[sel_reg_enum.value]
+
+
+def do_all_regressions(array_x, array_y):
     """ Get points and auc values for each classifier """
     global training_done
-    global regressors_data
+    global regressors_chart_data
+    global regressors_table_data
     points = list()
     # split the data:
     x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
 
     # Simple regressor
     train_simple_regressor(x_train=x_train, y_train=y_train)
-    roc_auc["simple"] = test_simple_regressor(x_test=x_test, actual=y_test, points=points)
+    regressors_table_data[Regressor.SIMPLE_REG.value] = test_simple_regressor(x_test=x_test, actual=y_test, points=points)
 
     # Decision tree regressor
     train_decision_tree_regressor(x_train=x_train, y_train=y_train)
-    roc_auc["dt"] = test_decision_tree_regressor(x_test=x_test, actual=y_test, points=points)
+    regressors_table_data[Regressor.DECISION_TREE_REG.value] = test_decision_tree_regressor(x_test=x_test, actual=y_test, points=points)
 
     # Random forest regressor
     train_random_forest_regressor(x_train=x_train, y_train=y_train)
-    roc_auc["rf"] = test_random_forest_regressor(x_test=x_test, actual=y_test, points=points)
+    regressors_table_data[Regressor.RANDOM_FOREST_REG.value] = test_random_forest_regressor(x_test=x_test, actual=y_test, points=points)
 
     # SVR regressor
     train_svr_regressor(x_train=x_train, y_train=y_train)
-    roc_auc["svr"] = test_svr_regressor(x_test=x_test, actual=y_test, points=points)
+    regressors_table_data[Regressor.SVR_REG.value] = test_svr_regressor(x_test=x_test, actual=y_test, points=points)
 
     training_done = True
-    regressors_data["pSimple"] = list(points[0])
-    regressors_data["pDt"] = list(points[1])
-    regressors_data["pRf"] = list(points[2])
-    regressors_data["pSVR"] = list(points[3])
-    regressors_data["AUCs"] = [roc_auc["simple"], roc_auc["dt"], roc_auc["rf"], roc_auc["svr"]]
-
-    points = [regressors_data["pSimple"], regressors_data["pDt"], regressors_data["pRf"], regressors_data["pSVR"]]
-    return points
+    regressors_chart_data[Regressor.SIMPLE_REG.value] = list(points[0])
+    regressors_chart_data[Regressor.DECISION_TREE_REG.value] = list(points[1])
+    regressors_chart_data[Regressor.RANDOM_FOREST_REG.value] = list(points[2])
+    regressors_chart_data[Regressor.SVR_REG.value] = list(points[3])
 
 
 def calculate_z_scores(predictions, x_test):
@@ -512,59 +532,66 @@ def calculate_z_scores(predictions, x_test):
 def do_calculate_z_scores(array_x, array_y):
     """ Calculates z-score for regressor
         TODO: change the way that user decides which regressor to use"""
-    global rf_regressor
+    global regressors
     global z_scores_ref
     x_train, x_test, y_train, y_test = train_test_split(array_x, array_y, test_size=0.2, random_state=7)
-    predictions = rf_regressor.predict(np.asarray(x_test)[:, 4:])
-    z_scores_ref = calculate_z_scores(predictions, x_test)
+    predictions = regressors[Regressor.SIMPLE_REG.value].predict(np.asarray(x_test)[:, 4:])
+    z_scores_ref[Regressor.SIMPLE_REG.value] = calculate_z_scores(predictions, x_test)
+    predictions = regressors[Regressor.DECISION_TREE_REG.value].predict(np.asarray(x_test)[:, 4:])
+    z_scores_ref[Regressor.DECISION_TREE_REG.value] = calculate_z_scores(predictions, x_test)
+    predictions = regressors[Regressor.RANDOM_FOREST_REG.value].predict(np.asarray(x_test)[:, 4:])
+    z_scores_ref[Regressor.RANDOM_FOREST_REG.value] = calculate_z_scores(predictions, x_test)
+    predictions = regressors[Regressor.SVR_REG.value].predict(np.asarray(x_test)[:, 4:])
+    z_scores_ref[Regressor.SVR_REG.value] = calculate_z_scores(predictions, x_test)
     return z_scores_ref
 
 
 def run_ml(array_x):
     """ Run machine learning once. Returns ID of broken cell.
-        Based on comparing reference and new z-scores
-        TODO: make not always return outage!"""
-    global z_scores_ref
-    global training_done
-    if not training_done:
-        return -1
-    predictions = rf_regressor.predict(np.asarray(array_x)[:, 4:])
+        Based on comparing reference and new z-scores """
+    #global z_scores_ref
+    #global training_done
+    global sel_reg_enum
+  #  if not training_done:
+   #     return -1
+    regressor = get_regressor(sel_reg_enum)
+    predictions = regressor.predict(np.asarray(array_x)[:, 4:])
+    z_score_ref = get_ref_z_scores(sel_reg_enum)
     z_scores_new = calculate_z_scores(predictions, array_x)
 
     #highest_z_score = -1
     #outage_id = 0
 
-    high4 = ['BS0', -1, 0]
+    high4 = [0, -1]
     for i in range(0, 7):
         if high4[1] < z_scores_new[i]:
             high4[1] = z_scores_new[i]
-            high4[0] = 'BS' + str(i + 1)
-            high4[2] = z_scores_new[i]
+            high4[0] = i + 1
+            #high4[2] = z_scores_new[i]
             score_outage = []
     for i in range(0, 7):
-        if i == 3 and z_scores_new[i] == high4[2]:
+       # if i == 3 and z_scores_new[i] == high4[1]:
+       #     score_outage.append(i)
+        if z_scores_new[i] >= z_score_ref[i]:
             score_outage.append(i)
-        if z_scores_new[i] >= z_scores_ref[i]:
-            score_outage.append(i)
-            maxval = ['BS0', -1, 0]
+            maxval = [0, -1]
 
     for i in range(0, len(score_outage)):
         if maxval[1] < z_scores_new[score_outage[i]]:
             maxval[1] = z_scores_new[score_outage[i]]
-            maxval[0] = 'BS' + str(score_outage[i] + 1)
-            maxval[2] = z_scores_new[score_outage[i]]
+            maxval[0] = score_outage[i] + 1
+            #maxval[2] = z_scores_new[score_outage[i]]
 
-    if maxval[2] >= 3:
-        return maxval[0]
+    if maxval[1] >= 2:
+        return [maxval[0], z_scores_new]
     else:
-        return 0
+        return [0, z_scores_new]
 
     # OLD CODE
     # for i in range(0, 7):
     #     if z_scores_new[i] >= z_scores_ref[i] and z_scores_new[i] > highest_z_score:
     #         outage_id = i +1
     #         highest_z_score = z_scores_new[i]
-
 
 
 def preprocess_data_8_dim(data):

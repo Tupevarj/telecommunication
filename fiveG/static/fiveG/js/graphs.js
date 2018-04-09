@@ -10,7 +10,7 @@ var chartSvrRegression;
 var chartDtRegression;
 var chartRfRegression;
 var chartZScoreColumn;
-var chartNewZScoreColumn;
+// var chartNewZScoreColumn;
 var first = true;
 
 //
@@ -292,15 +292,17 @@ function updateRemChart(listValues)
 /*
     Updates RSRP column chart from dictionary
  */
-function updateZScoreColumnChart(listZscores)
+function updateZScoreColumnChart(listZscores, title, serie)
 {
-    var series = chartZScoreColumn.series[0];
+    var series = chartZScoreColumn.series[serie];
     var values = [];
     for(var i = 0; i < listZscores.length; i++)
     {
         values[i] = ["BS " + (i+1).toString(), listZscores[i]];
     }
     series.setData(values, false, false, true);
+    if(title != "")
+        chartZScoreColumn.setTitle({text: "Z-Score for " + title});
     chartZScoreColumn.redraw();
 }
 
@@ -311,6 +313,10 @@ function updateZScoreColumnChart(listZscores)
 function drawZScoreColumnChart(listZscore) {
 
       var seriesPerCell = [{
+        'name': ' Reference Z-Score',
+        'data': []
+        },
+        {
         'name': 'Z-Score',
         'data': []
         }];
@@ -319,63 +325,22 @@ function drawZScoreColumnChart(listZscore) {
          // let id = i.toString();  // Let is not supported
           seriesPerCell[0].data.push(["BS " + (i+1).toString(), listZscore[i]]);
      }
-
-     chartZScoreColumn = Highcharts.chart("newZScoreChartContainer", {
-         chart: {
-                 type: 'column',
-                width: 800
-         },
-         title: {
-            text: 'Z-score for each Basetation'
-         },
-         subtitle: {
-             text: 'Based on distance from basestations'
-         },
-         xAxis: {
-            type: 'category',
-             labels: {
-                rotation: -45,
-                style: {
-                    fontSize: '13px',
-                    fontFamily: 'Verdana, sans-serif'
-                }
-            }
-        },
-        tooltip: {
-            pointFormat: '{point.y:.1f} Z-score'
-        },
-        yAxis: {
-        },
-        legend: {
-            enabled: false
-        },
-         series: seriesPerCell
-     });
-}
-
-function drawZScoreColumnChart(listZscore) {
-
-      var seriesPerCell = [{
-        'name': 'Z-Score',
-        'data': []
-        }];
-
      for(var i = 0; i < listZscore.length; i++) {
          // let id = i.toString();  // Let is not supported
-          seriesPerCell[0].data.push(["BS " + (i+1).toString(), listZscore[i]]);
+          seriesPerCell[1].data.push(["BS " + (i+1).toString(), listZscore[i]]);
      }
 
      chartZScoreColumn = Highcharts.chart("zScoreChartContainer", {
          chart: {
                  type: 'column',
-                width: 800
+                width: 700
          },
          title: {
-            text: 'Z-score for each Basetation'
+            text: 'Z-Score For Regressor'
          },
-         subtitle: {
-             text: 'Based on distance from basestations'
-         },
+          subtitle: {
+              text: 'Based on anomal users in each basestation'
+          },
          xAxis: {
             type: 'category',
              labels: {
@@ -387,9 +352,15 @@ function drawZScoreColumnChart(listZscore) {
             }
         },
         tooltip: {
-            pointFormat: '{point.y:.1f} Z-score'
+             formatter: function () {
+                return '<b>' + "Basestation " + this.x + '</b><br/>' +
+                    this.series.name + ': ' + Highcharts.numberFormat(this.y, 2) + '<br/>'
+            }
         },
         yAxis: {
+             title: {
+                 text: 'Z-Score'
+             }
         },
         legend: {
             enabled: false
@@ -876,8 +847,32 @@ function drawRegressionCharts(parsed) {
     if (parsed["ZScores"] != undefined) {
       var map = JSON.parse(parsed["ZScores"]);
       if (chartZScoreColumn != undefined)
-          updateZScoreColumnChart(map);
+          updateZScoreColumnChart(map, "Simple Regression", 0);
       else
           drawZScoreColumnChart(map);
+    }
+}
+
+/*
+    Set reference Z-scores and title
+ */
+function redrawZscoresChart(data, title) {
+    var parsed = JSON.parse(data);
+    if (parsed["ZScores"] != undefined) {
+        var map = JSON.parse(parsed["ZScores"]);
+        updateZScoreColumnChart(map, title, 0);
+
+        // chartZScoreColumn.series[1].setData(0, false, false, true);  optional: hides old data from chart
+    }
+}
+
+/*
+    Update new Z-scores
+ */
+function updateZscoreChart(data) {
+ var parsed = JSON.parse(data);
+    if (parsed["ZScores"] != undefined) {
+        var map = JSON.parse(parsed["ZScores"]);
+        updateZScoreColumnChart(map, "", 1);
     }
 }

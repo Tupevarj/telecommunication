@@ -559,14 +559,14 @@
             <div class="col-lg-12 col-md-12">
              <div class="container">
                 <div class="heading">
-                  <h2 class="wow fadeInLeftBig" style="margin-top: 25px;">NS-3 Simulation Demo</h2>
+                  <h2 style="margin-top: 25px;">NS-3 Simulation Demo</h2>
                 </div>
               </div>
             </div>
           </div>
           <div class="container">
                 <div class="heading">
-                  <h3 class="wow fadeInLeftBig" style="margin-top: 25px; color: #313338; font-size: 30px;">Machine Learning Training Phase</h3>
+                  <h3 style="margin-top: 25px; color: #313338; font-size: 30px;">Machine Learning Training Phase</h3>
                 </div>
           </div>
          <div class="container">
@@ -607,7 +607,7 @@
              </div>
              <div style="text-align: center;">
                      <div class="centered text-center" style="display: inline-block; margin-top:20px; margin-bottom:50px;">
-                         <button class="btn btn-primary" id="updateML">Create Models</button>
+                         <button class="btn btn-primary" id="createML">Create Models</button>
                      </div>
                     <div class="centered text-center" style="display: inline-block; margin-top:20px; margin-bottom:50px;">
                          <button class="btn btn-primary" id="saveML">Save Models</button>
@@ -649,19 +649,19 @@
                  </div>
 
              </div>
-         <div class="container" style="margin-top: 2cm;" style="width:800px; margin:0 auto;">
-             <div class="row" style="width:800px; margin:0 auto;">
-                 <div id="zScoreChartContainer" class="col-md-12 col-lg-12" style="width:800px; margin:0 auto;"></div>
-                 <div class="col-lg-12 col-md-12">
-                     <div class="centered text-center"></div>
-                 </div>
-             </div>
-         </div>
          <div class="container">
                 <div class="heading">
-                  <h3 class="wow fadeInLeftBig" style="margin-top: 75px; color: #313338; font-size: 30px;">Network Monitoring</h3>
+                  <h3 style="margin-top: 75px; color: #313338; font-size: 30px;">Network Monitoring</h3>
                 </div>
           </div>
+            <div class="container" style="margin-top: 25px;" style="width:780px; margin:0 auto;">
+                 <div class="row" style="width:780px; margin:0 auto;">
+                     <div id="zScoreChartContainer" class="col-md-12 col-lg-12" style="width:780px; margin:0 auto;"></div>
+                     <div class="col-lg-12 col-md-12">
+                         <div class="centered text-center"></div>
+                     </div>
+                 </div>
+             </div>
           <div style="text-align: center;">
                  <div class="centered text-center" style="display: inline-block; margin-top:20px; margin-bottom:50px;">
                      <button class="btn btn-primary" id="useSimpleReg">Simple Regression</button>
@@ -676,7 +676,7 @@
                      <button class="btn btn-primary" id="useDtReg">Decision Tree Regression</button>
              </div>
          </div>
-            <div class="container" style="margin-top: 2cm; width: 800px;">
+            <div class="container" style="margin-top: 25px; width: 800px;">
                     <table id="alarmTable" class="table">
                         <thead>
                             <tr>
@@ -689,65 +689,9 @@
                         </thead>
                     </table>
              </div>
-            <div class="container" style="margin-top: 2cm;" style="width:800px; margin:0 auto;">
-             <div class="row" style="width:800px; margin:0 auto;">
-                 <div id="newZScoreChartContainer" class="col-md-12 col-lg-12" style="width:800px; margin:0 auto;"></div>
-                 <div class="col-lg-12 col-md-12">
-                     <div class="centered text-center"></div>
-                 </div>
-             </div>
-         </div>
-{#         <div class="container">#}
-{#             <div class="row">#}
-{#                 <div class="col-lg-12 col-md-12">#}
-{#                        <table id="mlTable"#}
-{#                            data-url = "{% url 'update_ml_table' %}"#}
-{#                            data-method = "get" class="table" >#}
-{#                            <thead>#}
-{#                                <tr>#}
-{#                                    <th data-field="algorithm">Algorithm</th>#}
-{#                                    <th data-field="score">AUC Score</th>#}
-{#                                </tr>#}
-{#                            </thead>#}
-{#                        </table>#}
-{#                         <div class="col-lg-6 col-md-12" style="height: 800px; overflow:scroll">#}
-{#                                <table id="alarmTable2" data-toggle="table"#}
-{#                                    data-url = "{% url 'show_normal_col_in_table' %}"#}
-{#                                    data-method = "get" data-page-size=10#}
-{#                                    data-pagination = "true" data-show-columns="true"#}
-{#                                    data-side-pagination = "server" data-striped="true"#}
-{#                                    >#}
-{#                                    <thead>#}
-{#                                        <tr>#}
-{#                                            <td>Severity</td>#}
-{#                                            <th data-field="CellID">CellID</th>#}
-{#                                                <th data-field="Severity" data-cell-style="cellStyle">Severity</th>#}
-{#                                            <th data-field="Created">Created</th>#}
-{#                                            <th data-field="Problem Class">Problem Class</th>#}
-{#                                            <th data-field="Service Class">Service Class</th>#}
-{#                                        </tr>#}
-{#                                    </thead>#}
-{#                                </table>#}
-{#                         </div>#}
-{#                        {% comment %}<div class="col-lg-6 col-md-12" id="dominationMapDisplay">#}
-{#                            <div class="panel panel-primary">#}
-{#                                <div class="panel-heading text-center">#}
-{#                                    DOMINACE MAP#}
-{#                                </div>#}
-{#                                <div class="panel-body text-center">#}
-{#                                    <img id="dominateMap" src="http://127.0.0.1:8000/media/dominationMap.png" class="img-fluid" alt="dominate map">#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>{% endcomment %}#}
-{##}
-{#                 </div>#}
-{##}
-{#             </div>#}
-{##}
-{#             </div>#}
           <div class="container">
                 <div class="heading">
-                  <h3 class="wow fadeInLeftBig" style="margin-top: 100px; color: #313338; font-size: 30px;">Networks Performance</h3>
+                  <h3 style="margin-top: 100px; color: #313338; font-size: 30px;">Networks Performance</h3>
                 </div>
           </div>
          </div>
@@ -793,7 +737,11 @@
              </div>
 
          </div>
-
+{#         <div id="controlPanelNew">#}
+{#            <label>Create Outage</label>#}
+{#            <button>Create Outage</button>#}
+{#            <br> <input type="text" name="firstname"><br>#}
+{#         </div>#}
 
          <div class="container" style="margin-top: 2cm;">
              <form action="controlPanel" method="GET" id="controlPanel">
@@ -1479,10 +1427,10 @@
          var regressionRf = {{  RegressionRF | safe }};
          var regressionSvr = {{  RegressionSVR | safe }};
          var regressionZScores = {{  ZScores | safe }};
-         //var knAuc = {{  knAUC | safe }};
      </script>
     <script src="{% static 'fiveG/js/graphs.js' %}"></script>
      <!-- Buttons -->
+    <script src="{% static 'fiveG/js/buttons-demo.js' %}"></script>
     <script src="{% static 'fiveG/js/buttons.js' %}"></script>
     <!-- Custom js-->
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
@@ -1499,65 +1447,66 @@
 {#         });#}
 {##}
 
-
         $(document).ready(function() {
-             var dataInit = [{ bsID: "1",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "2",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "3",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "4",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "5",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "6",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"},
-                    { bsID: "7",
-                    created: new Date().toLocaleString(),
-                    severity: "Normal",
-                    problem: "Normal Traffic",
-                    service: "eUTRAN"}];
+            disableSelectRegButton();
+             {#var dataInit = [{ bsID: "1",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "2",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "3",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "4",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "5",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "6",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"},#}
+             {#       { bsID: "7",#}
+             {#       created: new Date().toLocaleString(),#}
+             {#       severity: "Normal",#}
+             {#       problem: "Normal Traffic",#}
+             {#       service: "eUTRAN"}];#}
                 $('#alarmTable').bootstrapTable({});
-                $('#alarmTable').bootstrapTable("load", dataInit);
+              //  $('#alarmTable').bootstrapTable("load", dataInit);
 
 
                 setInterval(function () {
                     $.get('/update_alarm_gui', function (data) {
                         var parsed = JSON.parse(data);
+                        updateZscoreChart(data);
                         if (parsed['rows'] != undefined) {
                             var rowData = [];
                             for(var i = 0; i < parsed['rows'].length; i++) {
                                 rowData.push({ bsID: parsed['rows'][i]['bsID'],
                                     created: new Date().toLocaleString(),
                                     severity: parsed['rows'][i]['severity'],
-                                    problem: "Normal Traffic",
-                                    service: "eUTRAN"})
+                                    problem: parsed['rows'][i]['problem'],
+                                    service: parsed['rows'][i]['service']})
                             }
                         }
                     $('#alarmTable').bootstrapTable({});
                     $('#alarmTable').bootstrapTable("load", rowData);
 
                 });
-                }, 20000);
+                }, 10000);
         } );
 
         function cellStyle(value, row, index) {
@@ -1572,157 +1521,6 @@
             }
             return {};
         }
-       // $(document).ready(function(){
-      //     $('.cellID').each(function(){
-     //         var cellIdValue = parseInt($(this).text());
-      //        if(cellIdValue > 0) {
-     //             $(this).css('color', 'red');
-    //          }
-   //        });
-  //      });
-
-         {#$('#alarmTable').bootstrapTable({});#}
-         {#   function load(){#}
-         {#       var data = [{ cellID: "1",#}
-         {#           created: "TEST4444",#}
-         {#           severity: "TEST4142",#}
-         {#           problem: "TEST4",#}
-         {#           service: "TEST5"}];#}
-         {#       $('#alarmTable').bootstrapTable("load", data);#}
-         {#   }#}
-         {#   function reload(){#}
-         {#       var data = [{ cellID: "1",#}
-         {#           created: "TEST4444",#}
-         {#           severity: "TEST4142",#}
-         {#           problem: "TEST4",#}
-         {#           service: "TEST5"}];#}
-         {#       $('#alarmTable').bootstrapTable("load", data);#}
-         {#   }#}
-        function toggleRegressionButtons(buttonID) {
-            if(buttonID != 0) {
-                $("#useSimpleReg").css({background:'#000411'});
-                $("#useRfReg").css({background:'#ff0900'});
-                $("#useSvrReg").css({background:'#00c80d'});
-                $("#useDtReg").css({background:'#000000'});
-            }
-            if(buttonID != 1) $("#useSimpleReg").css({background:'#2DA2C8'});
-        }
-
-        $("#useSimpleReg").click(function () {
-             $.ajax({
-                 url: "selectRegressionModel",
-                 data: {
-                    selectedReg: 0,
-                  },
-                 type: 'GET',
-                   beforeSend: function() {
-                     toggleRegressionButtons(0)
-                   },
-                 success: function (data) {
-                 },
-                 failure: function (data) {
-                     alert("Error at selection regression");
-                 }
-             });
-         });
-
-
-
-        function disableMlButtons() {
-            $("#saveML").prop('disabled', true);
-            $("#loadML").prop('disabled', true);
-            $("#updateML").prop('disabled', true);
-        }
-
-         function enableMlButtons() {
-            $("#saveML").prop('disabled', false);
-            $("#loadML").prop('disabled', false);
-            $("#updateML").prop('disabled', false);
-        }
-
-        $("#saveML").click(function () {
-             $.ajax({
-                 url: "saveMLModels",
-                 type: 'GET',
-                   beforeSend: function() {
-                     disableMlButtons()
-                   },
-                 success: function (data) {
-                     var parsed = JSON.parse(data);
-                     if(parsed == 0) {
-                         alert("Models need to be created before saving");
-                     }
-                     enableMlButtons();
-                 },
-                 failure: function (data) {
-                     alert("Error at saving models");
-                     enableMlButtons();
-                 }
-             });
-         });
-
-
-
-         $("#loadML").click(function () {
-             $.ajax({
-                 url: "loadMLModels",
-                 type: 'GET',
-                   beforeSend: function() {
-                     disableMlButtons()
-                   },
-                 success: function (data) {
-                     var parsed = JSON.parse(data);
-                     if(parsed == 0) {
-                         alert("Couldn't find previously saved models");
-                     }
-                     else {
-                         var parsed = JSON.parse(data);
-                         drawRegressionCharts(parsed)
-                     }
-                     enableMlButtons();
-                 },
-                 failure: function (data) {
-                     alert("Error at loading models");
-                     enableMlButtons();
-                 }
-             });
-         });
-
-         $("#updateML").click(function () {
-             $.ajax({
-                 url: "updateRegressionChart",
-                 type: 'GET',
-                   beforeSend: function() {
-                     disableMlButtons()
-                   },
-                 success: function (data) {
-                     var parsed = JSON.parse(data);
-                     drawRegressionCharts(parsed)
-                     enableMlButtons();
-                 },
-                 failure: function (data) {
-                     alert("Error at updating regression charts");
-                     enableMlButtons();
-
-                 }
-             });
-         });
-
-         {#function cellStyle(value, row, index) {#}
-         {#    if (value === "Normal") {#}
-         {#        return {#}
-         {#            classes: "success"#}
-         {#        }#}
-         {#    } else if (value === "Minor") {#}
-         {#        return {#}
-         {#            classes: "warning"#}
-         {#        }#}
-         {#    } else {#}
-         {#        return {#}
-         {#            classes: ""#}
-         {#        }#}
-         {#    }#}
-
      </script>
   </body>
 </html>
