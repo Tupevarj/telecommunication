@@ -1435,57 +1435,10 @@
     <!-- Custom js-->
     <script src="{% static 'fiveG/js/custom.js' %}"></script>
      <script>
-{##}
-{#         $(document).ready(function () {#}
-{#             d = new Date();#}
-{#             setInterval(function () {#}
-{#                 $.get('/loadNewestDominateMap',#}
-{#                     function (data) {#}
-{#                         $('#dominateMap').attr("src", "http://127.0.0.1:8000/media/dominationMap.png"+"?"+Math.random());#}
-{#                     });#}
-{#             }, 2000);#}
-{#         });#}
-{##}
 
         $(document).ready(function() {
             disableSelectRegButton();
-             {#var dataInit = [{ bsID: "1",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "2",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "3",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "4",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "5",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "6",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"},#}
-             {#       { bsID: "7",#}
-             {#       created: new Date().toLocaleString(),#}
-             {#       severity: "Normal",#}
-             {#       problem: "Normal Traffic",#}
-             {#       service: "eUTRAN"}];#}
                 $('#alarmTable').bootstrapTable({});
-              //  $('#alarmTable').bootstrapTable("load", dataInit);
 
 
                 setInterval(function () {

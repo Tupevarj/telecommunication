@@ -10,21 +10,7 @@ var chartSvrRegression;
 var chartDtRegression;
 var chartRfRegression;
 var chartZScoreColumn;
-// var chartNewZScoreColumn;
 var first = true;
-
-//
-// function loadTable(tableId, fields, data) {
-//     var rows = '';
-//     $.each(data, function(index, item) {
-//         var row = '<tr>';
-//         $.each(fields, function(index, field) {
-//                 row += '<td>' + item[field+''] + '</td>';
-//             });
-//         rows += row + '<tr>';
-//     });
-//     $('#' + tableId + ' tbody').html(rows);
-// }
 
 /*
     Initialize charts and start timer for updating charts
@@ -300,7 +286,7 @@ function updateZScoreColumnChart(listZscores, title, serie)
     {
         values[i] = ["BS " + (i+1).toString(), listZscores[i]];
     }
-    series.setData(values, false, false, true);
+    series.setData(values, false, true, true);
     if(title != "")
         chartZScoreColumn.setTitle({text: "Z-Score for " + title});
     chartZScoreColumn.redraw();
@@ -353,7 +339,7 @@ function drawZScoreColumnChart(listZscore) {
         },
         tooltip: {
              formatter: function () {
-                return '<b>' + "Basestation " + this.x + '</b><br/>' +
+                return '<b>' + "Basestation " + String(parseInt(this.x) + 1) + '</b><br/>' +
                     this.series.name + ': ' + Highcharts.numberFormat(this.y, 2) + '<br/>'
             }
         },
@@ -858,11 +844,12 @@ function drawRegressionCharts(parsed) {
  */
 function redrawZscoresChart(data, title) {
     var parsed = JSON.parse(data);
+    $('#alarmTable').bootstrapTable({});
+    $('#alarmTable').bootstrapTable("removeAll");
     if (parsed["ZScores"] != undefined) {
         var map = JSON.parse(parsed["ZScores"]);
+        chartZScoreColumn.series[1].setData(0, false, false, true); // optional: hides old data from chart
         updateZScoreColumnChart(map, title, 0);
-
-        // chartZScoreColumn.series[1].setData(0, false, false, true);  optional: hides old data from chart
     }
 }
 

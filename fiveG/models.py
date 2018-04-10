@@ -24,23 +24,6 @@ def connect_to_mongo_db():
         mongo_conn = MongoClient(host, port)
 
 
-# def _connect_mongo():
-#     """ A util for making a connection to mongo """
-#     host = "localhost"
-#     port = 27017
-#     username = ""
-#     password = ""
-#     db = "5gopt"
-#
-#     if username and password:
-#         mongo_uri = 'mongodb://%s:%s@%s:%s/%s' % (username, password, host, port, db)
-#         conn = MongoClient(mongo_uri)
-#     else:
-#         conn = MongoClient(host, port)
-#
-#     return conn[db]
-
-
 def get_collection_count(collection):
     global mongo_conn
     global mongo_db
@@ -85,8 +68,6 @@ def unlock_database(read):
         mongo_conn[mongo_db]["Locks"].update({}, {'$inc': {'Type': -1}})
     else:
         mongo_conn[mongo_db]["Locks"].update({}, {'$set': {'Type': 0}})
-
-
 
 
 def read_collection_as_list_mongo(collection, query={}, skip=0, limit=0):
@@ -138,13 +119,3 @@ def calculate_dominatemap_size():
         return mongo_conn[mongo_db]["dominationmap"].count()
     except:
         return 0
-
-
-
-
-
-
-
-
-
-

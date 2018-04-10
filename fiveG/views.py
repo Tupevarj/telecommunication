@@ -1,17 +1,16 @@
 from django.shortcuts import render
-from .models import collection_read_mongo, insert_document, calculate_dominatemap_size, \
-    read_collection_as_list_mongo, get_collection_count
-from .models import collection_read_mongo, insert_document, calculate_dominatemap_size, \
+from .models import read_collection_as_list_mongo, get_collection_count
+from .models import collection_read_mongo, insert_document, \
     connect_to_mongo_db, is_database_unlocked, unlock_database, lock_database
 import json
 import numpy as np
 from django.http import HttpResponse
-from .ml import calculate_total_throughput, \
-    get_rsrp_per_cell_from_collection_II, calculate_total_throughput_II, \
-    initialize_ml, run_ml, do_calculate_z_scores, preprocessed_data_to_csv_file, \
-    preprocess_training_set_to_8_and_10_dimensions, do_all_regressions, save_all_regressors, \
-    load_all_regressors, Regressor, set_regressor, get_reg_chart_data, get_reg_z_scores, \
-    get_auc_scores, get_current_z_scores
+from .data_processing import get_rsrp_per_cell_from_collection, calculate_total_throughput, \
+    initialize_data_processing, preprocessed_data_to_csv_file, preprocess_training_set_to_8_and_10_dimensions,\
+    preprocess_testing_set_to_10_dimensions
+from .ml import run_ml, calculate_reference_z_scores, \
+    train_and_test_all_regressions, save_all_regressors, load_all_regressors, Regressor, set_regressor, \
+    get_reg_chart_data, get_reg_z_scores, get_auc_scores, get_current_z_scores
 import time
 
 
@@ -25,6 +24,19 @@ training_ended = False  # cache
 ##############################################################
 #   UPDATING CHARTS
 ##############################################################
+
+
+def is_update_needed_for_alarm_table():
+    """ Checks if there is new data in DB for ML algorithm """
+    global last_read_ml
+    count_map = get_collection_count(collection="main_kpis_log_labels")
+    if last_read_ml == count_map:
+        return False
+    elif last_read_ml > count_map:    # DB dropped
+        last_read_ml = 0
+        return True
+    else:
+        return True
 
 
 def is_update_needed_for_dominance_map():
@@ -55,7 +67,7 @@ def is_update_needed_for_charts(context):
     elif last_read_rsrp > count_rsrp and last_read_thr > count_thr:  # DB dropped
         last_read_rsrp = 0
         last_read_thr = 0
-        initialize_ml()     # TODO: move elsewhere
+        initialize_data_processing()     # TODO: move elsewhere
         context['Initialize'] = json.dumps(True)
         return True
     else:
@@ -83,18 +95,9 @@ def update_dominance_map(context):
     context['DominanceMap'] = json.dumps(dict_dominance)
 
 
-def select_reg_model(request):
-    """" Set regression model and return references Z-scores accordingly selection """
-    reg = int(request.GET['selectedReg'])
-    set_regressor(reg)
-    context = dict()
-    z_scores = get_current_z_scores()
-    context['ZScores'] = json.dumps(z_scores)
-    return HttpResponse(json.dumps(context))
-
-
-def create_context_for_reg_graphs(context):
+def create_context_for_reg_graphs():
     """ Creates context for regression charts"""
+    context = dict()
     points = get_reg_chart_data()
     auc_scores = get_auc_scores()
     z_scores = get_reg_z_scores()
@@ -103,31 +106,12 @@ def create_context_for_reg_graphs(context):
     context['RegressionSVR'] = json.dumps(points[Regressor.SVR_REG.value])
     context['RegressionDT'] = json.dumps(points[Regressor.DECISION_TREE_REG.value])
     context['RegressionRF'] = json.dumps(points[Regressor.RANDOM_FOREST_REG.value])
-
     context['sRegAUC'] = json.dumps(auc_scores[Regressor.SIMPLE_REG.value])
     context['rfRegAUC'] = json.dumps(auc_scores[Regressor.RANDOM_FOREST_REG.value])
     context['svcRegAUC'] = json.dumps(auc_scores[Regressor.SVR_REG.value])
     context['dtRegAUC'] = json.dumps(auc_scores[Regressor.DECISION_TREE_REG.value])
-
     context['ZScores'] = json.dumps(z_scores[Regressor.SIMPLE_REG.value])
-
-
-def create_regression_models():
-    """ First preprocesses data from database and then trains regression
-        models with it """
-    while not is_database_unlocked(True):
-        time.sleep(0.1)
-    lock_database(True)
-    data = collection_read_mongo(collection="main_kpis_log_labels")
-    unlock_database(True)
-    if len(data) > 0:
-        array_8_dim = []
-        labels = []
-        array_10_dim = []
-        preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
-                                                       labels=labels, data_frame=data)
-        do_all_regressions(array_8_dim, labels)
-        do_calculate_z_scores(array_x=array_10_dim, array_y=labels)
+    return context
 
 
 def update_charts_data(context):
@@ -147,12 +131,12 @@ def update_charts_data(context):
     last_read_thr += len(throughput_new)
 
     # Create RSRP dictionary
-    get_rsrp_per_cell_from_collection_II(list_rsrp=list_main_kpis, dict_rsrp=dict_rsrp_graph)
+    get_rsrp_per_cell_from_collection(list_rsrp=list_main_kpis, dict_rsrp=dict_rsrp_graph)
 
     # Calculate throughput
     throughput_result_new = dict()
     if len(throughput_new) > 0:
-        throughput_result_new = calculate_total_throughput_II(throughput_new)
+        throughput_result_new = calculate_total_throughput(throughput_new)
 
     # Get latest RSRP for each cell TODO: Make this as separate function!?!
     list_rsrp_per_cell = list()
@@ -164,6 +148,62 @@ def update_charts_data(context):
     context['RsrpPerCell'] = list_rsrp_per_cell
 
 
+##############################################################
+#   END : UPDATING CHARTS
+##############################################################
+
+
+def create_regression_models():
+    """ First preprocesses data from database and then trains regression
+        models with it """
+    while not is_database_unlocked(True):
+        time.sleep(0.1)
+    lock_database(True)
+    data = collection_read_mongo(collection="main_kpis_log_labels")
+    unlock_database(True)
+    if len(data) > 0:
+        array_8_dim = []
+        labels = []
+        array_10_dim = []
+        preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
+                                                       labels=labels, data_frame=data)
+        train_and_test_all_regressions(array_8_dim, labels)
+        calculate_reference_z_scores(array_x=array_10_dim, array_y=labels)
+
+
+##############################################################
+#   HTTP REQUEST HANDLERS
+##############################################################
+
+
+def update_charts(request):
+    """ Main update routine for charts; checks if charts needs to be updated
+        and returns data needed for charts """
+    if request.method == "GET" and request.path == '/updateCharts':
+        # Create context to be send to html file:
+        context = dict()
+        # Check if needs to be updated
+        if is_database_unlocked(True):
+            lock_database(True)
+            if is_update_needed_for_charts(context):
+                update_charts_data(context)
+            if is_update_needed_for_dominance_map():
+                update_dominance_map(context)
+            unlock_database(True)
+            return HttpResponse(json.dumps(context))
+    return HttpResponse(json.dumps(0))
+
+
+def select_reg_model(request):
+    """" Set regression model and return references Z-scores accordingly selection """
+    reg = int(request.GET['selectedReg'])
+    set_regressor(reg)
+    context = dict()
+    z_scores = get_current_z_scores()
+    context['ZScores'] = json.dumps(z_scores)
+    return HttpResponse(json.dumps(context))
+
+
 def load_ml_models(request):
     """ Load Regression models and data for regression charts from hard drive """
     global training_ended
@@ -171,10 +211,8 @@ def load_ml_models(request):
         if load_all_regressors() == 0:
             return HttpResponse(json.dumps(0))
         else:
-            context = dict()
-            create_context_for_reg_graphs(context)
             training_ended = True
-            return HttpResponse(json.dumps(context))
+            return HttpResponse(json.dumps(create_context_for_reg_graphs()))
 
 
 def save_ml_models(request):
@@ -191,44 +229,12 @@ def create_ml_models(request):
     """ Fits Regression models and creates data for regression charts and table """
     global training_ended
     if request.method == "GET" and request.path == '/createModels':
-        context = dict()
         create_regression_models()
-        create_context_for_reg_graphs(context)  # Data for charts and table
         training_ended = True
-        return HttpResponse(json.dumps(context))
+        return HttpResponse(json.dumps(create_context_for_reg_graphs()))
     else:
         return 0
 
-
-def update_charts(request):
-    """ Main update routine for charts; checks if charts needs to be updated
-        and returns data needed for charts. TODO: Should we only response if new data is available?
-        (Currently we are doing unnecessary checks in front-end.)"""
-    if request.method == "GET" and request.path == '/updateCharts':
-        # Create context to be send to html file:
-        context = dict()
-        # Check if needs to be updated
-        if is_database_unlocked(True):
-            # TODO: USE THIS: time.sleep ??
-            lock_database(True)
-            if is_update_needed_for_charts(context):
-                update_charts_data(context)
-            if is_update_needed_for_dominance_map():
-                update_dominance_map(context)
-            unlock_database(True)
-            return HttpResponse(json.dumps(context))
-        return HttpResponse(json.dumps(0))
-    else:
-        return HttpResponse(json.dumps(0))
-
-
-##############################################################
-#   END : UPDATING CHARTS
-##############################################################
-
-##############################################################
-#   UPDATE TABLES
-##############################################################
 
 def update_alarm_gui(request):
     """ Run ML Algorithm and return data for alarm table
@@ -236,34 +242,26 @@ def update_alarm_gui(request):
     if request.method == "GET":
         global last_read_ml
         global training_ended
-        if training_ended:
+        if training_ended and is_update_needed_for_alarm_table():
             response_data = {'total': 1, 'rows': []}
 
             while not is_database_unlocked(True):
-                time.sleep(0.1)
+                time.sleep(0.01)
 
             lock_database(True)
             data = collection_read_mongo(collection="main_kpis_log_labels", skip=last_read_ml)
             unlock_database(True)
+            last_read_ml += len(data)
+
             if len(data) > 0:
-                last_read_ml += len(data)
-                array_8_dim = []
-                labels = []
-                array_10_dim = []
-                preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
-                                                               labels=labels, data_frame=data)
-
-                ml_data = run_ml(array_10_dim)
-                outage_id = ml_data[0]
-
-                # Get new Z-scores
-                z_scores = ml_data[1]
-                response_data['ZScores'] = json.dumps(z_scores)
+                array_10_dim = preprocess_testing_set_to_10_dimensions(data)
+                ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
+                response_data['ZScores'] = json.dumps(ml_data[1])
 
                 for i in range(1, 8):
                     severity = "Normal"
                     problem = "Normal Traffic"
-                    if i == outage_id:
+                    if i == ml_data[0]:
                         severity = "Critical"
                         problem = "Outage"
                     response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
@@ -271,14 +269,6 @@ def update_alarm_gui(request):
                 return HttpResponse(json.dumps(response_data))
         return HttpResponse(json.dumps(0))
 
-
-##############################################################
-#   END : UPDATE TABLES
-##############################################################
-
-##############################################################
-#   CONTROL PANEL
-##############################################################
 
 def controlPanel(request):
     if request.method == "GET":
@@ -333,7 +323,7 @@ def controlPanel(request):
         else:
             # store this operation into mongoDB collecton - control Panel
             # insert one document into database
-            info = "successfully finish new operation"
+            info = "Successfully finish new operation"
             while not is_database_unlocked(True):
                 time.sleep(0.1)
             lock_database(False)
@@ -343,8 +333,9 @@ def controlPanel(request):
 
 
 ##############################################################
-#   END : CONTROL PANEL
+#   END: HTTP REQUEST HANDLERS
 ##############################################################
+
 
 def initialize():
     """ Initialize global values when page is refreshed """
@@ -368,10 +359,8 @@ def index(request):
         Read data from mongoDB and preprocess data for graphs in front-end """
     # Initialize global values:
     initialize()
-    initialize_ml()
-    global auck
+    initialize_data_processing()
 
-    #
     # Load data for charts:
     context = dict()
 
@@ -379,7 +368,6 @@ def index(request):
         time.sleep(0.1)
 
     lock_database(True)
-    #preprocessed_data_to_csv_file("/home/tupevarj/NS3SimulatorData/realphase/")
     update_charts_data(context)
     update_dominance_map(context)
     unlock_database(True)
@@ -391,12 +379,3 @@ def index(request):
     context['ZScores'] = json.dumps([0, 0, 0, 0, 0, 0, 0])  # TODO: Get rid of this
 
     return render(request, 'fiveG/index.html', context)
-
-
-##############################################################
-#   NOT USED FUNCTIONS AND VARIABLES
-##############################################################
-
-##############################################################
-#   END: NOT USED FUNCTIONS AND VARIABLES
-##############################################################
