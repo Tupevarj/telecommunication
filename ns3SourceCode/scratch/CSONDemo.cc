@@ -20,12 +20,27 @@
 #include <unistd.h>
 #include <thread>
 #include <algorithm>
+#include <time.h>
 
+//#define DEBUG
 ConfigureInOut confInOut;
+
+
+/*
+ * Time start point in real life
+ */
+#ifdef DEBUG
+clock_t timeStart; // = clock();
+clock_t timePrevious; // = clock();
+#endif //DEBUG
+
 
 using namespace ns3;
 
 const int NUMBER_OF_UES = 105;	// number of users
+//Vector3D ueLocationsBuffer[100][NUMBER_OF_UES+1];
+Vector3D ueLocationsBuffer[NUMBER_OF_UES+1];
+
 int remStep = 0;		// Step number for REM generating
 //int lastStepRem = -1;	// For preventing to create same REM multiple times in a row
 volatile sig_atomic_t flag = 0;
@@ -33,7 +48,9 @@ bool remReady = true;
 bool createRem = true;
 ConfigurationLog confPrevious;
 std::thread threadRem;
+//std::thread threadMongo;
 u_int16_t labelDefault = 0;
+uint16_t outageBs = 4;
 
 // FOR LABELING:
 bool labeling = false;
@@ -68,6 +85,20 @@ float triangleC = std::numeric_limits<float>::max();
  */
 
 
+/*
+ * Returns cell ids of particular basestation
+ */
+void
+GetCellBasedOnBsID(uint16_t bs, std::vector<uint16_t>& ids)
+{
+	uint16_t start = (bs - 1) * 3 + 1;
+	for(uint16_t i = 0; i < 3; i++)
+	{
+		ids.push_back(start + i);
+	}
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //	MACHINE LEARNING
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,9 +124,10 @@ void
 CreateTriangle()
 {
 	std::vector<uint16_t> cells;
-	cells.push_back(10);
-	cells.push_back(11);
-	cells.push_back(12);
+
+	GetCellBasedOnBsID(outageBs, cells);
+	std::cout << "CELLS: " << cells[0] << ", " << cells[1] << ", " << cells[2] << std::endl;
+
 	std::vector<Location> locations = confInOut.ReadHandovers(cells);
 
 	for(unsigned int i = 0; i < locations.size(); i++)
@@ -117,7 +149,7 @@ CreateTriangle()
 			triangle.C = locations[i];
 		}
 	}
-	//std::cout << "Triangle is { A: " << triangle.A.x << " : " << triangle.A.y << " B: " << triangle.B.x << " : " << triangle.B.y << " C: " << triangle.C.x << " : " << triangle.C.y << " } " << "\n";
+	std::cout << "Triangle is { A: " << triangle.A.x << " : " << triangle.A.y << " B: " << triangle.B.x << " : " << triangle.B.y << " C: " << triangle.C.x << " : " << triangle.C.y << " } " << "\n";
 }
 
 
@@ -154,9 +186,52 @@ SignalHandler(int signum)
 //	}
 }
 
+
+void
+UpdateUserLocations(float time)
+{
+	ueLocationsBuffer[0] = Vector3D(time,time,time);
+	// Loop through all the nodes:
+	for(NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+	{
+		Ptr<Node> node = *it;
+		int nDevices = node->GetNDevices();
+
+		// Loop through all devices on node:
+		for(int i = 0; i < nDevices; i++)
+		{
+			Ptr<LteUeNetDevice> ueDevice = node->GetDevice(i)->GetObject<LteUeNetDevice>();
+
+			// test NULL
+			if(ueDevice && ueDevice->GetImsi() > 0 && ueDevice->GetImsi() <= NUMBER_OF_UES)
+			{
+				Ptr<MobilityModel> mob = node->GetObject<MobilityModel>();
+				ueLocationsBuffer[ueDevice->GetImsi()] = mob->GetPosition();
+			}
+		}
+	}
+}
+
+inline bool DoubleEquals(double a, double b, double epsilon = 0.01)
+{
+    return std::abs(a - b) < epsilon;
+}
+
 Vector3D
 GetUeLocation(uint64_t imsi)
 {
+	// For 200 ms interval timestamps find UE location from buffer:
+	if(DoubleEquals(ueLocationsBuffer[0].x, Simulator::Now().GetSeconds()))
+	{
+		return ueLocationsBuffer[imsi];
+	}
+	else if(DoubleEquals(ueLocationsBuffer[0].x + 0.2, Simulator::Now().GetSeconds()))
+	{
+		UpdateUserLocations(Simulator::Now().GetSeconds());
+		return ueLocationsBuffer[imsi];
+	}
+
+	// For arbitrary timestamps find UE location without buffer
 	// Loop through all the nodes:
 	for(NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
 	{
@@ -216,57 +291,13 @@ SetCellTransmissionPower(u_int16_t cellId, double power)
  *  Changes basestations transmission power
  */
 void
-SetBaseStationTransmissionPower(u_int16_t bs, double power, int &firstCell)
+SetBaseStationTransmissionPower(u_int16_t bs, double power)
 {
-	if(bs == 1)
-	{
-		firstCell = 1;
-		SetCellTransmissionPower(1, power);
-		SetCellTransmissionPower(2, power);
-		SetCellTransmissionPower(3, power);
-	}
-	else if(bs == 2)
-	{
-		firstCell = 4;
-		SetCellTransmissionPower(4, power);
-		SetCellTransmissionPower(5, power);
-		SetCellTransmissionPower(6, power);
-	}
-	else if(bs == 3)
-	{
-		firstCell = 7;
-		SetCellTransmissionPower(7, power);
-		SetCellTransmissionPower(8, power);
-		SetCellTransmissionPower(9, power);
-	}
-	else if(bs == 4)
-	{
-		firstCell = 10;
-		SetCellTransmissionPower(10, power);
-		SetCellTransmissionPower(11, power);
-		SetCellTransmissionPower(12, power);
-	}
-	else if(bs == 5)
-	{
-		firstCell = 13;
-		SetCellTransmissionPower(13, power);
-		SetCellTransmissionPower(14, power);
-		SetCellTransmissionPower(15, power);
-	}
-	else if(bs == 6)
-	{
-		firstCell = 16;
-		SetCellTransmissionPower(16, power);
-		SetCellTransmissionPower(17, power);
-		SetCellTransmissionPower(18, power);
-	}
-	else if(bs == 7)
-	{
-		firstCell = 19;
-		SetCellTransmissionPower(19, power);
-		SetCellTransmissionPower(20, power);
-		SetCellTransmissionPower(21, power);
-	}
+	std::vector<uint16_t> cellIds;
+	GetCellBasedOnBsID(bs, cellIds);
+	SetCellTransmissionPower(cellIds[0], power);
+	SetCellTransmissionPower(cellIds[1], power);
+	SetCellTransmissionPower(cellIds[2], power);
 }
 
 
@@ -355,6 +386,7 @@ GetConnectedCell(uint64_t imsi)
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CALLBACKS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,7 +467,6 @@ KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp
 	}
 	if(labeling)
 	{
-//		u_int16_t label = labelDefault;
 		bool label = false;
 		if(labelingStarted)
 		{
@@ -444,15 +475,6 @@ KpiTestCallback(std::string context, uint64_t imsi, uint16_t cellId, double rsrp
 				label = true;
 			}
 		}
-//		if(labelings[imsi]) label = true;
-//		else
-//		{
-//			if(std::find(outaged.begin(), outaged.end(), connected) != outaged.end())
-//			{
-//				label = true;
-//				labelings[imsi] = true;
-//			}
-//		}
 		confInOut.LogMainKpisWithLabeling(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn, label);
 	}
 	else confInOut.LogMainKpisWithLabeling(Simulator::Now().GetSeconds(), location.x, location.y, imsi, cellId, rsrp, rsrq, conn, false);
@@ -532,21 +554,23 @@ ApplySONEngineMethods(SONEngineLog confData)
 	{
 		std::cout << "Clicked: \"" << SONEngineLog::GetMethodName(confData.configurations[i].method) <<
 				"\" for cell " << confData.configurations[i].cellId << std::endl;
-		double oldTxPower = GetCellTransmissionPower(confData.configurations[i].cellId);
 
 
 		if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Outage)
 		{
-			int firstCell = 0;
 			// TODO: continue here: 15.3
-			SetBaseStationTransmissionPower(confData.configurations[i].cellId, 0.0, firstCell);
+			std::vector<uint16_t> cellIds;
+			GetCellBasedOnBsID(confData.configurations[i].cellId, cellIds);
+			double oldTxPower = GetCellTransmissionPower(cellIds[0]);
+
+			SetBaseStationTransmissionPower(confData.configurations[i].cellId, 0.0);
 //			SetCellTransmissionPower(confData.configurations[i].cellId, 0.0);
 			std::cout << "Outage created at basestation " << confData.configurations[i].cellId << ": decreased transmission power of basestation from "
 					  << oldTxPower << " to " << 0.0 << std::endl;
 
-			confInOut.UpdateTxPower(firstCell, 0.0);
-			confInOut.UpdateTxPower(firstCell+1, 0.0);
-			confInOut.UpdateTxPower(firstCell+2, 0.0);
+			confInOut.UpdateTxPower(cellIds[0], 0.0);
+			confInOut.UpdateTxPower(cellIds[1], 0.0);
+			confInOut.UpdateTxPower(cellIds[2], 0.0);
 		}
 //		else if(confData.configurations[i].method == SONEngineConfiguration::SonEngineMethod::Normal)
 //		{
@@ -627,12 +651,12 @@ WaitSonEngine()
 void
 CellOutage()
 {
-	outaged.push_back(10);
-	outaged.push_back(11);
-	outaged.push_back(12);
-	SetCellTransmissionPower(10, 0.0);
-	SetCellTransmissionPower(11, 0.0);
-	SetCellTransmissionPower(12, 0.0);
+	outaged.push_back(4);
+	outaged.push_back(5);
+	outaged.push_back(6);
+	SetCellTransmissionPower(4, 0.0);
+	SetCellTransmissionPower(5, 0.0);
+	SetCellTransmissionPower(6, 0.0);
 	createRem = true;
 }
 
@@ -653,6 +677,12 @@ RunSimulation(double seconds, Ptr<RadioBearerStatsCalculator> rlcStats)
 	Simulator::Run ();
 	rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (rlcStats->GetEpoch().GetSeconds() + seconds)));
 }
+
+//void
+//WriteToDatabase()
+//{
+//	confInOut.FlushLogs();
+//}
 
 void
 RunREMGeneratorScript()
@@ -707,12 +737,16 @@ static ns3::GlobalValue g_epc ("epc",
                                "If false, only the LTE radio access will be simulated with RLC SM. ",
                                ns3::BooleanValue (true),
                                ns3::MakeBooleanChecker ());
-static ns3::GlobalValue g_labeling ("labeling",
+static ns3::GlobalValue g_training ("training",
                                	   "If true, simulation will be running 10 rounds, 5 rounds with normal,"
                                	   "and 5 rounds after outage. Users affected by outage will be label"
                                	   "with LABEL : true.",
 								   ns3::BooleanValue (false),
 								   ns3::MakeBooleanChecker ());
+static ns3::GlobalValue g_training_bs("outage",
+									"Basestation ID to been broken in training-phase",
+									ns3::UintegerValue (4),
+									ns3::MakeUintegerChecker<uint32_t> ());
 
 
 // TODO: Should add more global values!
@@ -743,8 +777,10 @@ main (int argc, char *argv[])
 	double interSiteDistance = doubleValue.Get ();
 	GlobalValue::GetValueByName ("epc", booleanValue);
 	bool epc = booleanValue.Get ();
-	GlobalValue::GetValueByName ("labeling", booleanValue);
+	GlobalValue::GetValueByName ("training", booleanValue);
 	labeling = booleanValue.Get ();
+	GlobalValue::GetValueByName ("outage", uintegerValue);
+	outageBs = uintegerValue.Get ();
 	double txPower = 46.0;
 
 	Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -756,7 +792,8 @@ main (int argc, char *argv[])
 	NodeContainer macroUes;
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (160));
 
-	//RngSeedManager::SetSeed(213);
+	if(!labeling)
+		RngSeedManager::SetSeed(11); // TODO: create random
 
 	///////////////////////////////////////////////
 	// CREATE TOPOLOGY
@@ -850,11 +887,17 @@ main (int argc, char *argv[])
 //		userLocations[i] = Vector
 //	}
 
+
+
 	int rounds = 0;
 	while(flag == 0)
 	{
+		#ifdef DEBUG
+		  timeStart = clock();
+		  timePrevious = timeStart;
+		#endif //DEBUG
 		// read configuration from database:
-		Update(nMacroEnbSites); 	// Note! requires connection to database TEMPORARY TURNED OFF
+		Update(nMacroEnbSites); 	// Note! requires connection to database
 
 
 //		double txPowersII[22] = {};
@@ -869,9 +912,17 @@ main (int argc, char *argv[])
 		RunSimulation(simTime, rlcStats);
 		// Updates cell states to database:
 		//UpdateCellStates(nMacroEnbSites*3); // <- IF REM
+
+
 		// write KPIs into database:
 		confInOut.FlushLogs();
 		std::cout << "Measurements are written to database.." << std::endl;
+
+		#ifdef DEBUG
+		  clock_t timeEnd = clock();
+		  double timeSpent = (double)(timeEnd - timeStart) / CLOCKS_PER_SEC;
+		  std::cout << "Round time: " << timeSpent << std::endl;
+		#endif //DEBUG
 
 		//rounds++;
 		if(labeling)
@@ -882,7 +933,9 @@ main (int argc, char *argv[])
 			}
 			if(rounds == 25)
 			{
-				CellOutage();
+				SetBaseStationTransmissionPower(outageBs, 0.0);
+				createRem = true;
+				//CellOutage();
 				labelingStarted = true;
 			}
 			if(rounds == 50)
@@ -933,6 +986,10 @@ main (int argc, char *argv[])
 		{
 			RunREMGenerator();
 		}
+	}
+	if(threadRem.joinable())
+	{
+		threadRem.join();
 	}
 	lteHelper = 0;
 	Simulator::Destroy ();

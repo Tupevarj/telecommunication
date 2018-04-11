@@ -131,7 +131,7 @@ main (int argc, char *argv[])
 
 		confInOut.ReadSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, pid);
 
-		std::cout << "Macro site: " << nMacroEnbSites << " X: " << nMacroEnbSitesX << std::endl;
+		//std::cout << "Macro site: " << nMacroEnbSites << " X: " << nMacroEnbSitesX << std::endl;
 		PID = pid;
 
 		Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
