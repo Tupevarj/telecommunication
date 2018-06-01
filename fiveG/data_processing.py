@@ -1,84 +1,11 @@
 import pandas as pd
-from .models import collection_read_mongo
+from .models import collection_read_mongo, read_multiple_mongo_collections_df, get_collection_count, get_last_element
+import json
 from sklearn import manifold
 import numpy as np
 
 ##############################################################
-#   PREPROCESS DATA FOR GRAPHS
-##############################################################
-
-prev_thr = 0.0
-last_time = 200
-prev_time = 200
-previous_thr = 0.0
-
-
-def initialize_data_processing():
-    global prev_thr
-    global last_time
-    global prev_time
-    prev_thr = 0.0
-    last_time = 200
-    prev_time = 200
-
-
-def calculate_total_throughput(list_thr):
-    """ Calculates total throughput at each timestamp, and stores values
-        into list """
-    global prev_thr
-    global last_time
-    global prev_time
-
-    list_thrs = []
-    curr_thr = 0.0
-
-    for i in range(0, len(list_thr)):
-
-        if prev_time == int(list_thr[i]["Time"] * 1000):
-            curr_thr += list_thr[i]["Throughput"]
-        else:
-            if not i == 0:
-                thr = (curr_thr - prev_thr) / (1000000 * 0.2)
-                list_thrs.append([prev_time/1000.0, thr])  # expecting timestep to be 200 ms
-                prev_thr = curr_thr
-                curr_thr = 0
-            prev_time = int(list_thr[i]["Time"] * 1000)
-        if i == (len(list_thr) - 1):    # TODO: Clean code
-            prev_time = int(list_thr[i]["Time"] * 1000)
-            thr = (curr_thr - prev_thr) / (1000000 * 0.2)
-            list_thrs.append([prev_time/1000.0, thr])  # expecting timestep to be 200 ms
-            prev_thr = curr_thr
-            curr_thr = 0
-    return list_thrs
-
-
-def get_rsrp_per_cell_from_collection(list_rsrp, dict_rsrp):
-    """Calculates rsrp for each cell at each timestamp and puts them into dictionary"""
-    # TODO: CURRENTLY EXPECTING FIRST USER ID TO 1
-    # Calculate RSRP for each cell
-    time_stamp = -1
-    for i in list_rsrp:
-        if time_stamp != i["Time"]:
-            time_stamp = i["Time"]
-            dict_rsrp["Time"].append(time_stamp)
-        user_id = i["UserID"]  # Based on user id  we know
-        key = "RSRP" + str(i["CellID"])
-        if key not in dict_rsrp:
-            dict_rsrp[key] = list()
-        # Calculate average if timestamp is same
-        if user_id > 1:
-            dict_rsrp[key][-1] = (dict_rsrp[key][-1] + i["RSRP"]) / 2
-        else:
-            dict_rsrp[key].append(i["RSRP"])
-
-
-##############################################################
-#   END: PREPROCESS DATA FOR GRAPHS
-##############################################################
-
-
-##############################################################
-#   OUTPUT TO CSV TODO: MOVE ANOTHER FILE
+#   OUTPUT TO CSV
 ##############################################################
 
 
@@ -91,7 +18,7 @@ def preprocessed_data_to_csv_file(path):
     file.close()
     file_labels.close()
 
-    data = collection_read_mongo(collection="main_kpis_log_labels")
+    data = collection_read_mongo(collection="main_kpis_log")
     processed = preprocess_data_8_dim(data)
     write_data_frame_to_csv_file(data_frame=processed, path=path)
 
@@ -147,7 +74,7 @@ def preprocess_testing_set_to_10_dimensions(data_frame):
            -   dim_10_list  : Time UserID RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
            -        array_y : LABEL """
 
-    dim_10_list = list();
+    dim_10_list = list()
     for identity, group in data_frame.groupby(["Time", "UserID"]):
         # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
         numpy_array = np.array(group.values)
@@ -206,50 +133,6 @@ def preprocess_data_8_dim(data):
     id_df = pd.DataFrame(id_list, columns=["Time", "UserID", "LABEL", "LocationX", "LocationY"])
     reference_df = id_df.merge(signal_df, left_index=True, right_index=True)
     return reference_df
-
-
-def mds(data):
-    ''' NOT USED ANYMORE?
-    preprocess data to make 8 dims and then apply mds(multidimensional scaling) to 3 dims vector, then make the reference database
-    :param data:
-    :return:
-    '''
-    # for each user A, we pick the top 4 highest RSRP, RSRQ value at a time point t.
-    identiferList = list()
-    pd.DataFrame(columns=["Time", "UserID", "LABEL", "LocationX", "LocationY"])
-    # pd.DataFrame(columns=["Time", "UserID"])
-    signalList = list()
-
-    for ident, group in data.groupby(["Time", "UserID"]):
-        #     iterate the group object, and pick the top 4 highest rsrp value and then its corresponsing rsrq value in that row
-        #     print(type(group))
-        top4Row = group.sort_values(by=["RSRP"], ascending=False)[:4]
-        #     print(top4Row)
-        try:
-            signalRow = [top4Row.iloc[0]["RSRP"], top4Row.iloc[0]["RSRQ"], top4Row.iloc[1]["RSRP"],
-                         top4Row.iloc[1]["RSRQ"], top4Row.iloc[2]["RSRP"], top4Row.iloc[2]["RSRQ"],
-                         top4Row.iloc[3]["RSRP"], top4Row.iloc[3]["RSRQ"]]
-            signalList.append(signalRow)
-            ident = (round(ident[0], 1), ident[1], group["LABEL"].iloc[0], group["LocationX"].iloc[0],
-                     group["LocationY"].iloc[0])
-            #  ident = (round(ident[0], 1), ident[1])
-            identiferList.append(ident)
-        except:
-            pass
-    signalDF = pd.DataFrame(signalList,
-                            columns=["RSRP_1", "RSRQ_1", "RSRP_2", "RSRQ_2", "RSRP_3", "RSRQ_3", "RSRP_4", "RSRQ_4"])
-    identiferDF = pd.DataFrame(identiferList, columns=["Time", "UserID", "LABEL", "LocationX", "LocationY"])
-    # identiferDF = pd.DataFrame(identiferList, columns=["Time", "UserID"])
-    referenceDF = identiferDF.merge(signalDF, left_index=True, right_index=True)
-    # TEMPORARY COMMENTED
-    mds = manifold.MDS(3, max_iter=200, n_init=1)
-    signalDF = signalDF.dropna(axis=0, how="any")
-    threeDimSig = mds.fit_transform(signalDF)
-    threeDimSigDF = pd.DataFrame(threeDimSig)
-
-    # create a new Dataframe with merging two exist Dataframe, and length of these two dataframe is same
-    referenceDF = identiferDF.merge(threeDimSigDF, left_index=True, right_index=True)
-    return referenceDF
 
 
 ##############################################################

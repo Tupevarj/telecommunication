@@ -1,25 +1,25 @@
 from django.shortcuts import render
 from .models import read_collection_as_list_mongo, get_collection_count
 from .models import collection_read_mongo, insert_document, \
-    connect_to_mongo_db, is_database_unlocked, unlock_database, lock_database
+    connect_to_mongo_db, collection_update_with_set
 import json
-import numpy as np
 from django.http import HttpResponse
-from .data_processing import get_rsrp_per_cell_from_collection, calculate_total_throughput, \
-    initialize_data_processing, preprocessed_data_to_csv_file, preprocess_training_set_to_8_and_10_dimensions,\
+from .data_processing import preprocess_training_set_to_8_and_10_dimensions,\
     preprocess_testing_set_to_10_dimensions
+from .chart_data_processing import initialize_data_processing, get_data_for_all_charts, \
+    get_ue_location_and_connection_history, get_cell_locations_II
 from .ml import run_ml, calculate_reference_z_scores, \
     train_and_test_all_regressions, save_all_regressors, load_all_regressors, Regressor, set_regressor, \
-    get_reg_chart_data, get_reg_z_scores, get_auc_scores, get_current_z_scores
-import time
-
+    get_reg_chart_data, get_reg_z_scores, get_auc_scores, get_current_z_scores, update_nb_cell_lists
+import subprocess, signal
+import os
+from threading import Thread
 
 # Global values
-last_read_rsrp = 0
-last_read_thr = 0
-last_read_dominance = 0
 last_read_ml = 0
 training_ended = False  # cache
+outage_rows = [0, 0, 0]
+sim_thread = 0
 
 ##############################################################
 #   UPDATING CHARTS
@@ -29,7 +29,7 @@ training_ended = False  # cache
 def is_update_needed_for_alarm_table():
     """ Checks if there is new data in DB for ML algorithm """
     global last_read_ml
-    count_map = get_collection_count(collection="main_kpis_log_labels")
+    count_map = get_collection_count(collection="main_kpis_log")
     if last_read_ml == count_map:
         return False
     elif last_read_ml > count_map:    # DB dropped
@@ -39,62 +39,6 @@ def is_update_needed_for_alarm_table():
         return True
 
 
-def is_update_needed_for_dominance_map():
-    """ Checks if there is new data in DB for dominance map """
-    global last_read_dominance
-    count_map = get_collection_count(collection="dominationmap")
-    if last_read_dominance == count_map:
-        return False
-    elif last_read_dominance > count_map:    # DB dropped
-        last_read_dominance = 0
-        return True
-    else:
-        return True
-
-
-def is_update_needed_for_charts(context):
-    """ Checks if there is new data in DB in main_kpis_log_labels or in throughput_log
-        In addition checks if collection in DB has been dropped and based on that knowledge
-        saves Initialize value to context """
-    global last_read_rsrp
-    global last_read_thr
-    count_rsrp = get_collection_count(collection="main_kpis_log_labels")
-
-    count_thr = get_collection_count(collection="throughput_log")
-    if last_read_rsrp == count_rsrp and last_read_thr == count_thr:  # Not should need to use and
-        context['Initialize'] = json.dumps(False)
-        return False
-    elif last_read_rsrp > count_rsrp and last_read_thr > count_thr:  # DB dropped
-        last_read_rsrp = 0
-        last_read_thr = 0
-        initialize_data_processing()     # TODO: move elsewhere
-        context['Initialize'] = json.dumps(True)
-        return True
-    else:
-        context['Initialize'] = json.dumps(False)
-        return True
-
-
-def update_dominance_map(context):
-    """ Updates dominance map: Save points (pixels) to context parameter """
-    global last_read_dominance
-
-    # Load dominance map from DB
-    list_dominance = read_collection_as_list_mongo(collection="dominationmap", skip=last_read_dominance)
-    last_read_dominance += len(list_dominance)
-
-    # Load dominance map from DB
-    dict_dominance = dict()
-    dict_dominance["Points"] = list()
-
-    list_dominance_II = list_dominance[-22500:]
-    # Create dictionary from dominance map values:  TODO: Make this as separate function!
-    for i in range(0, len(list_dominance_II)):    # FIXME: Hard coded pixel count!!!
-        dict_dominance["Points"].append([int(round(list_dominance_II[i]['x'])), int(round(list_dominance_II[i]['y'])),
-                                        10*np.log10(list_dominance_II[i]['sinr'])])
-    context['DominanceMap'] = json.dumps(dict_dominance)
-
-
 def create_context_for_reg_graphs():
     """ Creates context for regression charts"""
     context = dict()
@@ -102,65 +46,32 @@ def create_context_for_reg_graphs():
     auc_scores = get_auc_scores()
     z_scores = get_reg_z_scores()
 
-    context['Regression'] = json.dumps(points[Regressor.SIMPLE_REG.value])
-    context['RegressionSVR'] = json.dumps(points[Regressor.SVR_REG.value])
-    context['RegressionDT'] = json.dumps(points[Regressor.DECISION_TREE_REG.value])
-    context['RegressionRF'] = json.dumps(points[Regressor.RANDOM_FOREST_REG.value])
+    context['Regression'] = points[Regressor.SIMPLE_REG.value]
+    context['RegressionSVR'] = points[Regressor.SVR_REG.value]
+    context['RegressionDT'] = points[Regressor.DECISION_TREE_REG.value]
+    context['RegressionRF'] = points[Regressor.RANDOM_FOREST_REG.value]
     context['sRegAUC'] = json.dumps(auc_scores[Regressor.SIMPLE_REG.value])
     context['rfRegAUC'] = json.dumps(auc_scores[Regressor.RANDOM_FOREST_REG.value])
     context['svcRegAUC'] = json.dumps(auc_scores[Regressor.SVR_REG.value])
     context['dtRegAUC'] = json.dumps(auc_scores[Regressor.DECISION_TREE_REG.value])
-    context['ZScores'] = json.dumps(z_scores[Regressor.SIMPLE_REG.value])
+    context['ZScores'] = z_scores[Regressor.SIMPLE_REG.value]
     return context
-
-
-def update_charts_data(context):
-    """" Adds data to context parameter for RSRPs and throughput charts """
-    global last_read_rsrp
-    global last_read_thr
-
-    dict_rsrp_graph = dict()
-    dict_rsrp_graph["Time"] = list()
-
-    # RSRP: Load main_kpis log from DB
-    list_main_kpis = read_collection_as_list_mongo(collection="main_kpis_log_labels", skip=last_read_rsrp)
-    last_read_rsrp += len(list_main_kpis)
-
-    # THROUGHPUT: Load throughput log from DB
-    throughput_new = read_collection_as_list_mongo(collection="throughput_log", skip=last_read_thr)
-    last_read_thr += len(throughput_new)
-
-    # Create RSRP dictionary
-    get_rsrp_per_cell_from_collection(list_rsrp=list_main_kpis, dict_rsrp=dict_rsrp_graph)
-
-    # Calculate throughput
-    throughput_result_new = dict()
-    if len(throughput_new) > 0:
-        throughput_result_new = calculate_total_throughput(throughput_new)
-
-    # Get latest RSRP for each cell TODO: Make this as separate function!?!
-    list_rsrp_per_cell = list()
-    for i in range(1, len(dict_rsrp_graph)):
-        list_rsrp_per_cell.append(dict_rsrp_graph["RSRP" + str(i)][-1])
-
-    context['TotalThroughput'] = json.dumps(throughput_result_new)
-    context['RSRP'] = json.dumps(dict_rsrp_graph)
-    context['RsrpPerCell'] = list_rsrp_per_cell
 
 
 ##############################################################
 #   END : UPDATING CHARTS
 ##############################################################
 
+def update_nb_cell_lists_in_db():
+    """ Updates neighbour list for each cell in DB."""
+    update_nb_cell_lists()
+
 
 def create_regression_models():
     """ First preprocesses data from database and then trains regression
         models with it """
-    while not is_database_unlocked(True):
-        time.sleep(0.1)
-    lock_database(True)
-    data = collection_read_mongo(collection="main_kpis_log_labels")
-    unlock_database(True)
+    update_nb_cell_lists_in_db()    # FIXME: CALLING FROM HERE FOR NOW ON
+    data = collection_read_mongo(collection="main_kpis_log")
     if len(data) > 0:
         array_8_dim = []
         labels = []
@@ -171,26 +82,105 @@ def create_regression_models():
         calculate_reference_z_scores(array_x=array_10_dim, array_y=labels)
 
 
+def basetation_to_cell_ids(bs_id):
+    """ Converts basestation ID to corresponding cell IDs """
+    start = (bs_id - 1) * 3 + 1
+    list_cells = list()
+    for i in range(0, 3):
+        list_cells.append((start + i))
+
+    return list_cells
+
+
+def apply_coc():
+    global outage_rows
+    if outage_rows[2] == 0:
+        return {'message': "No outage detected.", 'status': 1}
+    else:
+        nb_cells = read_collection_as_list_mongo(collection="nb_cell_list")
+        outage_cell_ids = basetation_to_cell_ids(4)
+        compensated_cell_list = list()
+        # Compensate:
+        for cell in outage_cell_ids:
+            for nb_list in nb_cells:
+                if cell == nb_list['CellID']:
+                    for nb_cell in nb_list['NbCellIDs']:
+                        if nb_cell not in outage_cell_ids and nb_cell not in compensated_cell_list:
+                            compensated_cell_list.append(nb_cell)
+
+        for cell_id in compensated_cell_list:
+            collection_update_with_set(collection="cell_configurations", query={"CellID": cell_id}, value={"TxPower": 49.0})
+    return {'message': "Outage at basestation " + str(outage_rows[2]) + " detected. Compensation activated for cells " +
+                       str(compensated_cell_list) + ".", 'status': 0}
+
 ##############################################################
 #   HTTP REQUEST HANDLERS
 ##############################################################
+
+
+def run_simulation(params):
+    subprocess.call(["./start_simulation.sh", params])
+
+
+def stop_simulation(request):
+    """" Stops running simulation TODO: status code?"""
+    if request.method == "GET" and request.path == '/stopSimulation':
+        global sim_thread
+        list_state = read_collection_as_list_mongo("simulation_configurations")
+        pid = list_state[0]['pid']
+        os.kill(pid, signal.SIGUSR2)
+        sim_thread.join()
+    return HttpResponse(json.dumps("Simulation stopped."))
+
+
+def start_simulation(request):
+    """" Starts running simulation TODO: status code?"""
+    if request.method == "GET" and request.path == '/startSimulation':
+        global sim_thread
+        sim_thread = Thread(target=run_simulation, args=("0",))
+        sim_thread.start()
+    return HttpResponse(json.dumps("Simulation started."))
+
+
+def start_training_simulation(request):
+    """" Starts running training simulation TODO: status code?"""
+    if request.method == "GET" and request.path == '/startTrainingSimulation':
+        global sim_thread
+        sim_thread = Thread(target=run_simulation, args=("1",))
+        sim_thread.start()
+    return HttpResponse(json.dumps("Training phase started."))
+
+
+def control_panel_input(request):
+    if request.method == "GET" and request.path == '/controlPanelInput':
+        event_id = int(request.GET['eventId'])
+        if event_id == 0:
+            try:
+                bs_id_int = int(request.GET['bsId'])
+            except ValueError:
+                return HttpResponse(json.dumps({'message': "Please enter correct basestation ID.", 'status': 1}))
+            if 0 < bs_id_int < 8:
+                # Create outge TODO: change the way its created
+                document = {"cellID": bs_id_int, "normal": 0, "outage": 1, "coc": 0,
+                           "cco": 0, "mro": 0, "mlb": 0, "dirty_flag": 0 }
+                insert_document("controlpanel", document)
+                return HttpResponse(json.dumps({'message': "Outage created at basestation " + str(bs_id_int) + ".",
+                                                'status': 0}))
+            else:
+                return HttpResponse(json.dumps({'message': "Please enter basestation ID from 1 to 7.", 'status': 1}))
+        elif event_id == 1:
+            message = apply_coc()
+            return HttpResponse(json.dumps(message))
+    return HttpResponse(json.dumps(0))
 
 
 def update_charts(request):
     """ Main update routine for charts; checks if charts needs to be updated
         and returns data needed for charts """
     if request.method == "GET" and request.path == '/updateCharts':
-        # Create context to be send to html file:
         context = dict()
-        # Check if needs to be updated
-        if is_database_unlocked(True):
-            lock_database(True)
-            if is_update_needed_for_charts(context):
-                update_charts_data(context)
-            if is_update_needed_for_dominance_map():
-                update_dominance_map(context)
-            unlock_database(True)
-            return HttpResponse(json.dumps(context))
+        get_data_for_all_charts(context)
+        return HttpResponse(json.dumps(context))
     return HttpResponse(json.dumps(0))
 
 
@@ -200,7 +190,7 @@ def select_reg_model(request):
     set_regressor(reg)
     context = dict()
     z_scores = get_current_z_scores()
-    context['ZScores'] = json.dumps(z_scores)
+    context['ZScores'] = z_scores
     return HttpResponse(json.dumps(context))
 
 
@@ -236,100 +226,59 @@ def create_ml_models(request):
         return 0
 
 
+def get_ue_location_history(request):
+    """ Get user location and connection history request handler """
+    if request.method == "GET":
+        try:
+            ue_id = int(request.GET['UeID'])
+        except ValueError:
+            return 0
+        connections = get_ue_location_and_connection_history(int(ue_id))
+        return HttpResponse(json.dumps(connections))
+    else:
+        return 0
+
+
 def update_alarm_gui(request):
     """ Run ML Algorithm and return data for alarm table
         and Z-Score chart """
     if request.method == "GET":
         global last_read_ml
         global training_ended
+        global outage_rows
         if training_ended and is_update_needed_for_alarm_table():
             response_data = {'total': 1, 'rows': []}
-
-            while not is_database_unlocked(True):
-                time.sleep(0.01)
-
-            lock_database(True)
-            data = collection_read_mongo(collection="main_kpis_log_labels", skip=last_read_ml)
-            unlock_database(True)
+            data = collection_read_mongo(collection="main_kpis_log", skip=last_read_ml)
             last_read_ml += len(data)
 
-            if len(data) > 0:
+            if len(data) != 0:
                 array_10_dim = preprocess_testing_set_to_10_dimensions(data)
                 ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
-                response_data['ZScores'] = json.dumps(ml_data[1])
+                response_data['ZScores'] = ml_data[1]
+
+                outage_id = ml_data[0]
+
+                if outage_rows[0] == outage_id:
+                    outage_rows[1] += 1
+                else:
+                    outage_rows[1] = 0
+                if outage_rows[1] >= 5:  # outage_rows[1] >= 3 is not working with BS 3
+                    outage_rows[2] = outage_id
+                #    training_ended = False        # to stop after making a prediction
+
+                outage_rows[0] = outage_id
+                outage_id = outage_rows[2]
 
                 for i in range(1, 8):
                     severity = "Normal"
                     problem = "Normal Traffic"
-                    if i == ml_data[0]:
+                    if i == outage_id:
                         severity = "Critical"
                         problem = "Outage"
                     response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
 
                 return HttpResponse(json.dumps(response_data))
         return HttpResponse(json.dumps(0))
-
-
-def controlPanel(request):
-    if request.method == "GET":
-        if request.GET.get("cellID") == "":
-            cellID = 0
-        else:
-            cellID = request.GET.get("cellID")
-
-        if request.GET.get("normal") != None:
-            normal = request.GET.get("normal")
-        else:
-            normal = 0
-
-        if request.GET.get("outage") != None:
-            outage = request.GET.get("outage")
-        else:
-            outage = 0
-
-        if request.GET.get("coc") != None:
-            coc = request.GET.get("coc")
-        else:
-            coc = 0
-
-        if request.GET.get("cco") != None:
-            cco = request.GET.get("cco")
-        else:
-            cco = 0
-
-        if request.GET.get("mro") != None:
-            mro = request.GET.get("mro")
-        else:
-            mro = 0
-
-        if request.GET.get("mlb") != None:
-            mlb = request.GET.get("mlb")
-        else:
-            mlb = 0
-
-        document = {"cellID": int(cellID),
-                    "normal": int(normal),
-                    "outage": int(outage),
-                    "coc": int(coc),
-                    "cco": int(cco),
-                    "mro": int(mro),
-                    "mlb": int(mlb),
-                    "dirty_flag": 0
-                    }
-
-        if cellID == 0:
-            info = "Warning, the control Panel encounters problems, fixing"
-            return HttpResponse(json.dumps(info))
-        else:
-            # store this operation into mongoDB collecton - control Panel
-            # insert one document into database
-            info = "Successfully finish new operation"
-            while not is_database_unlocked(True):
-                time.sleep(0.1)
-            lock_database(False)
-            insert_document("controlpanel", document)
-            unlock_database(False)
-            return HttpResponse(json.dumps(info))
 
 
 ##############################################################
@@ -339,19 +288,15 @@ def controlPanel(request):
 
 def initialize():
     """ Initialize global values when page is refreshed """
-    global last_read_rsrp
-    global last_read_thr
-    global last_read_dominance
     global ml_is_calculating
     global training_ended
     global last_read_ml
+    global outage_rows
     last_read_ml = 0
-    last_read_rsrp = 0
-    last_read_thr = 0
-    last_read_dominance = 0
     connect_to_mongo_db()
     ml_is_calculating = False
     training_ended = False
+    outage_rows = [0, 0, 0]
 
 
 def index(request):
@@ -360,22 +305,16 @@ def index(request):
     # Initialize global values:
     initialize()
     initialize_data_processing()
-
     # Load data for charts:
     context = dict()
+    cell_locations = get_cell_locations_II()
+    context['CellLocations'] = cell_locations
+    get_data_for_all_charts(context)
 
-    while not is_database_unlocked(True):
-        time.sleep(0.1)
-
-    lock_database(True)
-    update_charts_data(context)
-    update_dominance_map(context)
-    unlock_database(True)
-
-    context['Regression'] = json.dumps([0, 0])  # TODO: Get rid of this
-    context['RegressionSVR'] = json.dumps([0, 0])  # TODO: Get rid of this
-    context['RegressionDT'] = json.dumps([0, 0])  # TODO: Get rid of this
-    context['RegressionRF'] = json.dumps([0, 0])  # TODO: Get rid of this
-    context['ZScores'] = json.dumps([0, 0, 0, 0, 0, 0, 0])  # TODO: Get rid of this
+    z_scores_chart = dict()
+    z_scores_chart['BS'] = ["BS1", "BS2", "BS3", "BS4", "BS5", "BS6", "BS7" ]
+    z_scores_chart['Ref. Z-scores'] = [0, 0, 0, 0, 0, 0, 0]
+    z_scores_chart['Z Score'] = [0, 0, 0, 0, 0, 0, 0]
+    context['ZScores'] = z_scores_chart  # TODO: Get rid of this
 
     return render(request, 'fiveG/index.html', context)

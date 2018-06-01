@@ -1,10 +1,18 @@
 import pandas as pd
+import pymongo
 from pymongo import MongoClient
 from pymongo.database import Database
-
+import time
+import calendar
+import heapq
+import subprocess
+from threading import Thread
 
 mongo_conn = MongoClient()
 mongo_db = "5gopt"
+
+def start_mongo():
+    subprocess.call(["./start_mongo.sh"])
 
 
 def connect_to_mongo_db():
@@ -21,53 +29,67 @@ def connect_to_mongo_db():
         mongo_uri = 'mongodb://%s:%s@%s:%s/%s' % (username, password, host, port, db)
         mongo_conn = MongoClient(mongo_uri)
     else:
-        mongo_conn = MongoClient(host, port)
+        try:
+            mongo_conn = MongoClient(host, port, serverSelectionTimeoutMS=2)
+            mongo_conn.server_info()
+        except pymongo.errors.ServerSelectionTimeoutError:
+            mongo_thread = Thread(target=start_mongo)
+            mongo_thread.start()
+            time.sleep(1)
+            mongo_conn = MongoClient(host, port)
 
 
 def get_collection_count(collection):
     global mongo_conn
     global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
     count = mongo_conn[mongo_db][collection].count()
+    unlock_database()
     return count
 
 
-def is_database_unlocked(read):
+def get_last_element(collection):
     global mongo_conn
     global mongo_db
-    cursor = mongo_conn[mongo_db]["Locks"].find()
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
+    count = mongo_conn[mongo_db][collection].count()
+    cursor = mongo_conn[mongo_db][collection].find().skip(count-1)
+    unlock_database()
+    df = pd.DataFrame(list(cursor))
+    return df
+
+
+def is_database_unlocked():
+    global mongo_conn
+    global mongo_db
+    cursor = mongo_conn[mongo_db]["locks"].find()
     cursor_list = list(cursor)
     if len(cursor_list) == 0:
         return True
 
     lock_type = cursor_list[0]["Type"]
-    if lock_type == 0:
-        return True
-    if read and lock_type > 0:
+    lock_time = cursor_list[0]['Time']
+    time_difference = calendar.timegm(time.gmtime()) - lock_time
+
+    if lock_type == 0 or time_difference > 5:   # 5 seconds is max read/write time
         return True
     return False
 
 
-def lock_database(read):
+def lock_database():
     global mongo_conn
     global mongo_db
-
-   # lock_type = 1
-    #if not read:
-    #    lock_type = 2
-
-    if read:
-        mongo_conn[mongo_db]["Locks"].update_one({}, {'$inc': {'Type': 1}}, upsert=True)
-    else:
-        mongo_conn[mongo_db]["Locks"].update_one({}, {'$set': {'Type': -1}}, upsert=True)
+    mongo_conn[mongo_db]["locks"].update_one({}, {'$set': {'Type': 1, 'Time': calendar.timegm(time.gmtime())}}, upsert=True)
 
 
-def unlock_database(read):
+def unlock_database():
     global mongo_conn
     global mongo_db
-    if read:
-        mongo_conn[mongo_db]["Locks"].update({}, {'$inc': {'Type': -1}})
-    else:
-        mongo_conn[mongo_db]["Locks"].update({}, {'$set': {'Type': 0}})
+    mongo_conn[mongo_db]["locks"].update({}, {'$set': {'Type': 0}})
 
 
 def read_collection_as_list_mongo(collection, query={}, skip=0, limit=0):
@@ -75,47 +97,86 @@ def read_collection_as_list_mongo(collection, query={}, skip=0, limit=0):
     global mongo_conn
     global mongo_db
 
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
     if not limit == 0:
         col_list = list(mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit))
     else:
         col_list = list(mongo_conn[mongo_db][collection].find(query).skip(skip))
+    unlock_database()
     return col_list
 
 
-def collection_read_mongo(collection, query={}, no_id = True, skip=0, limit=0):
+def collection_update_with_push(collection, query, values):
     global mongo_conn
     global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
+    mongo_conn[mongo_db][collection].update_one(query, {"$push": values})
+    unlock_database()
+
+
+def collection_update_with_set(collection, query, value):
+    global mongo_conn
+    global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
+    mongo_conn[mongo_db][collection].update_one(query, {"$set": value}, upsert=True)
+    unlock_database()
+
+
+def read_multiple_mongo_collections_df(collections, skips, query={}):
+    """ Reads multiple collections from mongo database.
+        Supports only skip and query options. Query same for all reads.
+        Collections and skips must match in length!"""
+    global mongo_conn
+    global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
+    dict_data_frames = dict()
+    for i in range(0, len(collections)):
+        df = pd.DataFrame(list(mongo_conn[mongo_db][collections[i]].find(query).skip(skips[i])))
+        if len(df) != 0:
+            dict_data_frames[collections[i]] = df.drop(columns="_id")
+        else:
+            dict_data_frames[collections[i]] = df
+    unlock_database()
+    return dict_data_frames
+
+
+def collection_read_mongo(collection, query={}, no_id=True, skip=0, limit=0):
+    global mongo_conn
+    global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
     cursor = mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit)
+    #array = list(mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit))
+    unlock_database()
     # TODO: We have to first check the size
-    array = list(mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit))
     df = pd.DataFrame(list(cursor))
 
-    x = []
-    for i in array:
-        x.append(i)
+   # x = []
+   # for i in array:
+    #    x.append(i)
 
     if no_id:
         try:
             del df["_id"]
         except:
-            pass
+           pass
     return df
 
 
 def insert_document(collection, data):
-    # db = _connect_mongo()
     global mongo_conn
     global mongo_db
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
     mongo_conn[mongo_db][collection].insert_one(data)
-
-
-def calculate_dominatemap_size():
-    # db = _connect_mongo()
-    global mongo_conn
-    global mongo_db
-   # db = _connect_mongo()
-    # Make a query to the specific DB and Collection
-    try:
-        return mongo_conn[mongo_db]["dominationmap"].count()
-    except:
-        return 0
+    unlock_database()
