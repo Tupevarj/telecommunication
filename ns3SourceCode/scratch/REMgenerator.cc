@@ -16,13 +16,23 @@
 #include <ns3/applications-module.h>
 #include <ns3/log.h>
 #include <signal.h>
+#include <time.h>
+#include <iomanip>
+#include <string>
 
-ConfigureInOut confInOut;
+DatabaseConnector dbConnector;
 
 using namespace ns3;
 int32_t PID = 0;
 
-const int NUMBER_OF_UES = 20;
+const int NUMBER_OF_UES = 105;
+
+std::string DoubleToString(double number)
+{
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(1) << number;
+	return ss.str();
+}
 
 void
 GenerateRemMap(Ptr<RadioEnvironmentMapHelper> remHelper, Box macroUeBox)
@@ -75,7 +85,7 @@ SetCellTransmissionPower(u_int16_t cellId, double power)
 void
 RemCallback(double x, double y, double z, double sinr)
 {
-	confInOut.LogREM(x, y, z, sinr);
+	dbConnector.LogREM(x, y, z, sinr);
 }
 
 void
@@ -116,8 +126,8 @@ main (int argc, char *argv[])
 		// CONNECT TO DATABASE
 		///////////////////////////////////////////////
 
-		confInOut.CreateConnectionToDataBase();
-		confInOut.SetDatabase("5gopt");
+		dbConnector.CreateConnectionToDataBase();
+		dbConnector.SetDatabase("5gopt");
 
 		///////////////////////////////////////////////
 		// READ CONFIGURATION FROM DATABASE
@@ -129,7 +139,7 @@ main (int argc, char *argv[])
 		double interSiteDistance;
 		int32_t pid;
 
-		confInOut.ReadSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, pid);
+		dbConnector.ReadSimulationState(nMacroEnbSites, nMacroEnbSitesX, interSiteDistance, pid);
 
 		//std::cout << "Macro site: " << nMacroEnbSites << " X: " << nMacroEnbSitesX << std::endl;
 		PID = pid;
@@ -174,21 +184,14 @@ main (int argc, char *argv[])
 		int noCells = 3 * nMacroEnbSites;
 		double txs[noCells + 1];
 
-		confInOut.ReadCellsStates(txs, noCells, step);
-//		std::cout << "Step: " << step << std::endl;
+		dbConnector.ReadCellsStates(txs, noCells); //, step);
 
 		for(int i = 1; i < noCells+1; i++)
 		{
 			SetCellTransmissionPower(i, txs[i]);
 		}
-	//	lteHelper->EnablePhyTraces ();
-	//	lteHelper->EnableDlPhyTraces();
-	//	lteHelper->EnableUlPhyTraces();
-	//	lteHelper->EnableMacTraces ();
-	//	lteHelper->EnableRlcTraces ();
-	//	lteHelper->EnablePdcpTraces ();
 
-	//	/* Generating REMs */
+		/* Generating REMs */
 		Ptr<RadioEnvironmentMapHelper> remHelper;
 		remHelper = CreateObject<RadioEnvironmentMapHelper> ();
 		remHelper->TraceConnectWithoutContext("RemTrace", MakeCallback(&RemCallback));
@@ -201,8 +204,9 @@ main (int argc, char *argv[])
 		std::ostringstream ss;
 		ss << step;
 
-		confInOut.SetPostFixCSV(ss.str());
-		confInOut.FlushLogs();
+		dbConnector.SetPostFixCSV(ss.str());
+		dbConnector.LogStatus(DoubleToString(Simulator::Now().GetSeconds()), "Radio Environment Map is written to database", 1);
+		dbConnector.FlushLogs();
 		std::cout << "  REM is written to DB" << std::endl;
 
 

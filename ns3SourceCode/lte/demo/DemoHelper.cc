@@ -18,7 +18,7 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 	// MACRO UE BOX
 	//////////////////////////////////////////////////////////////////
 
-	double areaMarginFactor = 0.5;
+	double areaMarginFactor = 0.1;
 
 	if (nEnbs > 0)
 	{
@@ -51,7 +51,7 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 	mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
 
-	lteHelper->SetAttribute("PathlossModel", StringValue("ns3::FriisPropagationLossModel"));
+	lteHelper->SetAttribute("PathlossModel", StringValue("ns3::LogDistancePropagationLossModel"));
 //	  lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::HybridBuildingsPropagationLossModel"));
 //	  lteHelper->SetPathlossModelAttribute ("ShadowSigmaExtWalls", DoubleValue (0));
 //	  lteHelper->SetPathlossModelAttribute ("ShadowSigmaOutdoor", DoubleValue (1));
@@ -73,6 +73,7 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 	lteHexGridEnbTopologyHelper->SetAttribute ("MinX", DoubleValue (interSiteDistance/2));
 	lteHexGridEnbTopologyHelper->SetAttribute ("GridWidth", UintegerValue (nEnbsX));
 	Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbsTx));
+
 	lteHelper->SetEnbAntennaModelType ("ns3::ParabolicAntennaModel");
 	lteHelper->SetEnbAntennaModelAttribute ("Beamwidth",   DoubleValue (70));
 	lteHelper->SetEnbAntennaModelAttribute ("MaxAttenuation",     DoubleValue (20.0));
@@ -116,11 +117,23 @@ DemoHelper::CreateHexagonalTopology(Ptr<PointToPointEpcHelper>& epcHelper, Mobil
 void
 DemoHelper::CreateUsers(NodeContainer& macroUes, MobilityHelper& mobility, Box& macroUeBox, Ptr <LteHelper> lteHelper, uint32_t nUes, double uesSpeed)
 {
+	// TO MAKE BOX SMALLER THAN NETWORK AREA (enbs: 17, enbs x: 3)
+//	macroUeBox.xMin += 500;
+//	macroUeBox.xMax -= 500;
+//	macroUeBox.yMin += 500;
+//	macroUeBox.yMax -= 500;
+
+//	macroUeBox.xMin += 350;
+//	macroUeBox.xMax -= 350;
+//	macroUeBox.yMin += 250;
+//	macroUeBox.yMax -= 600;
+
+	//std::cout << "Macro UE box min x: " << macroUeBox.xMin << "   max x: " << macroUeBox.xMax << "   min y: " << macroUeBox.yMin << "   max y: " << macroUeBox.yMax << std::endl;
 	macroUes.Create (nUes);
 
 	Ptr<PositionAllocator> positionAlloc = CreateObject<RandomBoxPositionAllocator> ();
 	mobility.SetPositionAllocator (positionAlloc);
-	lteHelper->SetUeDeviceAttribute ("CsgId", UintegerValue (1));
+	//lteHelper->SetUeDeviceAttribute ("CsgId", UintegerValue (1));
 
 	if (uesSpeed!=0.0)
 	{
