@@ -226,7 +226,7 @@ def update_ac_cumulative_rlf_chart_data(event_df, context):
             df_counts["EventID"].iloc[0] += cumulative_rlf_count
             rlf_total["Cumulative"] = df_counts["EventID"].cumsum().tolist()
 
-            cumulative_rlf_count += rlf_total["Cumulative"][-1]
+            cumulative_rlf_count == rlf_total["Cumulative"][-1]
             context['RlfTotal'] = rlf_total
 
 
