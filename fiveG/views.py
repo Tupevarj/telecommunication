@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import read_collection_as_list_mongo, get_collection_count
 from .models import collection_read_mongo, insert_document, \
-    connect_to_mongo_db, collection_update_with_set
+    connect_to_mongo_db, collection_update_with_set, collection_update_multiple_with_set
 import json
 from django.http import HttpResponse
 from .data_processing import preprocess_training_set_to_8_and_10_dimensions,\
@@ -149,6 +149,29 @@ def start_training_simulation(request):
         sim_thread = Thread(target=run_simulation, args=("1",))
         sim_thread.start()
     return HttpResponse(json.dumps("Training phase started."))
+
+
+def outage_button_handler(request):
+    if request.method == "GET" and request.path == '/outageInput':
+        state = int(request.GET['CreateOutage'])
+        bs_id = int(request.GET['BasestationID'])
+        list_cells = basetation_to_cell_ids(bs_id)
+        if state != 0:
+            # Create outage
+            collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
+                                                {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
+                                                {"TxPower": 0.0}, {"TxPower": 0.0}, {"TxPower": 0.0}])
+            return HttpResponse(json.dumps({'Message': "Outage created at bs " + str(bs_id) + " (Cells: " +
+                                                       str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
+                                                       str(list_cells[2]) + ').', 'status': 0}))
+        else:
+            # Cancel outage
+            collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
+                                                {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
+                                                {"TxPower": 46.0}, {"TxPower": 46.0}, {"TxPower": 46.0}])
+            return HttpResponse(json.dumps({'Message': "Outage cancelled at bs " + str(bs_id) + " (Cells: " +
+                                                       str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
+                                                       str(list_cells[2]) + ').', 'status': 0}))
 
 
 def control_panel_input(request):

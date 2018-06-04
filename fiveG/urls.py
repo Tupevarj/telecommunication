@@ -17,4 +17,5 @@ urlpatterns = [
     url(r'^controlPanelInput', views.control_panel_input, name="controlPanelInput"),
     url(r'^selectRegressionModel', views.select_reg_model, name="select_reg_model"),
     url(r'^userLocationHistory', views.get_ue_location_history, name="get_ue_location_history"),
+    url(r'^outageInput', views.outage_button_handler, name="outage_button_handler"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

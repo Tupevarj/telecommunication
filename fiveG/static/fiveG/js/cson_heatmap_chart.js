@@ -131,17 +131,19 @@ class HeatMapChart {
             if(!this.drawn) {
                 this.drawChart(points);
             }
-            var series = this.chart.series[0];
-            if(!clear) {
-                for (var i = 0; i < points.length; i++) {
-                    series.data[i].value = points[i][2];
+            else {
+                var series = this.chart.series[0];
+                if(!clear) {
+                    for (var i = 0; i < points.length; i++) {
+                        series.data[i].value = points[i][2];
+                    }
+                }
+                else {
+                    series.setData(points, false, false, true);
                 }
                 this.chart.yAxis[0].isDirty = true;
+                this.chart.redraw();
             }
-            else {
-                series.setData(points, false, false, true);
-            }
-            this.chart.redraw();
         }
     }
 }

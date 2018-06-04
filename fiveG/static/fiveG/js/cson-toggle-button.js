@@ -16,6 +16,7 @@ class ToggleButton {
          this.cOn = colorOn;
          this.cOff = colorOff;
          this.cDisable = colorDisabled;
+         this.state = 0;
      }
 
     /**
@@ -23,6 +24,7 @@ class ToggleButton {
      */
     on() {
          $(this.htmlID).css({background: this.cOn, borderColor: this.cOn});
+         this.state = 1;
      }
 
     /**
@@ -30,6 +32,7 @@ class ToggleButton {
      */
     off() {
          $(this.htmlID).css({background: this.cOff, borderColor: this.cOff});
+         this.state = 0;
      }
 
     /**
@@ -47,6 +50,16 @@ class ToggleButton {
         //if(this.disable)
          $(this.htmlID).prop('disabled', true);
         if(this.cDisable != "") $(this.htmlID).css({background: this.cDisable, borderColor: this.cDisable});
+     }
+
+     switchButton() {
+        if(this.state == 0) {
+            this.on()
+        }
+        else {
+            this.off()
+        }
+        return this.state
      }
 }
 

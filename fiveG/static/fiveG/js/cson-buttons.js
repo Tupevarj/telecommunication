@@ -14,8 +14,7 @@ var simulatorButtons = new ToggleButtonGroup([new ToggleButton("#startTraining",
 
 var viewButtons = new ToggleButtonGroup([new ToggleButton("#buttonHideML", '#337ab7', '#9aabb7'), new ToggleButton("#buttonHideMon", '#337ab7', '#9aabb7'),
                                                 new ToggleButton("#buttonHidePer", '#337ab7', '#9aabb7'), new ToggleButton("#buttonHideEve", '#337ab7', '#9aabb7')]);
-
-
+var outageButton = new ToggleButton("#outageBsButton", "#00C815", '#337ab7');
 
 // Disable stop
 
@@ -115,6 +114,34 @@ function simulatorButtonHandler(button, start, url) {
 function initButtons() {
     $("#stopSimulation").prop('disabled', true);
 }
+
+
+function outageButtonHandler() {
+  $.ajax({
+        url: "outageInput",
+        data: {
+            CreateOutage: outageButton.switchButton(),
+            BasestationID: document.getElementById('bsOutageId').value,
+        },
+        type: 'GET',
+        beforeSend: function() {
+            if(outageButton.state == 1) {
+                document.getElementById("bsOutageId").disabled = true;
+                document.getElementById("outageBsButton").innerHTML = "Cancel Outage";
+            }
+            else {
+                document.getElementById("bsOutageId").disabled = false;
+                document.getElementById("outageBsButton").innerHTML = "Create Outage";
+            }
+        },
+        success: function(data) {
+            var responseData = JSON.parse(data);
+            document.getElementById("controlPanelMessage").style.color = "green";
+            document.getElementById('controlPanelMessage').innerHTML = responseData['Message'];
+        }
+    });
+}
+
 
 /*
     Handles input through control panel

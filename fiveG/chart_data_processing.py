@@ -135,7 +135,7 @@ def update_rlf_per_cell_chart_data(df_events, context):
 
 
 def update_number_of_users_per_cell_chart_data(df_data, context):
-    """ Returns number of connected users per cell latest time stamp FIXME: CHANGED STRUCTURE!!!!"""
+    """ Returns number of connected users per cell latest time stamp """
     if len(df_data) != 0:
         global number_of_cells
         ues_per_cell = list()
@@ -226,7 +226,7 @@ def update_ac_cumulative_rlf_chart_data(event_df, context):
             df_counts["EventID"].iloc[0] += cumulative_rlf_count
             rlf_total["Cumulative"] = df_counts["EventID"].cumsum().tolist()
 
-            cumulative_rlf_count += rlf_total["Cumulative"][-1]
+            cumulative_rlf_count = rlf_total["Cumulative"][-1]
             context['RlfTotal'] = rlf_total
 
 
@@ -255,7 +255,7 @@ def get_data_for_all_charts(context):
     last_read_status += len(dict_dfs["status_log"])
     last_read_dominance += len(dict_dfs["rem_log"])
 
-    update_rem_map_chart(dict_dfs["rem_log"], context)
+    update_rem_map_chart(dict_dfs["rem_log"].tail(22500), context)          # TODO: Get rid of magic number!
     update_simulator_status_message_data(dict_dfs["status_log"], context)
     update_total_throughput_chart_data(dict_dfs["throughput_log"], context)
     update_rsrp_per_cell_chart_data(dict_dfs["main_kpis_log"], context)

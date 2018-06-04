@@ -128,6 +128,23 @@ def collection_update_with_set(collection, query, value):
     unlock_database()
 
 
+def collection_update_multiple_with_set(collection, queries, values):
+    """ Update multiple documents in same collection.
+        Note that length of values and queries need to match!"""
+    global mongo_conn
+    global mongo_db
+
+    if len(queries) != len(values):
+        return
+
+    while not is_database_unlocked():
+        time.sleep(0.003)
+    lock_database()
+    for i, value in enumerate(values):
+        mongo_conn[mongo_db][collection].update_one(queries[i], {"$set": value}, upsert=True)
+    unlock_database()
+
+
 def read_multiple_mongo_collections_df(collections, skips, query={}):
     """ Reads multiple collections from mongo database.
         Supports only skip and query options. Query same for all reads.

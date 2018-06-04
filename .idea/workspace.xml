@@ -2,39 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="65a02b13-c8ef-4a9f-8669-c93a4525b7de" name="Default" comment="finish the preprocessing data">
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/chart_data_processing.py" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/css/cson_css.css" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-chart.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-charts.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-simulator-console.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-ue-location-table.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/grouped-categories.js" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/xrange.js" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/data_dt_reg.csv" afterPath="$PROJECT_DIR$/data_dt_reg.csv" />
-      <change beforePath="$PROJECT_DIR$/data_rf_reg.csv" afterPath="$PROJECT_DIR$/data_rf_reg.csv" />
-      <change beforePath="$PROJECT_DIR$/data_simple_reg.csv" afterPath="$PROJECT_DIR$/data_simple_reg.csv" />
-      <change beforePath="$PROJECT_DIR$/data_svr_reg.csv" afterPath="$PROJECT_DIR$/data_svr_reg.csv" />
-      <change beforePath="$PROJECT_DIR$/dt_reg.pkl" afterPath="$PROJECT_DIR$/dt_reg.pkl" />
-      <change beforePath="$PROJECT_DIR$/fiveG/data_processing.py" afterPath="$PROJECT_DIR$/fiveG/data_processing.py" />
-      <change beforePath="$PROJECT_DIR$/fiveG/ml.py" afterPath="$PROJECT_DIR$/fiveG/ml.py" />
+      <change beforePath="$PROJECT_DIR$/fiveG/chart_data_processing.py" afterPath="$PROJECT_DIR$/fiveG/chart_data_processing.py" />
       <change beforePath="$PROJECT_DIR$/fiveG/models.py" afterPath="$PROJECT_DIR$/fiveG/models.py" />
-      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/buttons-demo.js" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/buttons.js" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/buttons.js" />
-      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/graphs.js" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js" />
+      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js" />
+      <change beforePath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js" afterPath="$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js" />
       <change beforePath="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" afterPath="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" />
-      <change beforePath="$PROJECT_DIR$/fiveG/tests.py" afterPath="$PROJECT_DIR$/fiveG/tests.py" />
       <change beforePath="$PROJECT_DIR$/fiveG/urls.py" afterPath="$PROJECT_DIR$/fiveG/urls.py" />
       <change beforePath="$PROJECT_DIR$/fiveG/views.py" afterPath="$PROJECT_DIR$/fiveG/views.py" />
-      <change beforePath="$PROJECT_DIR$/regressors_aucs.csv" afterPath="$PROJECT_DIR$/regressors_aucs.csv" />
-      <change beforePath="$PROJECT_DIR$/rf_reg.pkl" afterPath="$PROJECT_DIR$/rf_reg.pkl" />
-      <change beforePath="$PROJECT_DIR$/simple_reg.pkl" afterPath="$PROJECT_DIR$/simple_reg.pkl" />
-      <change beforePath="$PROJECT_DIR$/svr_reg.pkl" afterPath="$PROJECT_DIR$/svr_reg.pkl" />
-      <change beforePath="$PROJECT_DIR$/z_scores.csv" afterPath="$PROJECT_DIR$/z_scores.csv" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -62,12 +38,15 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
+      <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="26280">
-              <caret line="1460" column="42" lean-forward="true" selection-start-line="1460" selection-start-column="42" selection-end-line="1460" selection-end-column="42" />
-              <folding />
+            <state relative-caret-position="146">
+              <caret line="672" column="66" lean-forward="false" selection-start-line="672" selection-start-column="56" selection-end-line="672" selection-end-column="66" />
+              <folding>
+                <element signature="n#style#0;n#button#0;n#div#0;n#div#1;n#div#0;n#div#0;n#div#1;n#div#0;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
+                <element signature="n#style#0;n#button#0;n#div#0;n#div#2;n#div#0;n#div#0;n#div#1;n#div#0;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -76,17 +55,19 @@
         <entry file="file://$PROJECT_DIR$/fiveG/views.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="180">
-              <caret line="25" column="54" lean-forward="true" selection-start-line="25" selection-start-column="54" selection-end-line="25" selection-end-column="54" />
-              <folding />
+              <caret line="163" column="96" lean-forward="false" selection-start-line="163" selection-start-column="96" selection-end-line="163" selection-end-column="96" />
+              <folding>
+                <element signature="e#0#35#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ml.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
+      <file leaf-file-name="urls.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/fiveG/urls.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="140">
-              <caret line="341" column="51" lean-forward="false" selection-start-line="341" selection-start-column="51" selection-end-line="341" selection-end-column="51" />
+            <state relative-caret-position="108">
+              <caret line="9" column="30" lean-forward="true" selection-start-line="9" selection-start-column="30" selection-end-line="9" selection-end-column="30" />
               <folding />
             </state>
           </provider>
@@ -95,18 +76,8 @@
       <file leaf-file-name="base.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/telecommunication/venv/lib/python3.6/site-packages/django/core/handlers/base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2700">
+            <state relative-caret-position="502">
               <caret line="159" column="0" lean-forward="false" selection-start-line="159" selection-start-column="0" selection-end-line="159" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="exception.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/telecommunication/venv/lib/python3.6/site-packages/django/core/handlers/exception.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="432">
-              <caret line="37" column="0" lean-forward="false" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -115,18 +86,28 @@
       <file leaf-file-name="cson_heatmap_chart.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="10" column="33" lean-forward="true" selection-start-line="10" selection-start-column="33" selection-end-line="10" selection-end-column="33" />
+            <state relative-caret-position="7">
+              <caret line="118" column="103" lean-forward="true" selection-start-line="118" selection-start-column="103" selection-end-line="118" selection-end-column="103" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="cson-ue-location-table.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-ue-location-table.js">
+      <file leaf-file-name="cson-buttons.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="10" column="25" lean-forward="true" selection-start-line="10" selection-start-column="25" selection-end-line="10" selection-end-column="25" />
+            <state relative-caret-position="247">
+              <caret line="127" column="12" lean-forward="false" selection-start-line="127" selection-start-column="12" selection-end-line="127" selection-end-column="12" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="cson-toggle-button.js" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="298">
+              <caret line="61" column="25" lean-forward="false" selection-start-line="61" selection-start-column="25" selection-end-line="61" selection-end-column="25" />
               <folding />
             </state>
           </provider>
@@ -135,8 +116,8 @@
       <file leaf-file-name="data_processing.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/data_processing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="374">
-              <caret line="134" column="23" lean-forward="true" selection-start-line="134" selection-start-column="23" selection-end-line="134" selection-end-column="23" />
+            <state relative-caret-position="71">
+              <caret line="85" column="83" lean-forward="false" selection-start-line="85" selection-start-column="83" selection-end-line="85" selection-end-column="83" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -144,11 +125,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="chart_data_processing.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="chart_data_processing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fiveG/chart_data_processing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="260" column="71" lean-forward="true" selection-start-line="260" selection-start-column="71" selection-end-line="260" selection-end-column="71" />
+            <state relative-caret-position="216">
+              <caret line="150" column="24" lean-forward="true" selection-start-line="150" selection-start-column="24" selection-end-line="150" selection-end-column="24" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -159,8 +140,8 @@
       <file leaf-file-name="models.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fiveG/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="54">
-              <caret line="11" column="18" lean-forward="false" selection-start-line="11" selection-start-column="18" selection-end-line="11" selection-end-column="18" />
+            <state relative-caret-position="197">
+              <caret line="130" column="39" lean-forward="false" selection-start-line="130" selection-start-column="4" selection-end-line="130" selection-end-column="39" />
               <folding />
             </state>
           </provider>
@@ -248,25 +229,25 @@
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/graphs.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/buttons-demo.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/toggle-button.js" />
-        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js" />
-        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-ue-connection-table.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-simulator-console.js" />
-        <option value="$PROJECT_DIR$/fiveG/urls.py" />
         <option value="$PROJECT_DIR$/fiveG/plot_preprocess.py" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/xrange.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/css/cson_css.css" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/dominance_map_chart.js" />
-        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js" />
         <option value="$PROJECT_DIR$/fiveG/data_processing.py" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-chart.js" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-charts.js" />
-        <option value="$PROJECT_DIR$/fiveG/chart_data_processing.py" />
-        <option value="$PROJECT_DIR$/fiveG/ml.py" />
-        <option value="$PROJECT_DIR$/fiveG/views.py" />
-        <option value="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" />
         <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-ue-location-table.js" />
+        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js" />
         <option value="$PROJECT_DIR$/fiveG/models.py" />
+        <option value="$PROJECT_DIR$/fiveG/ml.py" />
+        <option value="$PROJECT_DIR$/fiveG/urls.py" />
+        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js" />
+        <option value="$PROJECT_DIR$/fiveG/templates/fiveG/index.html" />
+        <option value="$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js" />
+        <option value="$PROJECT_DIR$/fiveG/views.py" />
+        <option value="$PROJECT_DIR$/fiveG/chart_data_processing.py" />
       </list>
     </option>
   </component>
@@ -328,6 +309,14 @@
               <item name="fiveG" type="462c0819:PsiDirectoryNode" />
               <item name="static" type="462c0819:PsiDirectoryNode" />
               <item name="fiveG" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="telecommunication" type="b2602c69:ProjectViewProjectNode" />
+              <item name="telecommunication" type="462c0819:PsiDirectoryNode" />
+              <item name="fiveG" type="462c0819:PsiDirectoryNode" />
+              <item name="static" type="462c0819:PsiDirectoryNode" />
+              <item name="fiveG" type="462c0819:PsiDirectoryNode" />
+              <item name="js" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="telecommunication" type="b2602c69:ProjectViewProjectNode" />
@@ -883,18 +872,19 @@
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32914287" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3381535" sideWeight="0.21822916" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3381535" sideWeight="0.22760417" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.15154749" sideWeight="0.49786323" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32870865" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28031147" sideWeight="0.73854166" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28031147" sideWeight="0.73541665" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32870865" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17864583" sideWeight="0.496" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43489584" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32814237" sideWeight="0.434375" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="SciView" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33125" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.17200854" sideWeight="0.504" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3381535" sideWeight="0.7817708" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3381535" sideWeight="0.77239585" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="SFDX" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -908,7 +898,6 @@
       <window_info id="DB Browser" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32959402" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32814237" sideWeight="0.434375" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Log Manager" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Concurrent Activities Diagram" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20912124" sideWeight="0.49791667" order="10" side_tool="false" content_ui="tabs" />
     </layout>
@@ -1094,11 +1083,6 @@
           <option name="timeStamp" value="776" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/fiveG/views.py</url>
-          <line>78</line>
-          <option name="timeStamp" value="901" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/fiveG/ml.py</url>
           <line>234</line>
           <option name="timeStamp" value="903" />
@@ -1111,7 +1095,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="905" />
+      <option name="time" value="911" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="Python.DjangoServer">
@@ -1167,65 +1151,58 @@
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>calculate_reference_z_scores</expression-string>
+        <expression-string>dict_dfs[&quot;rem_log&quot;].tail(22500)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>x_test</expression-string>
+        <expression-string>dict_dfs[&quot;rem_log&quot;].iloc[-22500]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>predictions</expression-string>
+        <expression-string>dict_dfs[&quot;rem_log&quot;]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>len(predictions)</expression-string>
+        <expression-string>len(df_rem)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>array_x</expression-string>
+        <expression-string>last_read_dominance</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>new_nb_cells</expression-string>
+        <expression-string>global last_read_dominance</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>additions</expression-string>
+        <expression-string>df_counts[&quot;EventID&quot;].cumsum().tolist()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>nb_cells</expression-string>
+        <expression-string>cumulative_rlf_count</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df_nb_cells.loc[df_nb_cells[&quot;cellID&quot;] == i][&quot;nbCellIDs&quot;]</expression-string>
+        <expression-string>df_counts[&quot;EventID&quot;]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>df_nb_cells.loc[df_nb_cells[&quot;cellID&quot;] == i][&quot;nbCellIDs&quot;].iloc[0]</expression-string>
+        <expression-string>rlf_total[&quot;Cumulative&quot;]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/classie.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-812">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/custom.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="18">
@@ -1384,21 +1361,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="143" column="7" lean-forward="true" selection-start-line="143" selection-start-column="7" selection-end-line="143" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/urls.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="18" column="93" lean-forward="false" selection-start-line="18" selection-start-column="93" selection-end-line="18" selection-end-column="93" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-simulator-console.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="234">
@@ -1444,13 +1406,6 @@
           <folding>
             <element signature="n#!!doc" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2268">
-          <caret line="126" column="18" lean-forward="false" selection-start-line="126" selection-start-column="18" selection-end-line="126" selection-end-column="62" />
         </state>
       </provider>
     </entry>
@@ -1501,77 +1456,111 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="54">
-          <caret line="11" column="18" lean-forward="false" selection-start-line="11" selection-start-column="18" selection-end-line="11" selection-end-column="18" />
+        <state relative-caret-position="197">
+          <caret line="130" column="39" lean-forward="false" selection-start-line="130" selection-start-column="4" selection-end-line="130" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js">
+    <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="10" column="33" lean-forward="true" selection-start-line="10" selection-start-column="33" selection-end-line="10" selection-end-column="33" />
+        <state relative-caret-position="108">
+          <caret line="6" column="42" lean-forward="true" selection-start-line="6" selection-start-column="42" selection-end-line="6" selection-end-column="42" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-ue-location-table.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="10" column="25" lean-forward="true" selection-start-line="10" selection-start-column="25" selection-end-line="10" selection-end-column="25" />
+        <state relative-caret-position="-1558">
+          <caret line="10" column="25" lean-forward="false" selection-start-line="10" selection-start-column="25" selection-end-line="10" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-toggle-button.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="298">
+          <caret line="61" column="25" lean-forward="false" selection-start-line="61" selection-start-column="25" selection-end-line="61" selection-end-column="25" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/data_processing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="134" column="23" lean-forward="true" selection-start-line="134" selection-start-column="23" selection-end-line="134" selection-end-column="23" />
+        <state relative-caret-position="71">
+          <caret line="85" column="83" lean-forward="false" selection-start-line="85" selection-start-column="83" selection-end-line="85" selection-end-column="83" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/chart_data_processing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="260" column="71" lean-forward="true" selection-start-line="260" selection-start-column="71" selection-end-line="260" selection-end-column="71" />
-          <folding>
-            <element signature="e#0#19#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/ml.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="140">
-          <caret line="341" column="51" lean-forward="false" selection-start-line="341" selection-start-column="51" selection-end-line="341" selection-end-column="51" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/telecommunication/venv/lib/python3.6/site-packages/django/core/handlers/base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2700">
+        <state relative-caret-position="502">
           <caret line="159" column="0" lean-forward="false" selection-start-line="159" selection-start-column="0" selection-end-line="159" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fiveG/views.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="25" column="54" lean-forward="true" selection-start-line="25" selection-start-column="54" selection-end-line="25" selection-end-column="54" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fiveG/templates/fiveG/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="26280">
-          <caret line="1460" column="42" lean-forward="true" selection-start-line="1460" selection-start-column="42" selection-end-line="1460" selection-end-column="42" />
+        <state relative-caret-position="146">
+          <caret line="672" column="66" lean-forward="false" selection-start-line="672" selection-start-column="56" selection-end-line="672" selection-end-column="66" />
+          <folding>
+            <element signature="n#style#0;n#button#0;n#div#0;n#div#1;n#div#0;n#div#0;n#div#1;n#div#0;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
+            <element signature="n#style#0;n#button#0;n#div#0;n#div#2;n#div#0;n#div#0;n#div#1;n#div#0;n#div#3;n#body#0;n#html#0;n#!!top" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/urls.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="108">
+          <caret line="9" column="30" lean-forward="true" selection-start-line="9" selection-start-column="30" selection-end-line="9" selection-end-column="30" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="http://127.0.0.1:8000/static/fiveG/js/wow.min.js">
+      <provider selected="true" editor-type-id="httpFileEditor">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/views.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="163" column="96" lean-forward="false" selection-start-line="163" selection-start-column="96" selection-end-line="163" selection-end-column="96" />
+          <folding>
+            <element signature="e#0#35#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson-buttons.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="247">
+          <caret line="127" column="12" lean-forward="false" selection-start-line="127" selection-start-column="12" selection-end-line="127" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/static/fiveG/js/cson_heatmap_chart.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7">
+          <caret line="118" column="103" lean-forward="true" selection-start-line="118" selection-start-column="103" selection-end-line="118" selection-end-column="103" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fiveG/chart_data_processing.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="216">
+          <caret line="150" column="24" lean-forward="true" selection-start-line="150" selection-start-column="24" selection-end-line="150" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
