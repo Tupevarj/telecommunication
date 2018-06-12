@@ -236,6 +236,13 @@ SetCellTransmissionPower(u_int16_t cellId, double power)
 			// test NULL
 			if(enbDevice && enbDevice->GetCellId() == cellId)
 			{
+				//if(power < 1.0) {
+				//	Ptr<LteEnbRrc> rrc = enbDevice->GetRrc();
+//					enbDevice->SetAttribute("UlBandwidth", UintegerValue (1));
+//					enbDevice->SetAttribute("DlBandwidth", UintegerValue (1));
+				//	rrc->SetSrsPeriodicity(2);
+				//}
+
 				Ptr<LteEnbPhy> phy = enbDevice->GetPhy();
 
 				// set attribute directly:
@@ -483,7 +490,7 @@ WriteUeThroughPut(Ptr<RadioBearerStatsCalculator> rlcStats)
 {
 	for(int i = 1; i <= NUMBER_OF_UES; ++i)
 	{
-		double rxBytes = rlcStats->GetDlRxData(i , 4) * 8.0; // bits
+		double rxBytes = rlcStats->GetDlRxData(i , 4) * 8.0; // to bits
 		dbConnector.LogThroughput(Simulator::Now().GetSeconds(), uint64_t(i), GetConnectedCell(i), rxBytes);
 	}
 	Simulator::Schedule(MilliSeconds (200), &WriteUeThroughPut, rlcStats);
@@ -493,18 +500,18 @@ WriteUeThroughPut(Ptr<RadioBearerStatsCalculator> rlcStats)
 // END:		CALLBACKS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void
-GenerateRemMap(Ptr<RadioEnvironmentMapHelper> remHelper, Box macroUeBox)
-{
-	remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
-	remHelper->SetAttribute ("OutputFile", StringValue ("CSONREM.rem"));
-	remHelper->SetAttribute ("XMin", DoubleValue (macroUeBox.xMin));
-	remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
-	remHelper->SetAttribute ("YMin", DoubleValue (macroUeBox.yMin));
-	remHelper->SetAttribute ("YMax", DoubleValue (macroUeBox.yMax));
-	remHelper->SetAttribute ("Z", DoubleValue (1.5));
-    remHelper->Install();
-}
+//void
+//GenerateRemMap(Ptr<RadioEnvironmentMapHelper> remHelper, Box macroUeBox)
+//{
+//	remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
+//	remHelper->SetAttribute ("OutputFile", StringValue ("CSONREM.rem"));
+//	remHelper->SetAttribute ("XMin", DoubleValue (macroUeBox.xMin));
+//	remHelper->SetAttribute ("XMax", DoubleValue (macroUeBox.xMax));
+//	remHelper->SetAttribute ("YMin", DoubleValue (macroUeBox.yMin));
+//	remHelper->SetAttribute ("YMax", DoubleValue (macroUeBox.yMax));
+//	remHelper->SetAttribute ("Z", DoubleValue (1.5));
+//    remHelper->Install();
+//}
 
 
 
@@ -617,7 +624,6 @@ RunSimulation(double seconds, Ptr<RadioBearerStatsCalculator> rlcStats)
 	rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (rlcStats->GetEpoch().GetSeconds() + seconds)));
 }
 
-
 void
 RunREMGeneratorScript()
 {
@@ -676,6 +682,43 @@ static ns3::GlobalValue g_training_bs("outage",
 									ns3::MakeUintegerChecker<uint32_t> ());
 
 
+void
+FindAntenna(uint16_t cellId) {
+//	for(NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); ++it)
+//		{
+//			Ptr<Node> node = *it;
+//
+//			int nDevices = node->GetNDevices();
+//
+//			// Loop through all devices on node:
+//			for(int i = 0; i < nDevices; i++)
+//			{
+//				Ptr<LteEnbNetDevice> enbDevice = node->GetDevice(i)->GetObject<LteUeNetDevice>();
+//
+//
+//				// test NULL
+//				if(enbDevice && enbDevice->GetCellId() == cellId)
+//				{
+//					Ptr<LteEnbPhy> phy = enbDevice->GetPhy();
+//
+//					// set attribute directly:
+//					// phy->SetTxPower(power);
+//					// set attribute through attribute system:
+//					phy->SetAttribute("TxPower", DoubleValue(power));
+//					return;
+//				}
+//			}
+//		}
+}
+
+void
+CellOutageII()
+{
+	//FindAntenna(1);
+	std::cout << "Creating outage at basestation 4 " << std::endl;
+	SetBaseStationTransmissionPower(4, 0.0);
+}
+
 // TODO: Make read globals from DB instead in here
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -708,10 +751,11 @@ main (int argc, char *argv[])
 	labeling = booleanValue.Get ();
 	GlobalValue::GetValueByName ("outage", uintegerValue);
 	uint16_t outageBs = uintegerValue.Get ();
-	double txPower = 46.0;
+	double txPower = 43.0;
 
 	Ptr <LteHelper> lteHelper = CreateObject<LteHelper> ();
 	lteHelper->SetHandoverAlgorithmType("ns3::A3RsrpHandoverAlgorithm");
+//	lteHelper->SetHandoverAlgorithmType("ns3::NoOpHandoverAlgorithm");
 	Ptr<PointToPointEpcHelper> epcHelper;
 	MobilityHelper mobility;
 	Box macroUeBox;
@@ -768,6 +812,8 @@ main (int argc, char *argv[])
 	rlcStats->SetAttribute ("StartTime", TimeValue (Seconds (0)));
 //	rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (99999999999)));
 	Simulator::Schedule(MilliSeconds (200), &WriteUeThroughPut, rlcStats);
+
+	//Simulator::Schedule(MilliSeconds(500), &CellOutageII);
 
 	// RLF events
 	Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/RadioLinkFailure", MakeCallback (&RadioLinkFailureCallback));
@@ -847,9 +893,9 @@ main (int argc, char *argv[])
 		//rounds++;
 		if(labeling)
 		{
-			if(rounds == 50)
+			if(rounds == 10)
 			{
-				SetBaseStationTransmissionPower(outageBs, 0.0);
+				SetBaseStationTransmissionPower(outageBs, -std::numeric_limits<double>::max());
 				createRem = true;
 			}
 			if(rounds == 100)

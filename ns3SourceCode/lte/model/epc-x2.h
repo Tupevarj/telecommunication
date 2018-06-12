@@ -21,10 +21,12 @@
 #ifndef EPC_X2_H
 #define EPC_X2_H
 
+#include <ns3/nstime.h>
 #include "ns3/socket.h"
 #include "ns3/callback.h"
 #include "ns3/ptr.h"
 #include "ns3/object.h"
+//#include "ns3/lte-enb-phy.h"
 
 #include "ns3/epc-x2-sap.h"
 
@@ -32,6 +34,7 @@
 
 namespace ns3 {
 
+//class LteEnbRrc;
 
 class X2IfaceInfo : public SimpleRefCount<X2IfaceInfo>
 {
@@ -84,6 +87,18 @@ public:
 
   static TypeId GetTypeId (void);
   virtual void DoDispose (void);
+//  LteEnbRrc *pt;
+
+  /**
+   * The `enbCheckMlbPeriod` attribute. Time period for checking eNB
+   * condition#1, i.e.,  (default 200 ms).
+   */
+ // Time m_enbCheckMlbPeriod = MilliSeconds (200);
+
+  /**
+   * Th_pre: the MLB condition 1 threshold
+   */
+  uint8_t m_THPre =0.2;
 
 
   /**
@@ -133,7 +148,12 @@ protected:
   virtual void DoSendSnStatusTransfer (EpcX2SapProvider::SnStatusTransferParams params);
   virtual void DoSendUeContextRelease (EpcX2SapProvider::UeContextReleaseParams params);
   virtual void DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params);
+
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
+  virtual void DoSendResourceStatusRequest (EpcX2SapProvider::ResourceStatusRequestParams params);
+  virtual void DoSendResourceStatusResponse (EpcX2SapProvider::ResourceStatusResponseParams params);
+
+
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
 
   EpcX2SapUser* m_x2SapUser;
@@ -160,6 +180,8 @@ private:
   uint16_t m_x2cUdpPort;
   uint16_t m_x2uUdpPort;
 
+
+//  void TriggerMlbCondition_1();
 };
 
 } //namespace ns3

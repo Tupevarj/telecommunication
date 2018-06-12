@@ -88,6 +88,9 @@ EpcX2::EpcX2 ()
   NS_LOG_FUNCTION (this);
 
   m_x2SapProvider = new EpcX2SpecificEpcX2SapProvider<EpcX2> (this);
+  //Start the MLB check
+ //Simulator::Schedule (m_enbCheckMlbPeriod, &EpcX2::TriggerMlbCondition_1, this);
+// Simulator::Schedule (MilliSeconds(200), &EpcX2::TriggerMlbCondition_1, this);
 }
 
 EpcX2::~EpcX2 ()
@@ -164,8 +167,52 @@ EpcX2::AddX2Interface (uint16_t localCellId, Ipv4Address localX2Address, uint16_
                  "Mapping for data plane localSocket = " << localX2uSocket << " is already known");
   m_x2InterfaceCellIds [localX2uSocket] = Create<X2CellInfo> (localCellId, remoteCellId);
 }
+/*
+void
+EpcX2::TriggerMlbCondition_1()
+{
+	LteEnbPhy ob;
+   //NS_LOG_FUNCTION (this << Simulator::Now ());
+   std::vector<int> list = ob.GetlistOfDownlinkSubchannel();
+   NS_LOG_DEBUG (this << " Check MLB condition #1 ");
+   //Do check MLB condition one here and continue if ture.
+   //otherwise schedule next check
+  // std::cout <<Simulator::Now().GetSeconds()<<": Cell ="<< ob.m_cellId <<" In TriggerMlbCondition " << std::endl;
+   std::cout <<": Cell =" <<" In TriggerMlbCondition " << std::endl;
+   if((list.size()/ob.GetDlBandwidth())> m_THPre)
+   {
+ 	  //std::cout <<Simulator::Now().GetSeconds()<<": Cell ="<< ob.m_cellId <<"  Mlb Condition 1 is Trigger" << std::endl;
+ 	  std::cout <<": Cell =" <<"  Mlb Condition 1 is Trigger" << std::endl;
+
+   }
+   Simulator::Schedule (MilliSeconds(200), &EpcX2::TriggerMlbCondition_1, this);
 
 
+	std::cout <<": Cell =" <<"  Mlb Condition 1 is Triggered" << std::endl;
+	EpcX2Sap::ResourceStatusRequestParams params;
+	EpcX2Header x2Header;
+
+	EpcX2ResourceStatusRequestHeader x2RQHeader;
+	params.enb1MeasurementId 		= x2RQHeader.GetEnb1MeasurementId();
+	params.enb2MeasurementId 		= x2RQHeader.GetEnb2MeasurementId();
+	params.sourceEnbId		 		=  x2RQHeader.GetSourceEnbId(); // check this one???
+	params.regReq			 		= x2RQHeader.GetRegistrationRequest();
+	params.reportCharacteristics 	= x2RQHeader.GetReportCharacteristics();
+	params.reportingPeriodicity 	= x2RQHeader.GetReportingPeriodicity();
+	params.periodicityRSRP     		= x2RQHeader.GetPeriodicityRSRPMeasurementReport();
+	params.periodicityCSI     		= x2RQHeader.GetPeriodicityCSIReport();
+
+	//params.targetEnbId		 	    = x2RQHeader.GetTargetEnbId();
+     for (int j =0 ; j < 21; j++)
+     {
+    	 params.targetEnbId.push_back(j);
+     }
+	std::cout <<": Cell =" <<"  end Mlb Condition 1 is Triggered" << std::endl;
+
+	DoSendResourceStatusRequest(params);
+
+}
+*/
 void 
 EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 {
@@ -338,27 +385,115 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     }
   else if (procedureCode == EpcX2Header::ResourceStatusReporting)
     {
-      if (messageType == EpcX2Header::InitiatingMessage)
+      if (messageType == EpcX2Header::SuccessfulOutcome)
         {
           NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS UPDATE");
 
+
+
+
           EpcX2ResourceStatusUpdateHeader x2ResStatUpdHeader;
+
           packet->RemoveHeader (x2ResStatUpdHeader);
+
 
           NS_LOG_INFO ("X2 ResourceStatusUpdate header: " << x2ResStatUpdHeader);
 
+
           EpcX2SapUser::ResourceStatusUpdateParams params;
-          params.targetCellId = 0;
+
+
+
           params.enb1MeasurementId = x2ResStatUpdHeader.GetEnb1MeasurementId ();
+
+
           params.enb2MeasurementId = x2ResStatUpdHeader.GetEnb2MeasurementId ();
+
+          params.targetEnbId 	   = x2ResStatUpdHeader.GetTargetEnbId();
+
+          params.sourceEnbId 	   = x2ResStatUpdHeader.GetSourceEnbId();
+
           params.cellMeasurementResultList = x2ResStatUpdHeader.GetCellMeasurementResultList ();
+
 
           NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
           NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
-          NS_LOG_LOGIC ("cellMeasurementResultList size = " << params.cellMeasurementResultList.size ());
+          NS_LOG_LOGIC ("SourceEnbId 	   = " << params.sourceEnbId);
+          NS_LOG_LOGIC ("TargetEnbId 	   = " << params.targetEnbId);
+
 
           m_x2SapUser->RecvResourceStatusUpdate (params);
         }
+      else
+      {
+    	  NS_ASSERT_MSG (false, " MLB ProcedureCode NOT SUPPORTED!!!");
+      }
+    }
+  else if (procedureCode == EpcX2Header::ResourceStatusReportingInitiation)
+    {
+      if (messageType == EpcX2Header::InitiatingMessage)
+        {
+          NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS REQUEST");
+
+          std::cout<<"In recv x2 message Recv X2 message: RESOURCE STATUS REQUEST"<<std::endl;
+          EpcX2ResourceStatusRequestHeader x2ResStatReqHeader;
+          packet->RemoveHeader (x2ResStatReqHeader);
+
+          NS_LOG_INFO ("X2 ResourceStatusRequest header: " << x2ResStatReqHeader);
+
+          EpcX2SapUser::ResourceStatusRequestParams params;
+
+          params.enb1MeasurementId 		= x2ResStatReqHeader.GetEnb1MeasurementId ();
+          params.enb2MeasurementId 		= x2ResStatReqHeader.GetEnb2MeasurementId ();
+
+          params.regReq			   		= x2ResStatReqHeader.GetRegistrationRequest();
+          params.reportCharacteristics 	= x2ResStatReqHeader.GetReportCharacteristics();
+
+          params.targetEnbId			= x2ResStatReqHeader.GetTargetEnbId(); // I store the targetID in the first place in the vector
+          params.sourceEnbId	   		= x2ResStatReqHeader.GetSourceEnbId();
+
+          params.PSI			   		= x2ResStatReqHeader.GetPartialSuccessIndicator();
+          params.reportingPeriodicity 	= x2ResStatReqHeader.GetReportingPeriodicity();
+          params.periodicityRSRP   		= x2ResStatReqHeader.GetPeriodicityRSRPMeasurementReport();
+          params.periodicityCSI	   		= x2ResStatReqHeader.GetPeriodicityCSIReport();
+
+
+          NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+          NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+		  NS_LOG_LOGIC ("SourceCellId 	   = " << params.sourceEnbId);
+
+          m_x2SapUser->RecvResourceStatusRequest (params);
+        }
+
+	  else if (messageType == EpcX2Header::SuccessfulOutcome)
+			{
+			  NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS RESPONSE");
+
+			  EpcX2ResourceStatusResponseHeader x2ResStatResHeader;
+			  packet->RemoveHeader (x2ResStatResHeader);
+
+			  NS_LOG_INFO ("X2 ResourceStatusResponse header: " << x2ResStatResHeader);
+
+			  EpcX2SapUser::ResourceStatusResponseParams params;
+
+			  params.enb1MeasurementId 					= x2ResStatResHeader.GetEnb1MeasurementId ();
+			  params.enb2MeasurementId 					= x2ResStatResHeader.GetEnb2MeasurementId ();
+			  params.sourceEnbId						= x2ResStatResHeader.GetSourceEnbId ();
+			  params.targetEnbId						= x2ResStatResHeader.GetTargetEnbId();
+			  params.measurementInitiationResultList 	= x2ResStatResHeader.GetMeasurementInitiationResult();
+
+			  NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+			  NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+			  NS_LOG_LOGIC ("SourceCellId = " << params.sourceEnbId);
+			  NS_LOG_LOGIC ("SourceCellId = " << params.targetEnbId);
+
+
+			  m_x2SapUser->RecvResourceStatusResponse (params);
+			}
+	  else
+			{
+			  NS_ASSERT_MSG (false, "MLB ProcedureCode NOT SUPPORTED!!!");
+			}
     }
   else
     {
@@ -682,51 +817,211 @@ EpcX2::DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params)
 
 }
 
+void
+EpcX2::DoSendResourceStatusRequest (EpcX2SapProvider::ResourceStatusRequestParams params)
+{
+	  NS_LOG_FUNCTION (this);
+
+	 std::cout<<": CellId = ("<<params.sourceEnbId<<")  In DoSendResourceStatusRequest"<<std::endl;
+
+	  //NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+	  NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+	  NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+
+
+	   std::vector<uint16_t>::size_type sz = params.targetEnbId.size();
+
+
+	   std::vector<uint16_t> item = params.targetEnbId;
+
+	   uint16_t copyTargetEnbId = 0;
+
+      // std::cout<<"In DoSendResourceStatusRequest : Size of target eNB = "<<sz<<std::endl;
+
+	 	  for(int j = 0; j < (int) sz; j++)
+	 	  {
+
+	 		  if(params.sourceEnbId != j)
+	 		  {
+
+	 			 copyTargetEnbId = item[j];
+	 			/*  std::cout<<"Cell ID = "<< params.sourceEnbId
+	 					   << "\n Tagret Cell ID = "<< j
+						   << "\n RegRequest = " << (int)params.regReq
+						   << "\n Report Characteristics = " << params.reportCharacteristics
+						   << "\n Partial Success = "<<(int) params.PSI
+						   << "\n RSRP period " << (int)params.periodicityRSRP
+	 					   <<std::endl;
+	 			 */
+
+				  NS_LOG_LOGIC ("Sending RSQ msg to targetEnbId = " << copyTargetEnbId);
+
+				  NS_ASSERT_MSG (m_x2InterfaceSockets.find (copyTargetEnbId) != m_x2InterfaceSockets.end (),
+						  "Missing infos for targetCellId = " << copyTargetEnbId);
+
+
+				  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [copyTargetEnbId];
+				  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+				  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+				  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+				  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+				  NS_LOG_INFO ("Send X2 message: RESOURCE STATUS REQUEST");
+
+				  // Build the X2 message
+				  EpcX2ResourceStatusRequestHeader x2ResourceStatReqHeader;
+
+				 x2ResourceStatReqHeader.SetEnb1MeasurementId (params.enb1MeasurementId);
+				 x2ResourceStatReqHeader.SetEnb2MeasurementId (params.enb2MeasurementId);
+
+				 x2ResourceStatReqHeader.SetRegistrationRequest(params.regReq);
+
+				 x2ResourceStatReqHeader.SetReportCharacteristics(params.reportCharacteristics);
+
+				 x2ResourceStatReqHeader.SetTargetEnbId(item);
+				 x2ResourceStatReqHeader.SetSourceEnbId(params.sourceEnbId);
+
+
+
+				 x2ResourceStatReqHeader.SetPartialSuccessIndicator(params.PSI);
+				 x2ResourceStatReqHeader.SetReportingPeriodicity(params.reportingPeriodicity);
+				 x2ResourceStatReqHeader.SetPeriodicityRSRPMeasurementReport(params.periodicityRSRP);
+				 x2ResourceStatReqHeader.SetPeriodicityCSIReport(params.periodicityCSI);
+
+				  EpcX2Header x2Header;
+				  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+				  x2Header.SetProcedureCode (EpcX2Header::ResourceStatusReportingInitiation);
+				  x2Header.SetLengthOfIes (x2ResourceStatReqHeader.GetLengthOfIes ());
+				  x2Header.SetNumberOfIes (x2ResourceStatReqHeader.GetNumberOfIes ());
+
+				  NS_LOG_INFO ("X2 header: " << x2Header);
+				  NS_LOG_INFO ("X2 ResourceStatusRequest header: " << x2ResourceStatReqHeader);
+
+				  // Build the X2 packet
+				  Ptr<Packet> packet = Create <Packet> ();
+				  packet->AddHeader (x2ResourceStatReqHeader);
+				  packet->AddHeader (x2Header);
+				  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+				  std::cout<<"Request sent from = "<<params.sourceEnbId<<" to cell = "<<copyTargetEnbId<<std::endl;
+
+				  // Send the X2 message through the socket
+				  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+
+	 		  }
+	 	 }// end of for loop j
+
+}
+
+void
+EpcX2::DoSendResourceStatusResponse (EpcX2SapProvider::ResourceStatusResponseParams params)
+{
+	  NS_LOG_FUNCTION (this);
+
+	  NS_LOG_LOGIC ("targetEnbId 	   = " << params.targetEnbId);
+	  NS_LOG_LOGIC ("sourceEnbId 	   = " << params.sourceEnbId);
+	  NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+	  NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+
+
+	 		  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetEnbId) != m_x2InterfaceSockets.end (),"Missing infos for targetEnbId = " << params.targetEnbId);
+
+	 		  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetEnbId];
+	 		  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+	 		  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+	 		  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+	 		  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+	 		  NS_LOG_INFO ("Send X2 message: RESOURCE STATUS RESPONSE");
+
+	 		  // Build the X2 message
+	 		  EpcX2ResourceStatusResponseHeader x2ResourceStatResHeader;
+	 		  x2ResourceStatResHeader.SetEnb1MeasurementId (params.enb1MeasurementId);
+	 		  x2ResourceStatResHeader.SetEnb2MeasurementId (params.enb2MeasurementId);
+	 		  x2ResourceStatResHeader.SetSourceEnbId (params.sourceEnbId);
+	 		  x2ResourceStatResHeader.SetTargetEnbId(params.targetEnbId);
+              x2ResourceStatResHeader.SetMeasurementInitiationResult(params.measurementInitiationResultList);
+
+	 		  //x2ResourceStatResHeader.SetCellId(copyTargetCellId);
+              //x2ResourceStatResHeader.SetMeasurementFailedReportCharacteristics( item.measurementFailureCauseList.measurementFailedReportCharacteristics);
+             // x2ResourceStatResHeader.SetCause(item.measurementFailureCauseList.cause);
+
+	 		  EpcX2Header x2Header;
+	 		  x2Header.SetMessageType (EpcX2Header::SuccessfulOutcome);
+	 		  x2Header.SetProcedureCode (EpcX2Header::ResourceStatusReportingInitiation);
+	 		  x2Header.SetLengthOfIes (x2ResourceStatResHeader.GetLengthOfIes ());
+	 		  x2Header.SetNumberOfIes (x2ResourceStatResHeader.GetNumberOfIes ());
+
+	 		  NS_LOG_INFO ("X2 header: " << x2Header);
+	 		  NS_LOG_INFO ("X2 ResourceStatusResponse header: " << x2ResourceStatResHeader);
+
+	 		  // Build the X2 packet
+	 		  Ptr<Packet> packet = Create <Packet> ();
+	 		  packet->AddHeader (x2ResourceStatResHeader);
+	 		  packet->AddHeader (x2Header);
+	 		  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+
+	 		 std::cout<<params.sourceEnbId<<" In DoSendResourceStatusResponcse to "<<params.targetEnbId<<std::endl;
+
+	 		  // Send the X2 message through the socket
+	 		  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+
+}
 
 void
 EpcX2::DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params)
 {
+	std::cout <<"Cell Id = "<<params.sourceEnbId<< "In DoSendResourceStatusUpdate   "<< std::endl;
   NS_LOG_FUNCTION (this);
-
-  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+  NS_LOG_LOGIC ("sourceEnbId = " << params.sourceEnbId);
+  NS_LOG_LOGIC ("targetEnbId = " << params.targetEnbId);
   NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
   NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
-  NS_LOG_LOGIC ("cellMeasurementResultList size = " << params.cellMeasurementResultList.size ());
+  //NS_LOG_LOGIC ("cellMeasurementResultList size = " << params.cellMeasurementResultList.size ());
 
-  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
-                 "Missing infos for targetCellId = " << params.targetCellId);
-  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetCellId];
-  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
-  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
 
-  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
-  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+		  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetEnbId) != m_x2InterfaceSockets.end (),
+				  "Missing infos for targetEnbId = " << params.targetEnbId);
 
-  NS_LOG_INFO ("Send X2 message: RESOURCE STATUS UPDATE");
+		  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetEnbId];
+		  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+		  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
 
-  // Build the X2 message
-  EpcX2ResourceStatusUpdateHeader x2ResourceStatUpdHeader;
-  x2ResourceStatUpdHeader.SetEnb1MeasurementId (params.enb1MeasurementId);
-  x2ResourceStatUpdHeader.SetEnb2MeasurementId (params.enb2MeasurementId);
-  x2ResourceStatUpdHeader.SetCellMeasurementResultList (params.cellMeasurementResultList);
+		  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+		  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
 
-  EpcX2Header x2Header;
-  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
-  x2Header.SetProcedureCode (EpcX2Header::ResourceStatusReporting);
-  x2Header.SetLengthOfIes (x2ResourceStatUpdHeader.GetLengthOfIes ());
-  x2Header.SetNumberOfIes (x2ResourceStatUpdHeader.GetNumberOfIes ());
+		  NS_LOG_INFO ("Send X2 message: RESOURCE STATUS UPDATE");
 
-  NS_LOG_INFO ("X2 header: " << x2Header);
-  NS_LOG_INFO ("X2 ResourceStatusUpdate header: " << x2ResourceStatUpdHeader);
+		  // Build the X2 message
+		  EpcX2ResourceStatusUpdateHeader x2ResourceStatUpdHeader;
+		  x2ResourceStatUpdHeader.SetEnb1MeasurementId (params.enb1MeasurementId); // this should be set by the source of RSQ msg
+		  x2ResourceStatUpdHeader.SetEnb2MeasurementId (params.enb2MeasurementId); // this should be set by the source if RSU msg
+		  x2ResourceStatUpdHeader.SetTargetEnbId (params.targetEnbId);
+		  x2ResourceStatUpdHeader.SetSourceEnbId (params.sourceEnbId);
+		  x2ResourceStatUpdHeader.SetCellMeasurementResultList (params.cellMeasurementResultList);
 
-  // Build the X2 packet
-  Ptr<Packet> packet = Create <Packet> ();
-  packet->AddHeader (x2ResourceStatUpdHeader);
-  packet->AddHeader (x2Header);
-  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+		  EpcX2Header x2Header;
+		  x2Header.SetMessageType (EpcX2Header::SuccessfulOutcome);
+		  x2Header.SetProcedureCode (EpcX2Header::ResourceStatusReporting);
+		  x2Header.SetLengthOfIes (x2ResourceStatUpdHeader.GetLengthOfIes ());
+		  x2Header.SetNumberOfIes (x2ResourceStatUpdHeader.GetNumberOfIes ());
 
-  // Send the X2 message through the socket
-  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+		  NS_LOG_INFO ("X2 header: " << x2Header);
+		  NS_LOG_INFO ("X2 ResourceStatusUpdate header: " << x2ResourceStatUpdHeader);
+
+		  // Build the X2 packet
+		  Ptr<Packet> packet = Create <Packet> ();
+		  packet->AddHeader (x2ResourceStatUpdHeader);
+		  packet->AddHeader (x2Header);
+		  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+		  // Send the X2 message through the socket
+		  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+
+
 
 }
 

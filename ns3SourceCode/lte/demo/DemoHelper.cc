@@ -211,7 +211,7 @@ DemoHelper::CreateEPC(Ptr<PointToPointEpcHelper>& epcHelper, Ptr <LteHelper> lte
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
 	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
 
-	// for internetworking purposes, consider together home UEs and macro UEs
+	// for internetworking purposes, consider macro UEs
 	ues.Add (macroUes);
 	ueDevs.Add (macroUeDevs);
 

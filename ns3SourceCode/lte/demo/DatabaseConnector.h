@@ -10,6 +10,7 @@
 
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
+#include <mongocxx/write_concern.hpp>
 
 #include "DatabaseStructs.h"
 
@@ -86,6 +87,9 @@ public:
 
 	/* Writes all the logs into database/csv files and CLEARS LOG FILES */
 	void FlushLogs();
+
+	/* Converts WritableLog to documents and inserts documents into database */
+	//void InsertMultipleDocuments(std::string coll_name, std::vector<WritableLog> &logs);
 
 	std::vector<Location> ReadConnectionLocations(std::vector<uint16_t> cells);
 	std::vector<Location> ReadHandovers(std::vector<uint16_t> cells);

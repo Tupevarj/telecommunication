@@ -136,7 +136,9 @@ LteUeRrc::LteUeRrc ()
     m_hasReceivedMib (false),
     m_hasReceivedSib1 (false),
     m_hasReceivedSib2 (false),
+	m_hysteresis (3),
     m_csgWhiteList (0)
+
 {
   NS_LOG_FUNCTION (this);
   m_cphySapUser = new MemberLteUeCphySapUser<LteUeRrc> (this);
@@ -556,6 +558,10 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
     {
     case IDLE_RANDOM_ACCESS:
       {
+    	  //A.M.
+    	  m_NumRLF_RACHNotOK = 0;
+
+
         // we just received a RAR with a T-C-RNTI and an UL grant
         // send RRC connection request as message 3 of the random access procedure 
         SwitchToState (IDLE_CONNECTING);
@@ -606,6 +612,11 @@ LteUeRrc::DoNotifyRandomAccessFailed ()
       {
         SwitchToState (IDLE_CAMPED_NORMALLY);
         m_asSapUser->NotifyConnectionFailed ();
+
+        //A.M.
+        m_NumRLF_RACHNotOK++;
+        std::cout<< "RandomAccessFailed: UE ID = ("<< m_imsi <<") try to access Cell ID = ("<<m_cellId<<") For ("<<m_NumRLF_RACHNotOK<<") times"<<std::endl;
+
       }
       break;
 
@@ -720,6 +731,7 @@ LteUeRrc::DoConnect ()
     case CONNECTED_REESTABLISHING:
     case CONNECTED_HANDOVER:
       NS_LOG_INFO ("already connected");
+      std::cout<<Simulator::Now().GetSeconds()<<": UE ID = "<<m_imsi<< " :In DoConnect "<<std::endl;
       break;
 
     default:
@@ -857,7 +869,7 @@ void
 LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
 {
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
-
+ // std::cout<<Simulator::Now().GetSeconds()<<": UE ID = "<<m_imsi<< " :In DoRecvSystemInformation "<<std::endl;
   if (msg.haveSib2)
     {
       switch (m_state)
@@ -900,6 +912,7 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
 void 
 LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
 {
+	std::cout<<Simulator::Now().GetSeconds()<<": UE ID = "<<m_rnti<< " :In DoRecvRrcConnectionSetup "<<std::endl;
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
   switch (m_state)
     {
@@ -912,7 +925,22 @@ LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
         msg2.rrcTransactionIdentifier = msg.rrcTransactionIdentifier;
         m_rrcSapUser->SendRrcConnectionSetupCompleted (msg2);
         m_asSapUser->NotifyConnectionSuccessful ();
-        m_connectionEstablishedTrace (m_imsi, m_cellId, m_rnti);
+
+        std::map<uint16_t, MeasValues>::iterator it;
+         for (it = m_storedMeasValues.begin (); it != m_storedMeasValues.end (); it++)
+           {
+             /*
+              * This block attempts to find a cell with strongest RSRP and has not
+              * yet been identified as "acceptable cell".
+              */
+             if (it->first == m_cellId )
+               {
+            	 m_connectionEstablishedTrace (m_imsi, m_cellId, m_rnti,it->second.rsrp);
+               }
+           }
+
+        //A.M.
+        m_NumRLF_RACHOK = 0;
       }
       break;
 
@@ -968,6 +996,9 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
             }
           // RRC connection reconfiguration completed will be sent
           // after handover is complete
+
+
+
         }
       else
         {
@@ -984,7 +1015,21 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           msg2.rrcTransactionIdentifier = msg.rrcTransactionIdentifier;
           m_rrcSapUser->SendRrcConnectionReconfigurationCompleted (msg2);
           m_connectionReconfigurationTrace (m_imsi, m_cellId, m_rnti);
+
         }
+      //A.M
+      if(msg.newHysteresisHasValue)
+      {
+    	  m_hysteresis = msg.newHysteresis;
+    	  m_hysteresisHasValue = true;
+    	  std::cout<<"UE ID = "<<m_rnti<<" In LteUeRrc::DoRecvRrcConnectionReconfiguration, with Hys = "<<(uint16_t)msg.newHysteresis<<std::endl;
+      }
+      else
+      {
+    	 // std::cout<<"UE ID = "<<m_rnti<<" In LteUeRrc::DoRecvRrcConnectionReconfiguration, with m_hysteresisHasValue="<<(uint16_t)msg.newHysteresisHasValue<<std::endl;
+    	  m_hysteresis = 3.0;
+    	  m_hysteresisHasValue = false;
+      }
       break;
 
     default:
@@ -1687,6 +1732,8 @@ LteUeRrc::MeasurementReportTriggering (uint8_t measId)
 {
   NS_LOG_FUNCTION (this << (uint16_t) measId);
 
+
+
   std::map<uint8_t, LteRrcSap::MeasIdToAddMod>::iterator measIdIt =
     m_varMeasConfig.measIdList.find (measId);
   NS_ASSERT (measIdIt != m_varMeasConfig.measIdList.end ());
@@ -1925,6 +1972,8 @@ LteUeRrc::MeasurementReportTriggering (uint8_t measId)
          * Please refer to 3GPP TS 36.331 Section 5.5.4.4
          */
 
+
+
         double mn; // Mn, the measurement result of the neighbouring cell
         double ofn = measObjectEutra.offsetFreq; // Ofn, the frequency specific offset of the frequency of the
         double ocn = 0.0; // Ocn, the cell specific offset of the neighbour cell
@@ -1933,9 +1982,23 @@ LteUeRrc::MeasurementReportTriggering (uint8_t measId)
         double ocp = 0.0; // Ocp, the cell specific offset of the PCell
         // Off, the offset parameter for this event.
         double off = EutranMeasurementMapping::IeValue2ActualA3Offset (reportConfigEutra.a3Offset);
-        // Hys, the hysteresis parameter for this event.
-        double hys = EutranMeasurementMapping::IeValue2ActualHysteresis (reportConfigEutra.hysteresis);
 
+
+        // Hys, the hysteresis parameter for this event.
+        //A.M
+       double hys = 0.0;
+       if(m_hysteresisHasValue)
+        {
+			//std::cout<<Simulator::Now().GetSeconds() <<": UE Id ="<< m_rnti<<":Event_A3 In LteUeRrc::MeasurementReportTriggering, with Hys = "<< m_hysteresis<<std::endl;
+
+			hys = m_hysteresis;
+
+        }
+        else // take the defualt value
+        {
+        	hys = EutranMeasurementMapping::IeValue2ActualHysteresis (reportConfigEutra.hysteresis);
+        	//std::cout<<Simulator::Now().GetSeconds() <<": Hys ="<< hys <<std::endl;
+        }
 
         switch (reportConfigEutra.triggerQuantity)
           {
@@ -1981,11 +2044,22 @@ LteUeRrc::MeasurementReportTriggering (uint8_t measId)
               && (measReportIt->second.cellsTriggeredList.find (cellId)
                   != measReportIt->second.cellsTriggeredList.end ());
 
-            // Inequality A3-1 (Entering condition): Mn + Ofn + Ocn - Hys > Mp + Ofp + Ocp + Off
-            bool entryCond = mn + ofn + ocn - hys > mp + ofp + ocp + off;
+            bool entryCond = false;
+        	if(m_hysteresisHasValue)
+        	{
+                // Inequality A3-1 (Entering condition): Mn + Ofn + Ocn - Hys > Mp + Ofp + Ocp + Off
+        		entryCond = mn + ofn + ocn + hys > mp ;
+
+        	}
+        	else
+        	{
+                // Inequality A3-1 (Entering condition): Mn + Ofn + Ocn - Hys > Mp + Ofp + Ocp + Off
+                 entryCond = mn + ofn + ocn - hys > mp + ofp + ocp + off;
+        	}
 
             if (entryCond)
               {
+
                 if (!hasTriggered)
                   {
                 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1995,10 +2069,47 @@ LteUeRrc::MeasurementReportTriggering (uint8_t measId)
                 	//m_A3RsrpTrace(m_imsi, m_storedMeasValues[m_cellId].rsrp, m_cellId);
 
                 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                	/*if(m_cellId == 5)
+                	{
+						std::cout << Simulator::Now().GetSeconds()<<  ": UE ID = "<< m_imsi <<" In Cell ID = "<<m_cellId<<std::endl;
+						std::cout <<  "-------------------------with A3 Entry Condition = "<<(uint16_t)entryCond<<std::endl;
+						std::cout <<  "-------------------------with m_hysteresisHasValue = "<<(uint16_t)m_hysteresisHasValue<<std::endl;
+					}*/
+                	if(m_hysteresisHasValue)
+                	{
+						//double neighvalue =  pow10(1.0*(mn + ofn + ocn + hys)/10.0);
+						//double servingvalue = pow10(1.0*(mp + ofp + ocp + off)/10.0);
+                		double neighvalue =  (mn + ofn + ocn + hys);
+                		double servingvalue = (mp + ofp + ocp + off);
+                    	if(m_cellId == 5)
+                    	{
+						std::cout <<  "-------------------------Neigh cell measurements   = "<< neighvalue <<std::endl;
+						std::cout <<  "-------------------------Serving cell measurements = "<< servingvalue  <<std::endl;
+                    	}
 
-
+                	}
                     concernedCellsEntry.push_back (cellId);
                     eventEntryCondApplicable = true;
+                    //A.M
+                    m_NumHandoverTrials++;
+                    if(m_NumHandoverTrials==40)
+                    {
+                    	 // m_randomAccessErrorTrace (m_imsi, m_cellId, m_rnti);
+
+                    	  ConnectionTimeout();
+                    	  m_connectionTimeout.Cancel ();
+                    	  m_cmacSapProvider->Reset ();       // reset the MAC
+                    	  m_hasReceivedSib2 = false;         // invalidate the previously received SIB2
+                    	LeaveConnectedMode();
+                        SwitchToState (IDLE_CELL_SEARCH);
+                        SynchronizeToStrongestCell (); // retry to a different cell
+
+                    	//DoStartCellSelection(m_dlEarfcn);
+
+                       // std::cout << Simulator::Now().GetSeconds()<<  "-------------------------m_NumHandoverTrials = "<< m_NumHandoverTrials <<std::endl;
+
+                    }
+
                   }
               }
             else if (reportConfigEutra.timeToTrigger > 0)
@@ -2951,6 +3062,11 @@ LteUeRrc::ConnectionTimeout ()
   SwitchToState (IDLE_CAMPED_NORMALLY);
   m_connectionTimeoutTrace (m_imsi, m_cellId, m_rnti);
   m_asSapUser->NotifyConnectionFailed ();  // inform upper layer
+
+  //A.M.
+  m_NumRLF_RACHOK++;
+  std::cout<<Simulator::Now().GetSeconds()<< ": ConnectionTimeout: UE Id = ("<< m_imsi<<") try to access Cell ID = ("<<m_cellId<<") For ("<<m_NumRLF_RACHOK<<") times"<<std::endl;
+
 }
 
 void

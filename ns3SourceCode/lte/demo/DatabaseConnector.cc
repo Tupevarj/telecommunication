@@ -205,6 +205,34 @@ DatabaseConnector::WriteAllLogsToCSVFiles(std::string prefix)
 		outFile.close();
 	}
 }
+//
+//void
+//DatabaseConnector::InsertMultipleDocuments(std::string coll_name, std::vector<WritableLog> &logs)
+//{
+//	if(logs.size() > 0)
+//	{
+//		std::vector<bsoncxx::document::value> documents;
+//		SetCollection(coll_name);
+//
+//		documents.push_back(logs[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
+//		for(uint i = 1; i < logs.size()-1; ++i)
+//		{
+//			documents.push_back(logs[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+//		}
+//		documents.push_back(logs[logs.size()-1].ConvertToBSON(1) << bsoncxx::builder::stream::finalize);
+//		mongoCollection->insert_many(documents);
+//		documents.clear();
+//	}
+//
+//}
+
+//static int count_thr = 0;
+//static int count_main = 0;
+//static int count_event = 0;
+//static int count_handover = 0;
+//static int count_status = 0;
+//static int count_sinr = 0;
+//static int count_rem = 0;
 
 void
 DatabaseConnector::WriteLogsToDatabase()
@@ -212,16 +240,89 @@ DatabaseConnector::WriteLogsToDatabase()
 //	std::string no = "0";
 	std::vector<bsoncxx::document::value> documents;
 
+	//InsertMultipleDocuments("throughput_log", throughputsLog)
+
+
+	/* THROUGHPUTS */
+	if(throughputsLog.size() > 0)
+	{
+		SetCollection("throughput_log");
+
+		//documents.push_back(throughputsLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
+		for(uint i = 0; i < throughputsLog.size(); ++i)
+		{
+			documents.push_back(throughputsLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+//		count_thr += documents.size()+1;
+//		documents.push_back(throughputsLog[throughputsLog.size()-1].ConvertToBSON(count_thr) << bsoncxx::builder::stream::finalize);
+		mongoCollection->insert_many(documents);
+//		auto options = mongocxx::options::insert{};
+//		mongocxx::write_concern writeConcern;
+//	    writeConcern.acknowledge_level(mongocxx::write_concern::level::k_majority);
+//
+//		options.write_concern(writeConcern); //->acknowledge_level(mongocxx::write_concern::level::k_majority);
+//
+//		mongoCollection->insert_many(documents, options);
+
+		documents.clear();
+	}
+
+	/* MAIN KPIS */
+	if(mainKpisLog.size() > 0)
+	{
+		SetCollection("main_kpis_log");
+
+//		documents.push_back(mainKpisLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
+		for(uint i = 0; i < mainKpisLog.size(); ++i)
+		{
+			documents.push_back(mainKpisLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+//		count_main += documents.size()+1;
+//		documents.push_back(mainKpisLog[mainKpisLog.size()-1].ConvertToBSON(count_main) << bsoncxx::builder::stream::finalize);
+		mongoCollection->insert_many(documents);
+//		auto options = mongocxx::options::insert{};
+//		mongocxx::write_concern writeConcern;
+//	    writeConcern.acknowledge_level(mongocxx::write_concern::level::k_majority);
+//
+//		options.write_concern(writeConcern); //->acknowledge_level(mongocxx::write_concern::level::k_majority);
+//
+//		mongoCollection->insert_many(documents, options);
+
+		documents.clear();
+	}
+
+	/* MAIN KPIS WITH LABELS */
+	if(mainKpisWithLabelLog.size() > 0)
+	{
+		SetCollection("main_kpis_log");
+
+		//documents.push_back(mainKpisWithLabelLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
+		for(uint i = 0; i < mainKpisWithLabelLog.size(); ++i)
+		{
+			documents.push_back(mainKpisWithLabelLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+		//count_main += documents.size()+1;
+		//documents.push_back(mainKpisWithLabelLog[mainKpisWithLabelLog.size()-1].ConvertToBSON(count_main) << bsoncxx::builder::stream::finalize);
+		mongoCollection->insert_many(documents);
+
+		documents.clear();
+	}
+
+
 	/* EVENTS */
 	if(eventsLog.size() > 0)
 	{
 		SetCollection("event_log");
 
+//		documents.push_back(eventsLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
 		for(uint i = 0; i < eventsLog.size(); ++i)
 		{
 			documents.push_back(eventsLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
 		}
+		//count_event += documents.size()+1;
+		//documents.push_back(eventsLog[eventsLog.size()-1].ConvertToBSON(count_event) << bsoncxx::builder::stream::finalize);
 		mongoCollection->insert_many(documents);
+
 		documents.clear();
 	}
 
@@ -230,10 +331,13 @@ DatabaseConnector::WriteLogsToDatabase()
 	{
 		SetCollection("handover_log");
 
+//		documents.push_back(handoversLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
 		for(uint i = 0; i < handoversLog.size(); ++i)
 		{
 			documents.push_back(handoversLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
 		}
+	//	count_handover += documents.size()+1;
+		//documents.push_back(handoversLog[handoversLog.size()-1].ConvertToBSON(count_handover) << bsoncxx::builder::stream::finalize);
 		mongoCollection->insert_many(documents);
 		documents.clear();
 	}
@@ -243,63 +347,15 @@ DatabaseConnector::WriteLogsToDatabase()
 	{
 		SetCollection("sinr_log");
 
+//		documents.push_back(sinrsLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
 		for(uint i = 0; i < sinrsLog.size(); ++i)
 		{
 			documents.push_back(sinrsLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
 		}
+	//	count_sinr += documents.size()+1;
+	//	documents.push_back(sinrsLog[sinrsLog.size()-1].ConvertToBSON(count_sinr) << bsoncxx::builder::stream::finalize);
 		mongoCollection->insert_many(documents);
-		documents.clear();
-	}
 
-	/* THROUGHPUTS */
-	if(throughputsLog.size() > 0)
-	{
-		SetCollection("throughput_log");
-
-		for(uint i = 0; i < throughputsLog.size(); ++i)
-		{
-			documents.push_back(throughputsLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
-		}
-		mongoCollection->insert_many(documents);
-		documents.clear();
-	}
-
-	/* MAIN KPIS */
-	if(mainKpisLog.size() > 0)
-	{
-		SetCollection("main_kpis_log");
-
-		for(uint i = 0; i < mainKpisLog.size(); ++i)
-		{
-			documents.push_back(mainKpisLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
-		}
-		mongoCollection->insert_many(documents);
-		documents.clear();
-	}
-
-	/* MAIN KPIS WITH LABELS */
-	if(mainKpisWithLabelLog.size() > 0)
-	{
-		SetCollection("main_kpis_log");
-
-		for(uint i = 0; i < mainKpisWithLabelLog.size(); ++i)
-		{
-			documents.push_back(mainKpisWithLabelLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
-		}
-		mongoCollection->insert_many(documents);
-		documents.clear();
-	}
-
-	/* REM */
-	if(remLog.size() > 0)
-	{
-		SetCollection("rem_log");
-
-		for(uint i = 0; i < remLog.size(); ++i)
-		{
-			documents.push_back(remLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
-		}
-		mongoCollection->insert_many(documents);
 		documents.clear();
 	}
 
@@ -308,13 +364,36 @@ DatabaseConnector::WriteLogsToDatabase()
 	{
 		SetCollection("status_log");
 
+//		documents.push_back(statusLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
 		for(uint i = 0; i < statusLog.size(); ++i)
 		{
 			documents.push_back(statusLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
 		}
+		//count_status += documents.size()+1;
+	//	documents.push_back(statusLog[statusLog.size()-1].ConvertToBSON(count_status) << bsoncxx::builder::stream::finalize);
+
 		mongoCollection->insert_many(documents);
+
 		documents.clear();
 	}
+
+	/* REM */
+	if(remLog.size() > 0)
+	{
+		SetCollection("rem_log");
+
+//		documents.push_back(remLog[0].ConvertToBSON(-1) << bsoncxx::builder::stream::finalize);
+		for(uint i = 0; i < remLog.size(); ++i)
+		{
+			documents.push_back(remLog[i].ConvertToBSON() << bsoncxx::builder::stream::finalize);
+		}
+	//	count_rem += documents.size()+1;
+	//	documents.push_back(remLog[remLog.size()-1].ConvertToBSON(count_rem) << bsoncxx::builder::stream::finalize);
+		mongoCollection->insert_many(documents);
+
+		documents.clear();
+	}
+
 }
 
 SONEngineLog
@@ -406,6 +485,7 @@ DatabaseConnector::SetOutPutFolder(std::string path)
 bool
 DatabaseConnector::IsDatabaseUnlocked()
 {
+	return true;	//TODO: !!!!!!!!!!!!
 	//SetDatabase("5gopt");
 	SetCollection("locks");
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);

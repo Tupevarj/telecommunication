@@ -152,6 +152,8 @@ private:
   std::map<uint16_t, LteEnbRrcSapUser::SetupUeParameters> m_setupUeParametersMap;
   std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters> m_completeSetupUeParametersMap;
 
+ // void DoSendMlbCondition_1(uint16_t cellId);
+
 };
 
 ///////////////////////////////////////

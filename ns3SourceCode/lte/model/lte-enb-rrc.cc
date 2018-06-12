@@ -185,6 +185,8 @@ UeManager::DoInitialize ()
     // leave the rest of lcinfo empty as CCCH (LCID 0) is pre-configured
     m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
 
+
+
   }
 
   // setup the eNB side of SRB1; the UE side will be set up upon RRC connection establishment
@@ -492,6 +494,7 @@ LteEnbRrc::DoSendReleaseDataRadioBearer (uint64_t imsi, uint16_t rnti, uint8_t b
 void 
 UeManager::ScheduleRrcConnectionReconfiguration ()
 {
+
   NS_LOG_FUNCTION (this);
   switch (m_state)
     {
@@ -508,8 +511,13 @@ UeManager::ScheduleRrcConnectionReconfiguration ()
 
     case CONNECTED_NORMALLY:
       {
+
         m_pendingRrcConnectionReconfiguration = false;
         LteRrcSap::RrcConnectionReconfiguration msg = BuildRrcConnectionReconfiguration ();
+        if(msg.newHysteresis != 3.0)
+        {
+        	//std::cout<< "UE ID = "<<m_rnti<<":CONNECTED_NORMALLY In UeManager::ScheduleRrcConnectionReconfiguration"<<std::endl;
+        }
         m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration (m_rnti, msg);
         RecordDataRadioBearersToBeStarted ();
         SwitchToState (CONNECTION_RECONFIGURATION);
@@ -531,6 +539,9 @@ UeManager::PrepareHandover (uint16_t cellId)
     case CONNECTED_NORMALLY:
       {
         m_targetCellId = cellId;
+        //A.M
+        m_hysteresisHasUpdated = false;
+
         EpcX2SapProvider::HandoverRequestParams params;
         params.oldEnbUeX2apId = m_rnti;
         params.cause          = EpcX2SapProvider::HandoverDesirableForRadioReason;
@@ -732,6 +743,8 @@ UeManager::SendUeContextRelease ()
       m_rrc->m_x2SapProvider->SendUeContextRelease (ueCtxReleaseParams);
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->m_handoverEndOkTrace (m_imsi, m_rrc->m_cellId, m_rnti);
+      //A.M
+      m_rrc->m_numberUePerEnb++;
       break;
 
     default:
@@ -860,6 +873,7 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       StartDataRadioBearers ();
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->m_connectionEstablishedTrace (m_imsi, m_rrc->m_cellId, m_rnti);
+      m_rrc->m_numberUePerEnb++;
       break;
 
     default:
@@ -968,6 +982,7 @@ UeManager::RecvRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionRee
 void 
 UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
 {
+
   uint8_t measId = msg.measResults.measId;
   NS_LOG_FUNCTION (this << (uint16_t) measId);
   NS_LOG_LOGIC ("measId " << (uint16_t) measId
@@ -977,6 +992,8 @@ UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
                                   << " RSRP " << (uint16_t) msg.measResults.rsrpResult
                                   << " RSRQ " << (uint16_t) msg.measResults.rsrqResult);
 
+  m_servingRSRP = msg.measResults.rsrpResult;
+
   for (std::list <LteRrcSap::MeasResultEutra>::iterator it = msg.measResults.measResultListEutra.begin ();
        it != msg.measResults.measResultListEutra.end ();
        ++it)
@@ -984,6 +1001,13 @@ UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
       NS_LOG_LOGIC ("neighbour cellId " << it->physCellId
                                         << " RSRP " << (it->haveRsrpResult ? (uint16_t) it->rsrpResult : 255)
                                         << " RSRQ " << (it->haveRsrqResult ? (uint16_t) it->rsrqResult : 255));
+     if(it->haveRsrpResult)
+     {
+		  m_neighRSRP.push_back(it->rsrpResult);
+		  m_neighRSRPId.push_back(it->physCellId);
+		  m_neighRSRPMap.insert(std::pair<uint16_t, uint8_t > (it->physCellId,it->rsrpResult));
+     }
+
     }
 
   if ((m_rrc->m_handoverManagementSapProvider != 0)
@@ -1012,6 +1036,39 @@ UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
   m_rrc->m_recvMeasurementReportTrace (m_imsi, m_rrc->m_cellId, m_rnti, msg);
 
 } // end of UeManager::RecvMeasurementReport
+
+uint8_t
+UeManager::GetServingRSRPValue ()
+{
+	return m_servingRSRP;
+}
+std::map <uint16_t, uint8_t>
+UeManager::GetNeighRSRPValue()
+{
+
+/*	std::vector<uint8_t>::iterator it2 = m_neighRSRP.begin();
+
+	for (std::vector<uint8_t>::iterator it = m_neighRSRPId.begin(); it != m_neighRSRPId.end(); ++it)
+	{
+
+
+		if((cellId == *it) && (it2 != m_neighRSRP.end()))
+		{
+			return *it2;
+		}
+		++it2;
+	}
+*/
+
+	return m_neighRSRPMap;
+}
+
+void
+UeManager::SetHysteresisValue(double newHys)
+{
+	std::cout<<"In SetHysteresisValue with Hysteresis = "<< newHys << std::endl;
+ m_hysteresis = newHys;
+}
 
 
 // methods forwarded from CMAC SAP
@@ -1153,13 +1210,22 @@ LteRrcSap::RrcConnectionReconfiguration
 UeManager::BuildRrcConnectionReconfiguration ()
 {
   LteRrcSap::RrcConnectionReconfiguration msg;
-  msg.rrcTransactionIdentifier = GetNewRrcTransactionIdentifier ();
-  msg.haveRadioResourceConfigDedicated = true;
-  msg.radioResourceConfigDedicated = BuildRadioResourceConfigDedicated ();
-  msg.haveMobilityControlInfo = false;
-  msg.haveMeasConfig = true;
-  msg.measConfig = m_rrc->m_ueMeasConfig;
-
+  msg.rrcTransactionIdentifier 			= GetNewRrcTransactionIdentifier ();
+  msg.haveRadioResourceConfigDedicated 	= true;
+  msg.radioResourceConfigDedicated 		= BuildRadioResourceConfigDedicated ();
+  msg.haveMobilityControlInfo 			= false;
+  msg.haveMeasConfig 					= true;
+  msg.measConfig 						= m_rrc->m_ueMeasConfig;
+  msg.newHysteresis 					= m_hysteresis;
+  if(m_hysteresis != 3.0)
+  {
+	  msg.newHysteresisHasValue			= true;
+	  std::cout<<"UE ID = "<<m_rnti<<" with newHysteresisHasValue = true"<<std::endl;
+  }
+  else
+  {
+	  msg.newHysteresisHasValue			= false;
+  }
   return msg;
 }
 
@@ -1306,14 +1372,18 @@ LteEnbRrc::LteEnbRrc ()
     m_reconfigureUes (false)
 {
   NS_LOG_FUNCTION (this);
-  m_cmacSapUser = new EnbRrcMemberLteEnbCmacSapUser (this);
+  m_cmacSapUser 	= new EnbRrcMemberLteEnbCmacSapUser (this);
   m_handoverManagementSapUser = new MemberLteHandoverManagementSapUser<LteEnbRrc> (this);
-  m_anrSapUser = new MemberLteAnrSapUser<LteEnbRrc> (this);
-  m_ffrRrcSapUser = new MemberLteFfrRrcSapUser<LteEnbRrc> (this);
-  m_rrcSapProvider = new MemberLteEnbRrcSapProvider<LteEnbRrc> (this);
-  m_x2SapUser = new EpcX2SpecificEpcX2SapUser<LteEnbRrc> (this);
-  m_s1SapUser = new MemberEpcEnbS1SapUser<LteEnbRrc> (this);
-  m_cphySapUser = new MemberLteEnbCphySapUser<LteEnbRrc> (this);
+  m_anrSapUser 		= new MemberLteAnrSapUser<LteEnbRrc> (this);
+  m_ffrRrcSapUser 	= new MemberLteFfrRrcSapUser<LteEnbRrc> (this);
+  m_rrcSapProvider 	= new MemberLteEnbRrcSapProvider<LteEnbRrc> (this);
+  m_x2SapUser 		= new EpcX2SpecificEpcX2SapUser<LteEnbRrc> (this);
+  m_s1SapUser 		= new MemberEpcEnbS1SapUser<LteEnbRrc> (this);
+  m_cphySapUser 	= new MemberLteEnbCphySapUser<LteEnbRrc> (this);
+
+
+
+  Simulator::Schedule (MilliSeconds(500), &LteEnbRrc::TriggerMlbCondition_1, this);
 }
 
 
@@ -1432,6 +1502,20 @@ LteEnbRrc::GetTypeId (void)
                    IntegerValue (-70),
                    MakeIntegerAccessor (&LteEnbRrc::m_qRxLevMin),
                    MakeIntegerChecker<int8_t> (-70, -22))
+/**
+ *
+ */  //
+	/*.AddAttribute ("AdmitResourceStatusRequest",
+				   "Whether to admit an X2 resource status request from another eNB",
+				   BooleanValue (true),
+				   MakeBooleanAccessor (&LteEnbRrc::m_admitResourceStatusRequest),
+				   MakeBooleanChecker ())
+*/
+	.AddAttribute ("AdmitResourceStatusRequest",
+				   "Whether to admit an X2 resource status update from another eNB",
+					BooleanValue (true),
+					MakeBooleanAccessor (&LteEnbRrc::m_admitResourceStatusUpdate),
+					MakeBooleanChecker ())
 
     // Handover related attributes
     .AddAttribute ("AdmitHandoverRequest",
@@ -1488,8 +1572,147 @@ LteEnbRrc::GetTypeId (void)
                      "trace fired when measurement report is received",
                      MakeTraceSourceAccessor (&LteEnbRrc::m_recvMeasurementReportTrace),
                      "ns3::LteEnbRrc::ReceiveReportTracedCallback")
+
+	/**.AddTraceSource ("CheckMlbCondtion_1",
+					 "trace fired when Check MlB Condition_1 is received",
+					 MakeTraceSourceAccessor (&LteEnbRrc::DoCheckMlbCondition_1),
+					 "ns3::LteEnbRrc::DoCheckMlbCondition_1")
+	 */
   ;
   return tid;
+}
+
+void
+LteEnbRrc::TriggerMlbCondition_1()
+{
+
+
+   NS_ASSERT (m_configured);
+   NS_LOG_FUNCTION (this << Simulator::Now ().GetSeconds());
+
+   NS_LOG_DEBUG (this << " Check MLB condition #1 ");
+
+
+
+ /* std::cout <<Simulator::Now().GetSeconds()<<": Cell =" <<(int)m_cellId
+		  <<" In TriggerMlbCondition "
+		  << " \n Number of UEs in This cell = " << m_cmacSapProvider->GetNumberUE()
+		  <<"\n New number of UE = "<<m_numberUePerEnb
+		  <<std::endl;
+*/
+
+  //To do:
+  //Here we should check Cell_available_resources/Cell_Total_resources >  m_THPre
+  //for testing assume 1 PRB per UE
+
+if(m_numberUePerEnb != 0)
+{
+  if((m_dlBandwidth/m_numberUePerEnb) < 1.0)
+   {
+
+ 	  std::cout <<Simulator::Now().GetSeconds()<<": Cell = "<< (int)m_cellId <<"  Mlb Condition 1 is Triggered" << std::endl;
+
+		EpcX2Sap::ResourceStatusRequestParams params;
+
+
+
+		params.enb1MeasurementId 		= 0;
+		params.enb2MeasurementId 		= 1;
+		params.regReq			 		= 1; 		// start
+
+		/**
+		 * Each position in the bitmap indicates measurement object the eNB 2 is requested to report.
+		 * First Bit = PRB Periodic,
+		 * Second Bit = TNL load Ind Periodic,
+		 * Third Bit = HW Load Ind Periodic,
+		 * Fourth Bit = Composite Available Capacity Periodic, this bit should be set to 1
+		 * if at least one of the First, Second or Third bits is set to 1,
+		 * Fifth Bit = ABS Status Periodic,
+		 * Sixth Bit = RSRP Measurement Report Periodic,
+		 * Seventh Bit = CSI Report Periodic.
+		 * Other bits shall be ignored by the eNB 2 .
+		 */
+		params.reportCharacteristics.reset();  //initialize all bits to zero
+		params.reportCharacteristics.set(3,1); // set the fourth bit for Composite Available Capacity Periodic
+		params.reportCharacteristics.set(5,1); // set the sixth bit for RSRP Measurement Report Periodic
+
+		params.sourceEnbId		 		= m_cellId;
+		params.PSI						= 1; 		// Partial success indicator = allowed
+		params.reportingPeriodicity 	= 0; 		// 1000 ms
+		params.periodicityRSRP     		= 0; 		// 120 ms
+		params.periodicityCSI     		= 0; 		// 5 ms
+
+		std::cout<<"Remember if number of cells is different than 21 to change it manually within the code"<<std::endl;
+		std::cout<<"E.g, as in LteEnbRrc::TriggerMlbCondition_1()"<<std::endl;
+		/**
+		 *  Check the neighboring cells
+		 */
+		 for (int j = 1 ; j < m_numberOfEnbs; j++) // 21 is the max number of cells (To do: make it dynamic)
+		 {
+			 if(j != m_cellId)
+			 {
+				// if(m_cphySapProvider->GetTxPower() > std::numeric_limits<double>::infinity())
+				// {
+
+				 if (m_anrSapProvider != 0)
+					{
+					  // ensure that proper neighbour relationship exists between source and target cells
+					  bool noHo = m_anrSapProvider->GetNoHo (j);
+					  bool noX2 = m_anrSapProvider->GetNoX2 (j);
+					  NS_LOG_DEBUG (this << " cellId = " << m_cellId
+										 << ", targetCellId=" << j
+										 << " NRT.NoHo=" << noHo << " NRT.NoX2=" << noX2);
+
+					  if (noHo || noX2)
+						{
+						  NS_LOG_LOGIC (this << " handover to cell " << j
+											 << " is not allowed by ANR");
+						}
+					  else
+					  {
+							 params.targetEnbId.push_back(j);
+							 std::cout<< "Cell ID = " <<params.sourceEnbId<<"  have neighbour = "<<j<<std::endl;
+					  }
+					}
+				 //}
+				// else // cell is down
+				// {
+				//	 std::cout<<Simulator::Now().GetSeconds()<<": Cell Id = "<< m_cellId<<" Is DOWN"<<std::endl;
+				// }
+			 }
+		 }
+
+		/* std::cout<<" ***********************In Lte-enb-mac.cc : \n"
+			  <<"Frame No = "<<m_cmacSapProvider->GetFrameNo()
+			  << " \n Sub frame No = " << m_cmacSapProvider->GetSubframeNo()
+			  << std::endl;
+
+		 */
+
+		// schedule next MLB check
+		Simulator::Schedule (MilliSeconds(6000), &LteEnbRrc::TriggerMlbCondition_1, this);
+
+		//std::cout <<": Cell =" <<"  end Mlb Condition  is reschudeled" << std::endl;
+
+		m_x2SapProvider->SendResourceStatusRequest(params) ;
+
+   }// end of if (trigger MLB)
+   else
+   {
+	   Simulator::Schedule (MilliSeconds(500), &LteEnbRrc::TriggerMlbCondition_1, this);
+   }
+}
+else
+{
+	std::cout<<"In Cell ID = "<< m_cellId<<" with Zero UEs"<<std::endl;
+	Simulator::Schedule (MilliSeconds(500), &LteEnbRrc::TriggerMlbCondition_1, this);
+}
+}
+
+
+uint16_t LteEnbRrc::GetCellId()
+{
+	return m_cellId;
 }
 
 void
@@ -1703,6 +1926,9 @@ LteEnbRrc::AddUeMeasReportConfig (LteRrcSap::ReportConfigEutra config)
   reportConfig.reportConfigId = nextId;
   reportConfig.reportConfigEutra = config;
 
+
+
+
   // create the measurement identity
   LteRrcSap::MeasIdToAddMod measId;
   measId.measId = nextId;
@@ -1712,6 +1938,7 @@ LteEnbRrc::AddUeMeasReportConfig (LteRrcSap::ReportConfigEutra config)
   // add both to the list of UE measurement configuration
   m_ueMeasConfig.reportConfigToAddModList.push_back (reportConfig);
   m_ueMeasConfig.measIdToAddModList.push_back (measId);
+
 
   return nextId;
 }
@@ -1883,45 +2110,136 @@ void
 LteEnbRrc::DoRecvRrcConnectionRequest (uint16_t rnti, LteRrcSap::RrcConnectionRequest msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvRrcConnectionRequest (msg);
+  //A.M
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		GetUeManager (rnti)->RecvRrcConnectionRequest (msg);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvRrcConnectionRequest from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
 
 void
 LteEnbRrc::DoRecvRrcConnectionSetupCompleted (uint16_t rnti, LteRrcSap::RrcConnectionSetupCompleted msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvRrcConnectionSetupCompleted (msg);
+  //A.M
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		GetUeManager (rnti)->RecvRrcConnectionSetupCompleted (msg);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvRrcConnectionSetupCompleted from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
 
 void
 LteEnbRrc::DoRecvRrcConnectionReconfigurationCompleted (uint16_t rnti, LteRrcSap::RrcConnectionReconfigurationCompleted msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvRrcConnectionReconfigurationCompleted (msg);
+  //A.M
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		GetUeManager (rnti)->RecvRrcConnectionReconfigurationCompleted (msg);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvRrcConnectionReconfigurationCompleted from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
 
 void 
 LteEnbRrc::DoRecvRrcConnectionReestablishmentRequest (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvRrcConnectionReestablishmentRequest (msg);
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		GetUeManager (rnti)->RecvRrcConnectionReestablishmentRequest (msg);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvRrcConnectionReestablishmentRequest from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
 
 void 
 LteEnbRrc::DoRecvRrcConnectionReestablishmentComplete (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentComplete msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvRrcConnectionReestablishmentComplete (msg);
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		GetUeManager (rnti)->RecvRrcConnectionReestablishmentComplete (msg);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvRrcConnectionReestablishmentComplete from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
+
 
 void 
 LteEnbRrc::DoRecvMeasurementReport (uint16_t rnti, LteRrcSap::MeasurementReport msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvMeasurementReport (msg);
-}
+  //A.M , I added the if  here
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
+		if(m_cellId == 5)
+		std::cout<<"\n"<<Simulator::Now().GetSeconds()<<": Cell ID= "<<m_cellId<<" with TX power = "<<(uint16_t)m_cphySapProvider->GetReferenceSignalPower()<<std::endl;
 
+		GetUeManager (rnti)->RecvMeasurementReport (msg);
+
+	}
+	else
+	{
+		//std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		//std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvHandoverRequest from UE ID = "<<GetUeManager (rnti)->GetImsi()<<" to cell ID = "<<m_cellId<<" which is DOWN"<<std::endl;
+		//std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
+
+}
+/*
 void 
+LteEnbRrc::DoRecvMlbCondition_1 (uint16_t cellId)
+{
+  NS_LOG_FUNCTION (this << cellId);
+  std::cout <<Simulator::Now()<<":CellId ="<<cellId<<"in DoRecvMlbCondition_1"<<std::endl;
+ // m_handoverManagementSapProvider->s;
+
+  EpcX2Sap::ResourceStatusRequestParams params;
+  params.sourceEnbId = cellId;
+  params.enb1MeasurementId = 0;
+  params.enb2MeasurementId = 1;
+ // params.sourceEnbId = cellId;
+ // params.targetCellId = 2;
+  m_x2SapProvider->SendResourceStatusRequest(params);
+
+}*/
+/*
+void
+LteEnbRrc::DoCheckMlbCondition_1 (uint16_t cellId)
+{
+  NS_LOG_FUNCTION (this << cellId);
+  std::cout <<Simulator::Now()<<":CellId ="<<cellId<<"in DoCheckMlbCondition_1"<<std::endl;
+
+  //m_rrcSapUser->SendMlbCondition_1(cellId);
+
+}
+*/
+void
 LteEnbRrc::DoDataRadioBearerSetupRequest (EpcEnbS1SapUser::DataRadioBearerSetupRequestParameters request)
 {
   Ptr<UeManager> ueManager = GetUeManager (request.rnti);
@@ -1940,96 +2258,110 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
+  //A.M , I added the if  here
+	if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+	{
 
-  NS_LOG_LOGIC ("oldEnbUeX2apId = " << req.oldEnbUeX2apId);
-  NS_LOG_LOGIC ("sourceCellId = " << req.sourceCellId);
-  NS_LOG_LOGIC ("targetCellId = " << req.targetCellId);
-  NS_LOG_LOGIC ("mmeUeS1apId = " << req.mmeUeS1apId);
+	  NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST");
 
-  NS_ASSERT (req.targetCellId == m_cellId);
+	  NS_LOG_LOGIC ("oldEnbUeX2apId = " << req.oldEnbUeX2apId);
+	  NS_LOG_LOGIC ("sourceCellId = " << req.sourceCellId);
+	  NS_LOG_LOGIC ("targetCellId = " << req.targetCellId);
+	  NS_LOG_LOGIC ("mmeUeS1apId = " << req.mmeUeS1apId);
 
-  if (m_admitHandoverRequest == false)
-    {
-      NS_LOG_INFO ("rejecting handover request from cellId " << req.sourceCellId);
-      EpcX2Sap::HandoverPreparationFailureParams res;
-      res.oldEnbUeX2apId =  req.oldEnbUeX2apId;
-      res.sourceCellId = req.sourceCellId;
-      res.targetCellId = req.targetCellId;
-      res.cause = 0;
-      res.criticalityDiagnostics = 0;
-      m_x2SapProvider->SendHandoverPreparationFailure (res);
-      return;
-    }
+	  NS_ASSERT (req.targetCellId == m_cellId);
 
-  uint16_t rnti = AddUe (UeManager::HANDOVER_JOINING);
-  LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue anrcrv = m_cmacSapProvider->AllocateNcRaPreamble (rnti);
-  if (anrcrv.valid == false)
-    {
-      NS_LOG_INFO (this << " failed to allocate a preamble for non-contention based RA => cannot accept HO");
-      RemoveUe (rnti);
-      NS_FATAL_ERROR ("should trigger HO Preparation Failure, but it is not implemented");
-      return;
-    }
+	  if (m_admitHandoverRequest == false)
+		{
+		  NS_LOG_INFO ("rejecting handover request from cellId " << req.sourceCellId);
+		  EpcX2Sap::HandoverPreparationFailureParams res;
+		  res.oldEnbUeX2apId =  req.oldEnbUeX2apId;
+		  res.sourceCellId = req.sourceCellId;
+		  res.targetCellId = req.targetCellId;
+		  res.cause = 0;
+		  res.criticalityDiagnostics = 0;
+		  m_x2SapProvider->SendHandoverPreparationFailure (res);
+		  return;
+		}
 
-  Ptr<UeManager> ueManager = GetUeManager (rnti);
-  ueManager->SetSource (req.sourceCellId, req.oldEnbUeX2apId);
-  ueManager->SetImsi (req.mmeUeS1apId);
+	  uint16_t rnti = AddUe (UeManager::HANDOVER_JOINING);
+	  LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue anrcrv = m_cmacSapProvider->AllocateNcRaPreamble (rnti);
+	  if (anrcrv.valid == false)
+		{
+		  std::cout<<Simulator::Now().GetSeconds()<<": In Cell ID "<<m_cellId<< ": UE ID = "<< rnti <<" Not allowed to handover"<<std::endl;
+		  NS_LOG_INFO (this << " failed to allocate a preamble for non-contention based RA => cannot accept HO");
+		  RemoveUe (rnti);
+		  NS_FATAL_ERROR ("should trigger HO Preparation Failure, but it is not implemented");
+		  return;
+		}
 
-  EpcX2SapProvider::HandoverRequestAckParams ackParams;
-  ackParams.oldEnbUeX2apId = req.oldEnbUeX2apId;
-  ackParams.newEnbUeX2apId = rnti;
-  ackParams.sourceCellId = req.sourceCellId;
-  ackParams.targetCellId = req.targetCellId;
+	  Ptr<UeManager> ueManager = GetUeManager (rnti);
+	  ueManager->SetSource (req.sourceCellId, req.oldEnbUeX2apId);
+	  ueManager->SetImsi (req.mmeUeS1apId);
 
-  for (std::vector <EpcX2Sap::ErabToBeSetupItem>::iterator it = req.bearers.begin ();
-       it != req.bearers.end ();
-       ++it)
-    {
-      ueManager->SetupDataRadioBearer (it->erabLevelQosParameters, it->erabId, it->gtpTeid, it->transportLayerAddress);
-      EpcX2Sap::ErabAdmittedItem i;
-      i.erabId = it->erabId;
-      ackParams.admittedBearers.push_back (i);
-    }
+	  EpcX2SapProvider::HandoverRequestAckParams ackParams;
+	  ackParams.oldEnbUeX2apId = req.oldEnbUeX2apId;
+	  ackParams.newEnbUeX2apId = rnti;
+	  ackParams.sourceCellId = req.sourceCellId;
+	  ackParams.targetCellId = req.targetCellId;
 
-  LteRrcSap::RrcConnectionReconfiguration handoverCommand = ueManager->GetRrcConnectionReconfigurationForHandover ();
-  handoverCommand.haveMobilityControlInfo = true;
-  handoverCommand.mobilityControlInfo.targetPhysCellId = m_cellId;
-  handoverCommand.mobilityControlInfo.haveCarrierFreq = true;
-  handoverCommand.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_dlEarfcn;
-  handoverCommand.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_ulEarfcn;
-  handoverCommand.mobilityControlInfo.haveCarrierBandwidth = true;
-  handoverCommand.mobilityControlInfo.carrierBandwidth.dlBandwidth = m_dlBandwidth;
-  handoverCommand.mobilityControlInfo.carrierBandwidth.ulBandwidth = m_ulBandwidth;
-  handoverCommand.mobilityControlInfo.newUeIdentity = rnti;
-  handoverCommand.mobilityControlInfo.haveRachConfigDedicated = true;
-  handoverCommand.mobilityControlInfo.rachConfigDedicated.raPreambleIndex = anrcrv.raPreambleId;
-  handoverCommand.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex = anrcrv.raPrachMaskIndex;
+	  for (std::vector <EpcX2Sap::ErabToBeSetupItem>::iterator it = req.bearers.begin ();
+		   it != req.bearers.end ();
+		   ++it)
+		{
+		  ueManager->SetupDataRadioBearer (it->erabLevelQosParameters, it->erabId, it->gtpTeid, it->transportLayerAddress);
+		  EpcX2Sap::ErabAdmittedItem i;
+		  i.erabId = it->erabId;
+		  ackParams.admittedBearers.push_back (i);
+		}
 
-  LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider->GetRachConfig ();
-  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
-  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
-  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+	  LteRrcSap::RrcConnectionReconfiguration handoverCommand = ueManager->GetRrcConnectionReconfigurationForHandover ();
+	  handoverCommand.haveMobilityControlInfo = true;
+	  handoverCommand.mobilityControlInfo.targetPhysCellId = m_cellId;
+	  handoverCommand.mobilityControlInfo.haveCarrierFreq = true;
+	  handoverCommand.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_dlEarfcn;
+	  handoverCommand.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_ulEarfcn;
+	  handoverCommand.mobilityControlInfo.haveCarrierBandwidth = true;
+	  handoverCommand.mobilityControlInfo.carrierBandwidth.dlBandwidth = m_dlBandwidth;
+	  handoverCommand.mobilityControlInfo.carrierBandwidth.ulBandwidth = m_ulBandwidth;
+	  handoverCommand.mobilityControlInfo.newUeIdentity = rnti;
+	  handoverCommand.mobilityControlInfo.haveRachConfigDedicated = true;
+	  handoverCommand.mobilityControlInfo.rachConfigDedicated.raPreambleIndex = anrcrv.raPreambleId;
+	  handoverCommand.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex = anrcrv.raPrachMaskIndex;
 
-  Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand (handoverCommand);
+	  LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider->GetRachConfig ();
+	  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+	  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+	  handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
 
-  ackParams.rrcContext = encodedHandoverCommand;
+	  Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand (handoverCommand);
 
-  NS_LOG_LOGIC ("Send X2 message: HANDOVER REQUEST ACK");
+	  ackParams.rrcContext = encodedHandoverCommand;
 
-  NS_LOG_LOGIC ("oldEnbUeX2apId = " << ackParams.oldEnbUeX2apId);
-  NS_LOG_LOGIC ("newEnbUeX2apId = " << ackParams.newEnbUeX2apId);
-  NS_LOG_LOGIC ("sourceCellId = " << ackParams.sourceCellId);
-  NS_LOG_LOGIC ("targetCellId = " << ackParams.targetCellId);
+	  NS_LOG_LOGIC ("Send X2 message: HANDOVER REQUEST ACK");
 
-  m_x2SapProvider->SendHandoverRequestAck (ackParams);
+	  NS_LOG_LOGIC ("oldEnbUeX2apId = " << ackParams.oldEnbUeX2apId);
+	  NS_LOG_LOGIC ("newEnbUeX2apId = " << ackParams.newEnbUeX2apId);
+	  NS_LOG_LOGIC ("sourceCellId = " << ackParams.sourceCellId);
+	  NS_LOG_LOGIC ("targetCellId = " << ackParams.targetCellId);
+
+	  m_x2SapProvider->SendHandoverRequestAck (ackParams);
+	}
+	else
+	{
+		std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+		std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvHandoverRequest from cell ID = "<< req.sourceCellId<<" to cell ID = "<< m_cellId<<" which is DOWN"<<std::endl;
+		std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+	}
 }
 
 void
 LteEnbRrc::DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params)
 {
   NS_LOG_FUNCTION (this);
-
+  //A.M , I added the if  here
+if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+{
   NS_LOG_LOGIC ("Recv X2 message: HANDOVER REQUEST ACK");
 
   NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
@@ -2041,12 +2373,21 @@ LteEnbRrc::DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams para
   Ptr<UeManager> ueManager = GetUeManager (rnti);
   ueManager->RecvHandoverRequestAck (params);
 }
+else
+{
+	std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+	std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvHandoverRequest from cell ID = "<< params.sourceCellId<<" to cell ID = "<< m_cellId<<" which is DOWN"<<std::endl;
+	std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+}
+}
 
 void
 LteEnbRrc::DoRecvHandoverPreparationFailure (EpcX2SapUser::HandoverPreparationFailureParams params)
 {
   NS_LOG_FUNCTION (this);
-
+  //A.M , I added the if  here
+if( m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+{
   NS_LOG_LOGIC ("Recv X2 message: HANDOVER PREPARATION FAILURE");
 
   NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
@@ -2058,6 +2399,13 @@ LteEnbRrc::DoRecvHandoverPreparationFailure (EpcX2SapUser::HandoverPreparationFa
   uint16_t rnti = params.oldEnbUeX2apId;
   Ptr<UeManager> ueManager = GetUeManager (rnti);
   ueManager->RecvHandoverPreparationFailure (params.targetCellId);
+}
+else
+{
+	std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+	std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvHandoverRequest from cell ID = "<< params.sourceCellId<<" to cell ID = "<< m_cellId<<" which is DOWN"<<std::endl;
+	std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+}
 }
 
 void
@@ -2089,6 +2437,9 @@ LteEnbRrc::DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params)
   uint16_t rnti = params.oldEnbUeX2apId;
   GetUeManager (rnti)->RecvUeContextRelease (params);
   RemoveUe (rnti);
+
+  // A.M
+  m_numberUePerEnb--;
 }
 
 void
@@ -2106,13 +2457,524 @@ LteEnbRrc::DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params)
 void
 LteEnbRrc::DoRecvResourceStatusUpdate (EpcX2SapUser::ResourceStatusUpdateParams params)
 {
+
+
+  std::cout<<Simulator::Now().GetSeconds()<<"CellID = "<< m_cellId <<" In Here DoRecvResourceStatusUpdate, with Num of UEs = "<< m_numberUePerEnb<<std::endl;
+
   NS_LOG_FUNCTION (this);
 
   NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS UPDATE");
 
-  NS_LOG_LOGIC ("Number of cellMeasurementResultItems = " << params.cellMeasurementResultList.size ());
+   NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+   NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+   NS_LOG_LOGIC ("targetenbId 		= " << params.targetEnbId);
+   NS_LOG_LOGIC ("sourceEnbId 		= " << params.sourceEnbId);
 
-  NS_ASSERT ("Processing of RESOURCE STATUS UPDATE X2 message IS NOT IMPLEMENTED");
+   NS_ASSERT (params.targetEnbId == m_cellId);
+
+   if (m_admitResourceStatusUpdate == false)
+     {
+	   std::vector<EpcX2Sap::CellMeasurementResultItem>::size_type sz = params.cellMeasurementResultList.size();
+	   for (int j =0; j< (int) sz;j++)
+	   {
+          NS_LOG_INFO ("rejecting resource status update from cellId [" << params.cellMeasurementResultList[j].cellId << "]\n");
+	   }
+// To DO: Add the ResourceStatusFailureParams
+
+       //EpcX2Sap::ResourceStatusFailureParams res;
+       //res.oldEnbUeX2apId =  params.oldEnbUeX2apId;
+       //res.sourceCellId = params.sourceCellId;
+       //res.targetCellId = params.targetCellId;
+       //res.cause = 0;
+       //res.criticalityDiagnostics = 0;
+      // m_x2SapProvider->SendResourceStatusFailure (res);
+       return;
+
+     }
+
+   /** I received the resource status update msg correctly and I have to
+    * Calculate new Hysteresis toward each cell with RSU info
+    * Send new Hysteresis for all UEs within eNB
+    * if(VerfiyCondition#2 (): Avail_Resources/Total_Resources > Th_post)
+    * Restore old Hysteresis values and send them back to UEs and disable MLB.
+    * else go back and calculate new Hysteresis and send them to UEs.
+   */
+   std::cout <<"Cell ID = "<<params.targetEnbId <<" Do receive RSU msg \t  from CellId = " <<params.sourceEnbId <<std::endl;
+   std::vector<EpcX2Sap::CellMeasurementResultItem>::size_type sz = params.cellMeasurementResultList.size();
+	 for (int i = 0; i < (int) sz; i++)
+	 {
+		 std::cout <<"Cell ID = "<<params.cellMeasurementResultList[i].cellId<<std::endl;
+		 std::vector<EpcX2Sap::RSRPMeasurementReportItem>::size_type sz2 = params.cellMeasurementResultList[i].rRSPMeasurementReportList.size();
+		 for (int j = 0; j < (int) sz2; j++)
+		 {
+			 std::cout<<"UE ID = " <<params.cellMeasurementResultList[i].rRSPMeasurementReportList[j].uEId<<std::endl;
+			 std::vector<EpcX2Sap::RSRPMeasurementResult>::size_type sz3 = params.cellMeasurementResultList[i].rRSPMeasurementReportList[j].rSRPMeasurementResult.size();
+			 for(int l = 0; l < (int) sz3; l++)
+			 {
+				 std::cout<<"Neighbor ID = " << params.cellMeasurementResultList[i].rRSPMeasurementReportList[j].rSRPMeasurementResult[l].RSRPCellId<< "\t with RSRP ="
+				 << params.cellMeasurementResultList[i].rRSPMeasurementReportList[j].rSRPMeasurementResult[l].RSRPMeasured<<std::endl;
+
+			 }
+		 }
+
+	 }
+
+
+
+	 /*
+	     uint8_t hysteresisIeValue = EutranMeasurementMapping::ActualHysteresis2IeValue (m_hysteresisDb);
+  	  	  NS_LOG_LOGIC (this << " requesting Event A3 measurements"
+                     << " (hysteresis=" << (uint16_t) hysteresisIeValue << ")"
+                     << " (ttt=" << m_timeToTrigger.GetMilliSeconds () << ")");
+
+		  LteRrcSap::ReportConfigEutra reportConfig;
+		  reportConfig.eventId = LteRrcSap::ReportConfigEutra::EVENT_A3;
+		  reportConfig.a3Offset = 0;
+		  reportConfig.hysteresis = hysteresisIeValue;
+	  */
+
+	 // Set new m_myHysteresis according to RSU msg and update report config for each user.
+	 // m_myHysteresis initially set to 3.0
+	// m_myHysteresis = 1.0;
+	 //I brought the following code from A3RsrpHandoverAlgorithm::DoInitialize ()
+/*
+	  uint8_t hysteresisIeValue = EutranMeasurementMapping::ActualHysteresis2IeValue (m_myHysteresis);
+
+	  LteRrcSap::ReportConfigEutra reportConfig;
+	  reportConfig.eventId = LteRrcSap::ReportConfigEutra::EVENT_A3;
+	  reportConfig.a3Offset = 0;
+	  reportConfig.hysteresis = hysteresisIeValue;
+	  reportConfig.timeToTrigger = 256 ;//m_timeToTrigger.GetMilliSeconds ();
+	  reportConfig.reportOnLeave = false;
+	  reportConfig.triggerQuantity = LteRrcSap::ReportConfigEutra::RSRP;
+	  reportConfig.reportInterval = LteRrcSap::ReportConfigEutra::MS1024;
+	  uint8_t measId = m_handoverManagementSapUser->AddUeMeasReportConfigForHandover (reportConfig);
+*/
+
+	  /*
+	   * msg="AddUeMeasReportConfig may not be called after the simulation has run",
+	   * file=../src/lte/model/lte-enb-rrc.cc, line=1817
+	   * terminate called without an active exception
+	   *
+	   */
+
+	/*
+	 *
+	 * for all users in serving cell who receives RSU from target cell
+	 * check which user has target cell as neighbour
+	 * update hysteresis for this user toward the taget cell to increase its ability to perform handover
+	 * from serving cell to target cell.
+	 * take into account that each user within serving cell will be updated hysteresis just once.
+	 */
+	int count = 0;
+    for (std::map<uint16_t, Ptr<UeManager> >::iterator it1 = m_ueMap.begin ();
+         it1 != m_ueMap.end ();
+         ++it1)
+    {
+
+
+      	Ptr<UeManager> ueManager = GetUeManager (it1->first);
+
+		if(!ueManager->m_hysteresisHasUpdated)
+		{
+			std::map<uint16_t, uint8_t> tmp;
+			tmp = ueManager->GetNeighRSRPValue(); // return RSRP map for each ue with all  neigh cells
+
+
+		   for (std::map <uint16_t, uint8_t>::iterator it = tmp.begin ();
+				it != tmp.end ();
+				++it)
+			 {
+
+					 if( it->first == params.sourceEnbId) // the cell I received from RSU msg
+					 {
+
+						 ueManager->SetHysteresisValue(2.0);
+						 ueManager->ScheduleRrcConnectionReconfiguration();
+
+						 ueManager->m_hysteresisHasUpdated = true;
+
+						 std::cout<<Simulator::Now().GetSeconds()<<": User ID = "<<it1->first<< " Updated"
+								 "Hysteresis toward neighbor cell = "<<params.sourceEnbId<<std::endl;
+					 }
+
+			 }
+		}
+		else
+		{
+			count++;
+		}
+    }
+
+std::cout<<" Number of Updated UEs = ("<<count <<") out of = "<<m_numberUePerEnb<<std::endl;
+
+}
+
+void
+LteEnbRrc::DoRecvResourceStatusRequest (EpcX2SapUser::ResourceStatusRequestParams params)
+{
+
+//A.M , I added the if  here 7_6_2018
+if(m_cphySapProvider->GetReferenceSignalPower() > 0.0)
+{
+
+	   NS_ASSERT (m_configured);
+	   std::cout<<Simulator::Now().GetSeconds()<<"Cell Id = "<<m_cellId<<" : In DoRecvResourceStatusRequest from = "<<params.sourceEnbId<<std::endl;
+	   NS_LOG_FUNCTION (this);
+
+	   NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS REQUEST");
+
+	   NS_LOG_LOGIC ("enb1MeasurementId = " << params.enb1MeasurementId);
+	   NS_LOG_LOGIC ("enb2MeasurementId = " << params.enb2MeasurementId);
+	   NS_LOG_LOGIC (" From SourceCellId 		= " << params.sourceEnbId);
+
+       std::vector<uint16_t>::size_type sz = params.targetEnbId.size();
+
+       bool target = false;
+       int count = 0;
+
+// Check that m_cellId is one of the targetCellIds
+       for (int j = 0; j < (int) sz; j++)
+       {
+    	   if (params.targetEnbId[j] == m_cellId)
+    	   {
+    		   count  = j;
+    		   target = true;
+
+    	   }
+       }
+       if(!target)
+       {
+    	   NS_ASSERT (params.targetEnbId[count] == m_cellId);
+       }
+	   NS_LOG_LOGIC ("To TargetCellId 		= " << count);
+
+	/*   std::cout<<"In Cell ID = "<< count
+			   << "\n recieve RSQ from Cell ID = "<< params.sourceEnbId
+			   << "\n RegRequest = " << (int)params.regReq
+			   << "\n Report Characteristics = " << params.reportCharacteristics
+			   << "\n Partial Success = "<<(int) params.PSI
+			   << "\n RSRP period " << (int)params.periodicityRSRP
+			   <<std::endl;
+			   */
+
+//if (m_admitResourceStatusRequest == false)
+// {
+	//   NS_LOG_INFO ("rejecting resource status Request from eNBId " << params.sourceEnbId);
+
+	   	   // To DO: Add the ResourceStatusFailureParams
+
+		   //EpcX2Sap::ResourceStatusFailureParams res;
+		   //res.oldEnbUeX2apId =  params.oldEnbUeX2apId;
+		   //res.sourceCellId = params.sourceCellId;
+		   //res.targetCellId = params.targetCellId;
+		   //res.cause = 0;
+		   //res.criticalityDiagnostics = 0;
+		   // m_x2SapProvider->SendResourceStatusFailure (res);
+
+	 // return;
+// }
+
+if( params.regReq == 1 ) // regReq = 1 = start, else regReq = 0 is stop
+{
+
+	/**Step-1:
+	 * Registration Request = start
+	 * For each cell  k in eNB: // assume k = 1 for now (To Do)
+	 * calculate MLB condition #3 and:
+	 * if (condition#3 = true) for each cell initiate all the requested measurements according to characteristic report in the request msg
+	 * else(condition#3 = false) cancel MLB for each cell with condition#3 = false.
+	 *
+	 * condition#3 = Avail_Resources/Total_Resources > Th_Avail
+	 *
+	 */
+	bool condition_3;
+
+	if(m_numberUePerEnb == 0 )
+	{
+		condition_3 = true;
+
+	}
+	else if((m_dlBandwidth/m_numberUePerEnb) > 1)// I have two or more PRB per user
+	{
+		condition_3 = true;
+	}
+	else
+	{
+		condition_3 = false;
+
+	}
+      if(condition_3)
+      {
+    		std::cout<<"In DoRecvResourceStatusRequest_Condition#3 valid "<<std::endl;
+    	 // check  characteristic report (To Do) and
+    	 // initialize requested measurements
+    	 // go to step #2
+
+
+
+    		/**Step-2:
+    		 * Prepare the response msg and send it back to Source eNB
+    		 */
+
+    		/**Step-3:
+    		 * Schedule measurement reports updates for each cell k with condition#3 = true.
+    		 */
+
+    		/**Step-4:
+    		 *  Collect measurement reports updates received from all cells k with condition#3 = true, then prepare
+    		 *  resource status update message and send it back to the source eNB .
+    		 */
+
+
+    		/**
+    		 * std::vector<uint16_t> VerfiyCondition_3 (uint16_t srcCellId); // returns list of all cells Ids within m_cellId eNB that satisfy condition#3
+    		 * EpcX2SapProvider::ResourceStatusResponseParams resParams;
+    		 * EpcX2SapProvider::ResourceStatusResponseParams PrepareResourceStatusResponseParams(reParams);
+    		 * m_x2SapProvider->SendResourceStatusResponse (resParams);
+    		 * void ScheduleCellsMeasurementsUpdate (std::vector<CellId> cellIds, uint8_t ReportPeriodicity);
+    		 *
+    		 * On receive of measurements prepare resource status update message and send it back to source eNB
+    		 */
+
+    		  /****************************************************
+    		   *   prepare resource status response message       *
+    		   ****************************************************/
+    		    EpcX2SapProvider::ResourceStatusResponseParams resParams;
+
+    		   resParams.enb1MeasurementId = params.enb2MeasurementId;
+    		   resParams.enb2MeasurementId = params.enb1MeasurementId;
+
+    		   resParams.sourceEnbId       = m_cellId;
+    	       resParams.targetEnbId	   = params.sourceEnbId; //targetId =  the source of resource status request msg
+
+    	     ///  std::vector<EpcX2Sap::CellId>::size_type sz =
+    	       /**
+    	        * I should prepare the MeasurementInitiationResultItem for each cell under the source eNB
+    	        * so I should know how many cell within this eNB then
+    	        * I should set the measurementFailedReportCharacteristics for each cell
+    	        * check the cellconfiguration function
+    	        */
+    	       if(params.PSI ==1) // if allowed = 1
+    	       {
+
+    			   /**
+    				* TO DO: add function to customize measurementFailedReportCharacteristics dynamically
+    				* Read bitset from right to left. 0 :required, 1:ignore
+    				* 1st bit: PRB
+    				* 2nd bit: TN Load Ind Periodic
+    				* 3rd bit: HW load Ind Periodic
+    				* 4th bit: Composite Available Capacity Periodic
+    				* 5th bit: ABS Status Periodic
+    				* 6th bit: RSRP Measurement Report Periodic
+    				* 7th bit: CSI Report Periodic
+    				* Other bits: Ignore
+    				*/
+    	    	  EpcX2Sap::MeasurementInitiationResultItem item;
+    	    	  // This should be for each cell in eNB. assume for now that each eNB has one cell
+    	    	  item.cellId = m_cellId;
+    	    	  item.measurementFailureCauseList.cause = 21; // "MeasurementTemporarilynotAvailable"
+    	    	  // Assume all measurement are available
+    	    	  item.measurementFailureCauseList.measurementFailedReportCharacteristics.set();
+
+    	    	 // item.measurementFailureCauseList.measurementFailedReportCharacteristics.set(3,0);
+    	    	  //item.measurementFailureCauseList.measurementFailedReportCharacteristics.set(5,0);
+
+
+    			   resParams.measurementInitiationResultList.push_back(item);
+
+    			  // std::cout<<"In DoRecvResourceStatusRequest"<<std::endl;
+
+    			   NS_LOG_LOGIC ("Send X2 message: Resource Status Response");
+
+    			   NS_LOG_LOGIC ("enb2MeasurementId = " << resParams.enb2MeasurementId);
+    			   NS_LOG_LOGIC ("enb1MeasurementId = " << resParams.enb1MeasurementId);
+    			   NS_LOG_LOGIC ("sourceEnbId = " << resParams.sourceEnbId);
+    			   NS_LOG_LOGIC ("targetEnbId = " << resParams.targetEnbId);
+
+    			   std::cout << "In DoRecvResourceStatusRequest, Src Id = "<< resParams.sourceEnbId <<" , Target Id = "<<resParams.targetEnbId <<std::endl;
+
+    			  m_x2SapProvider->SendResourceStatusResponse (resParams);
+    	       } // end of if Partial Success Indicator allowed
+    	       else // not allowed
+    	       {
+    	    	   // To Do
+    	    	   NS_LOG_LOGIC ("Partial Success Indicator = NotAllowed");
+    	       }
+
+    	       //then schedule
+    	       m_targetMLBId = resParams.targetEnbId;
+    	       Simulator::Schedule (MilliSeconds(400), &LteEnbRrc::TriggerResourStatusUpdate, this);
+
+    	// prepare to send Resource Update Message
+      }
+      else
+      {
+    	  	  // Do not reply and ignore
+      }
+
+
+}
+else
+{
+	/**
+	 * Registration Request = stop.
+	 * Terminate all reporting
+	 */
+}
+}//end of if txPower
+else
+{
+
+	std::cout<<"\n"<<"**********************************************************************"<<std::endl;
+	std::cout<<Simulator::Now().GetSeconds()<<": In DoRecvResourceStatusRequest cell ID ="<<m_cellId<<" is DOWN"<<std::endl;
+	std::cout<<"**********************************************************************"<<"\n"<<std::endl;
+
+}
+}
+
+
+void
+LteEnbRrc::TriggerResourStatusUpdate()
+{
+
+    PrepareResourStatusUpdate();
+}
+
+void
+LteEnbRrc::PrepareResourStatusUpdate()
+{
+   /**
+    * Ask for measurement collection according to the requested measurement in reportch
+    */
+
+ 	  // for all users in eNB get RSRP measurements (you need for later
+  	  // Ptr<UeManager> ueManager = GetUeManager (rnti);
+  	  // m_neighRSRP.push_back(ueManager->GetNeighRSRPValue(m_cellId)); They are set in UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
+  	  // m_myRSRP = ueManager->GetServingRSRPValue();
+	//check A3RsrpHandoverAlgorithm::DoReportUeMeas (uint16_t rnti,  LteRrcSap::MeasResults measResults)
+// cehck ./src/lte/test/lte-test-ue-measurements.cc:ReportUeMeasurementsCallback
+//check ./src/lte/model/lte-ue-phy.cc:LteUePhy::ReportUeMeasurements ()
+
+    std::cout <<Simulator::Now().GetSeconds()<< ": In PrepareResourStatusUpdate , Cell Id  "<<(uint16_t) m_cellId
+    		<<"\t Number of UEs in this cell = "<<m_numberUePerEnb
+			<< std::endl;
+
+    EpcX2Sap::ResourceStatusUpdateParams params;
+
+    params.enb1MeasurementId 	= 0; // to be modified later
+    params.enb2MeasurementId 	= 1; // to be modified later
+    params.sourceEnbId 			= m_cellId;
+
+    params.targetEnbId 			= m_targetMLBId ;
+
+    EpcX2Sap::CellMeasurementResultItem item;
+
+   // item.dlCompositeAvailableCapacity.capacityValue = 0;
+   // item.dlCompositeAvailableCapacity.cellCapacityClassValue = 0;
+   // item.dlGbrPrbUsage = 0;
+   // item.dlHardwareLoadIndicator = 0;
+   // item.
+    //to be filled later
+
+      item.cellId = m_cellId;
+
+      item.dlCompositeAvailableCapacity.capacityValue 			= 0;
+      item.dlCompositeAvailableCapacity.cellCapacityClassValue 	= 0;
+      item.ulCompositeAvailableCapacity.capacityValue			= 0;
+      item.ulCompositeAvailableCapacity.cellCapacityClassValue	= 0;
+      item.dlHardwareLoadIndicator	= EpcX2Sap::LowLoad;
+      item.ulHardwareLoadIndicator 	= EpcX2Sap::LowLoad;
+      item.dlS1TnlLoadIndicator 	= EpcX2Sap::LowLoad;
+      item.ulS1TnlLoadIndicator 	= EpcX2Sap::LowLoad;
+      item.dlGbrPrbUsage	= 0;
+      item.ulGbrPrbUsage 	= 0;
+      item.dlNonGbrPrbUsage	= 0;
+      item.ulNonGbrPrbUsage = 0;
+      item.dlTotalPrbUsage	= 0;
+      item.ulTotalPrbUsage 	= 0;
+
+
+
+	 // uint16_t rnti = 1;
+
+	  std::vector<EpcX2Sap::RSRPMeasurementReportItem> RSRPMeasitems;
+
+	 // for (rnti = 1; (m_ueMap.find (rnti) != m_ueMap.end ()); ++rnti)
+	 //   {
+
+          for (std::map<uint16_t, Ptr<UeManager> >::iterator it1 = m_ueMap.begin ();
+               it1 != m_ueMap.end ();
+               ++it1)
+          {
+              EpcX2Sap::RSRPMeasurementReportItem tmp1;
+
+              tmp1.uEId = it1->first;
+
+              Ptr<UeManager> ueManager = GetUeManager (tmp1.uEId);
+              //Or
+             // Ptr<UeManager> ueManager = it1->second;
+
+              std::map<uint16_t, uint8_t> tmp;
+
+              tmp = ueManager->GetNeighRSRPValue(); // return RSRP map for each ue with all  neigh cells
+
+              std::vector< EpcX2Sap::RSRPMeasurementResult> RSRPMeasResult;
+
+             for (std::map <uint16_t, uint8_t>::iterator it = tmp.begin ();
+                  it != tmp.end ();
+                  ++it)
+               {
+            	 EpcX2Sap::RSRPMeasurementResult tmp2;
+
+            	 tmp2.RSRPCellId = it->first;
+            	 tmp2.RSRPMeasured = (uint16_t) it->second;
+
+            	 RSRPMeasResult.push_back(tmp2);
+
+                // std::cout << "\t ID"<<it->first <<" RSRP value = "<< (uint16_t)it->second <<std::endl;
+               }
+             tmp1.rSRPMeasurementResult = RSRPMeasResult;
+             RSRPMeasitems.push_back(tmp1);
+	    }
+	  item.rRSPMeasurementReportList = RSRPMeasitems;
+
+params.cellMeasurementResultList.push_back(item); // assuming one cell per eNB
+
+
+	m_x2SapProvider->SendResourceStatusUpdate(params) ;
+}
+
+/*
+uint8_t
+LteEnbRrc::DoAddUeMeasReportConfigForMlb (LteRrcSap::ReportConfigEutra reportConfig)
+{
+  NS_LOG_FUNCTION (this);
+  uint8_t measId = AddUeMeasReportConfig (reportConfig);
+  m_handoverMeasIds.insert (measId);
+  return measId;
+}
+*/
+void
+LteEnbRrc::DoRecvResourceStatusResponse (EpcX2SapUser::ResourceStatusResponseParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("Recv X2 message: RESOURCE STATUS RESPONSE");
+
+  //NS_LOG_LOGIC ("Number of cellMeasurementResultItems = " << params.cellMeasurementResultList.size ());
+
+  NS_ASSERT ("Processing of RESOURCE STATUS RSPONSE X2 message IS NOT IMPLEMENTED Yet");
+
+  /**
+   * Mark all eNBs sources as MLB ok and put them in a MLBOklist
+   * wait receiving resource status update messages
+   *
+   */
+    m_MlbOkMap.insert(std::pair<uint16_t,bool> (params.sourceEnbId,true)); // to be tested
+
+    std::cout <<"In DoRecvResourceStatusResponse from "<< params.sourceEnbId<<std::endl;
+
 }
 
 void
@@ -2181,7 +3043,8 @@ LteEnbRrc::DoTriggerHandover (uint16_t rnti, uint16_t targetCellId)
   if (m_anrSapProvider != 0)
     {
       // ensure that proper neighbour relationship exists between source and target cells
-      bool noHo = m_anrSapProvider->GetNoHo (targetCellId);
+
+	  bool noHo = m_anrSapProvider->GetNoHo (targetCellId);
       bool noX2 = m_anrSapProvider->GetNoX2 (targetCellId);
       NS_LOG_DEBUG (this << " cellId=" << m_cellId
                          << " targetCellId=" << targetCellId
@@ -2194,6 +3057,7 @@ LteEnbRrc::DoTriggerHandover (uint16_t rnti, uint16_t targetCellId)
                              << " is not allowed by ANR");
         }
     }
+
 
   Ptr<UeManager> ueManager = GetUeManager (rnti);
   NS_ASSERT_MSG (ueManager != 0, "Cannot find UE context with RNTI " << rnti);
@@ -2210,6 +3074,7 @@ LteEnbRrc::DoTriggerHandover (uint16_t rnti, uint16_t targetCellId)
     {
       // initiate handover execution
       ueManager->PrepareHandover (targetCellId);
+
     }
 }
 

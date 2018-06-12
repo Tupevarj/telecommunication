@@ -164,6 +164,8 @@ LteUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg
                         msg);
 }
 
+
+
 void 
 LteUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
 {
@@ -218,6 +220,11 @@ LteEnbRrcProtocolIdeal::~LteEnbRrcProtocolIdeal ()
 {
   NS_LOG_FUNCTION (this);
 }
+
+//void LteEnbRrcProtocolIdeal::SendMlbCondition_1_OK(uint16_t cellId)
+//{
+
+//}
 
 void
 LteEnbRrcProtocolIdeal::DoDispose ()
@@ -407,6 +414,15 @@ LteEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::Rrc
 		       msg);
 }
 
+
+/*void
+LteEnbRrcProtocolIdeal::DoSendMlbCondition_1 (uint16_t cellId)
+{
+   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                        &LteEnbRrcSapProvider::RecvMlbCondition_1,
+                        m_enbRrcSapProvider,
+                        cellId);
+}*/
 /*
  * The purpose of LteEnbRrcProtocolIdeal is to avoid encoding
  * messages. In order to do so, we need to have some form of encoding for

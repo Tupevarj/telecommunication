@@ -51,7 +51,7 @@ class LteSignalingRadioBearerInfo;
 class LteDataRadioBearerInfo;
 class LteEnbRrc;
 class Packet;
-
+class LteEnbMac;
 
 
 /**
@@ -255,6 +255,20 @@ public:
   /// Part of the RRC protocol. Implement the LteEnbRrcSapProvider::RecvMeasurementReport interface.
   void RecvMeasurementReport (LteRrcSap::MeasurementReport msg);
 
+// ***********************************
+  uint8_t GetServingRSRPValue();
+  std::map <uint16_t, uint8_t> GetNeighRSRPValue();
+
+  void SetHysteresisValue(double newHys);
+
+  uint8_t 						m_servingRSRP;
+  std::vector<uint8_t>  		m_neighRSRP;
+  std::vector<uint16_t> 		m_neighRSRPId;
+  std::map <uint16_t, uint8_t> 	m_neighRSRPMap;
+  double 						m_hysteresis 			= 3.0;
+  bool 							m_hysteresisHasUpdated 	= false;
+  // *************************************
+
 
   // METHODS FORWARDED FROM ENB CMAC SAP //////////////////////////////////////
 
@@ -428,6 +442,8 @@ private:
    */
   Ptr<LteSignalingRadioBearerInfo> m_srb1;
 
+
+
   /**
    * The `C-RNTI` attribute. Cell Radio Network Temporary Identifier.
    */
@@ -536,7 +552,7 @@ protected:
   virtual void DoDispose (void);
 public:
   static TypeId GetTypeId (void);
-
+ uint16_t GetCellId();
 
   /**
    * Set the X2 SAP this RRC should interact with
@@ -863,7 +879,17 @@ public:
   typedef void (* ReceiveReportTracedCallback)
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      LteRrcSap::MeasurementReport report);
-  
+  int						m_numberOfEnbs	 = 21;
+  uint8_t 					m_THPre   		 = 0.2;
+  uint8_t 					m_Thavail 		 = 0.6;
+  uint8_t 					m_Thpost  		 = 0.8;
+  std::map<uint16_t, bool> 	m_MlbOkMap;
+  uint16_t 					m_numberUePerEnb = 0;
+  uint8_t 					m_myRSRP;
+  std::vector<uint8_t> 		m_neighRSRP;
+  uint16_t 					m_targetMLBId;
+  double 					m_myHysteresis 	 = 3.0;
+
 private:
 
 
@@ -884,6 +910,12 @@ private:
   /// Part of the RRC protocol. Forwarding LteEnbRrcSapProvider::RecvMeasurementReport interface to UeManager::RecvMeasurementReport
   void DoRecvMeasurementReport (uint16_t rnti, LteRrcSap::MeasurementReport msg);
 
+  void TriggerMlbCondition_1();
+  void TriggerResourStatusUpdate();
+
+  //void DoRecvMlbCondition_1(uint16_t cellId);
+ // void DoCheckMlbCondition_1(uint16_t cellId);
+
   // S1 SAP methods
 
   void DoDataRadioBearerSetupRequest (EpcEnbS1SapUser::DataRadioBearerSetupRequestParameters params);
@@ -897,8 +929,19 @@ private:
   void DoRecvSnStatusTransfer (EpcX2SapUser::SnStatusTransferParams params);
   void DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params);
   void DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params);
-  void DoRecvResourceStatusUpdate (EpcX2SapUser::ResourceStatusUpdateParams params);
+ //MY*******
+  void DoRecvResourceStatusRequest 	(EpcX2SapUser::ResourceStatusRequestParams params);
+  void DoRecvResourceStatusResponse (EpcX2SapUser::ResourceStatusResponseParams params);
+  void DoRecvResourceStatusUpdate 	(EpcX2SapUser::ResourceStatusUpdateParams params);
+
+  void PrepareResourStatusUpdate();
+
+  //uint8_t DoAddUeMeasReportConfigForMlb (LteRrcSap::ReportConfigEutra reportConfig);
+
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
+
+
+
 
   // CMAC SAP methods
 
@@ -971,6 +1014,7 @@ public:
    * \return the current SRS periodicity
    */
   uint32_t GetSrsPeriodicity () const;
+
 
   /**
    * \brief Associate this RRC entity with a particular CSG information.
@@ -1162,6 +1206,18 @@ private:
    * receive from this cell before it is allowed to camp to this cell.
    */
   int8_t m_qRxLevMin;
+
+
+  /**
+   * The 'AdmitResourceStatusRequest' attribute. Whether to admit an X2
+   * resource status request from another eNB
+   */
+ // bool m_admitResourceStatusRequest;
+
+ /** The 'AdmitResourceStatusUpdate' attribute. Whether to admit an X2
+  * resource status update from another eNB
+  */
+ bool m_admitResourceStatusUpdate;
   /**
    * The `AdmitHandoverRequest` attribute. Whether to admit an X2 handover
    * request from another eNB.
