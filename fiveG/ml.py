@@ -14,7 +14,7 @@ import sys
 from sklearn.model_selection import cross_val_score,cross_val_predict
 from sklearn.externals import joblib
 from enum import Enum
-from .models import collection_read_mongo, collection_update_with_set
+from .models import collection_update_with_set, read_mongo_guaranteed
 import time
 
 ##############################################################
@@ -334,16 +334,19 @@ def run_ml(array_x):
 
 def get_number_of_cells():
     """ Returns number of cells in simulation """
-    df_sim_conf = collection_read_mongo(collection="simulation_configurations")
-    return df_sim_conf["nMacroEnbSites"].iloc[-1] * 3
+    dict_dfs = dict()
+    if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="simulation_configurations"):
+        return dict_dfs["simulation_configurations"]["nMacroEnbSites"].iloc[-1] * 3
 
 
 def update_nb_cell_lists():
     """" Updates neighbouring cell lists in DB. """
-    df_handovers = collection_read_mongo(collection="handover_log")
-    df_nb_cells = collection_read_mongo(collection="nb_cell_list")
+    dict_dfs = dict()
+    if 0 > read_mongo_guaranteed(dictionary=dict_dfs, collection="handover_log"):
+        return
+    df_nb_cells = read_mongo_guaranteed(dictionary=dict_dfs, collection="nb_cell_list")
 
-    df_nb_pairs = df_handovers[["CellID", "TargetCellID"]].loc[df_handovers["TargetCellID"] != 0]
+    df_nb_pairs = dict_dfs["handover_log"][["CellID", "TargetCellID"]].loc[dict_dfs["handover_log"]["TargetCellID"] != 0]
     cell_count = get_number_of_cells()
 
     for i in range(1, cell_count+1):

@@ -117,3 +117,33 @@ function searchUserLocationButtonHandler() {
      }
     });
 }
+
+
+/**
+ * Button handler for simulation start and stop buttons.
+ * @param button
+ * @param start - Boolean. True for start and false for stop.
+ * @param url
+ */
+function searchUsersLocationsByCellButtonHandler() {
+    var cellId = document.getElementById('inputTrackUsersCell').value;
+    $.ajax({
+     url: "usersLocationHistoryCell",
+    data: {
+        CellID: cellId
+    },
+     type: 'GET',
+     success: function (data) {
+         var parsed = JSON.parse(data);
+         if(connectionChart == undefined) initialize(parsed, userId);
+         else update(parsed["Connections"]);
+         locationChart.update(parsed, true);
+         connectionChart.setTitle({text: 'Connected cells over time for user ID: ' + userId.toString()});
+         locationChart.chart.setTitle({text: 'Location over time for user ID: '+ userId.toString()});
+     },
+     failure: function (data) {
+         alert("User NUMBER???? doesn't exist");
+         // MAYBE ALERT IN CONTROL PANEL
+     }
+    });
+}

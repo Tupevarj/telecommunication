@@ -65,7 +65,6 @@ class Chart {
      *               of tuples (points). In case of multi-series data should be dictionary.
      */
     drawChart(data) {
-        this.drawn = true;
         if(!this.multiSeries)
             this.createSeries(data);
         else
@@ -113,6 +112,7 @@ class Chart {
              series: this.series
 
          });
+        this.drawn = true;
     }
 
     /**
@@ -213,6 +213,18 @@ class Chart {
         for(var i = 1; i < Object.keys(dictionary).length; i++)
         {
             var serie = series[i-1];
+
+            // NOTE: update
+            if(serie.name != Object.keys(dictionary)[i]) {
+                for(var j = 1; j < Object.keys(dictionary).length; j++)
+                {
+                    if(Object.keys(dictionary)[i] == Object.keys(dictionary)[j]) {
+                        serie = series[j];
+                        break;                  // IF NOT FOUND???? TODO:
+                    }
+                }
+            }
+
             var yList = dictionary[Object.keys(dictionary)[i]];
 
              if(clear) {
@@ -225,7 +237,7 @@ class Chart {
              else {
                 for(var j = 0; j < yList.length; j++)
                 {
-                    serie.addPoint([xList[j], yList[j]], false, false);
+                    serie.addPoint([xList[j], yList[j]], false, false);     //TODO: FIX BUG HERE!
                 }
              }
         }
@@ -263,7 +275,7 @@ class Chart {
         if(data == undefined) // Just in case, not needed actually
             return;
 
-        if(!this.drawn) {
+        if(!this.drawn | this.chart == undefined) {
             this.drawChart(data[this.dataName]);
         }
         else {

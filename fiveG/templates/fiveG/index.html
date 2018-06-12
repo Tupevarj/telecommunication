@@ -743,6 +743,7 @@
         <div class="panel-body">
             <div class="row" style="margin: 20px 0px 0px 0px;">
                 <!--======  FIRST COLUMN ====== -->
+                <div class="col-md-6">
                     <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
                     <label class="form-check-label">Track user</label>
                     <div class=".row" style="margin-top: 10px;">
@@ -750,6 +751,16 @@
                         <button class="btn btn-primary" id="buttonTrackUser" onclick="searchUserLocationButtonHandler()" style="font-size:12px;">Track User</button>
                     </div>
                     </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
+                    <label class="form-check-label">Track users by cell</label>
+                    <div class=".row" style="margin-top: 10px;">
+                        <input class="input-sm" id="inputTrackUsersCell" type="text" style="margin: auto; width:50px;" value="1">
+                        <button class="btn btn-primary" id="buttonTrackUsersCell" onclick="searchUsersLocationsByCellButtonHandler()" style="font-size:12px;">Track User</button>
+                    </div>
+                    </div>
+                </div>
                 <!--======  END PANEL BODY ====== -->
             </div>
         </div>

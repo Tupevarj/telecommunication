@@ -1,6 +1,5 @@
 from django.shortcuts import render
-from .models import read_collection_as_list_mongo, get_collection_count
-from .models import collection_read_mongo, insert_document, \
+from .models import insert_document, read_mongo_best_effort, read_mongo_guaranteed, get_collection_count, \
     connect_to_mongo_db, collection_update_with_set, collection_update_multiple_with_set
 import json
 from django.http import HttpResponse
@@ -71,13 +70,13 @@ def create_regression_models():
     """ First preprocesses data from database and then trains regression
         models with it """
     update_nb_cell_lists_in_db()    # FIXME: CALLING FROM HERE FOR NOW ON
-    data = collection_read_mongo(collection="main_kpis_log")
-    if len(data) > 0:
+    dict_dfs = dict()
+    if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="main_kpis_log"):
         array_8_dim = []
         labels = []
         array_10_dim = []
         preprocess_training_set_to_8_and_10_dimensions(dim_8_list=array_8_dim, dim_10_list=array_10_dim,
-                                                       labels=labels, data_frame=data)
+                                                       labels=labels, data_frame=dict_dfs["main_kpis_log"])
         train_and_test_all_regressions(array_8_dim, labels)
         calculate_reference_z_scores(array_x=array_10_dim, array_y=labels)
 
@@ -97,21 +96,22 @@ def apply_coc():
     if outage_rows[2] == 0:
         return {'message': "No outage detected.", 'status': 1}
     else:
-        nb_cells = read_collection_as_list_mongo(collection="nb_cell_list")
-        outage_cell_ids = basetation_to_cell_ids(4)
-        compensated_cell_list = list()
-        # Compensate:
-        for cell in outage_cell_ids:
-            for nb_list in nb_cells:
-                if cell == nb_list['CellID']:
-                    for nb_cell in nb_list['NbCellIDs']:
-                        if nb_cell not in outage_cell_ids and nb_cell not in compensated_cell_list:
-                            compensated_cell_list.append(nb_cell)
+        dict_dfs = dict()
+        if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="nb_cell_list"):
+            outage_cell_ids = basetation_to_cell_ids(outage_rows[2])
+            compensated_cell_list = list()
+            # Compensate:
+            for cell in outage_cell_ids:
+                for nb_list in dict_dfs["nb_cell_list"]:
+                    if cell == nb_list['CellID']:
+                        for nb_cell in nb_list['NbCellIDs']:
+                            if nb_cell not in outage_cell_ids and nb_cell not in compensated_cell_list:
+                                compensated_cell_list.append(nb_cell)
 
-        for cell_id in compensated_cell_list:
-            collection_update_with_set(collection="cell_configurations", query={"CellID": cell_id}, value={"TxPower": 49.0})
-    return {'message': "Outage at basestation " + str(outage_rows[2]) + " detected. Compensation activated for cells " +
-                       str(compensated_cell_list) + ".", 'status': 0}
+            for cell_id in compensated_cell_list:
+                collection_update_with_set(collection="cell_configurations", query={"CellID": cell_id}, value={"TxPower": 46.0})
+        return {'message': "Outage at basestation " + str(outage_rows[2]) + " detected. Compensation activated for cells " +
+                           str(compensated_cell_list) + ".", 'status': 0}
 
 ##############################################################
 #   HTTP REQUEST HANDLERS
@@ -126,10 +126,11 @@ def stop_simulation(request):
     """" Stops running simulation TODO: status code?"""
     if request.method == "GET" and request.path == '/stopSimulation':
         global sim_thread
-        list_state = read_collection_as_list_mongo("simulation_configurations")
-        pid = list_state[0]['pid']
-        os.kill(pid, signal.SIGUSR2)
-        sim_thread.join()
+        dict_dfs = dict()
+        if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="simulation_configurations"):
+            pid = dict_dfs["simulation_configurations"]["pid"][0]
+            os.kill(pid, signal.SIGUSR2)
+            sim_thread.join()
     return HttpResponse(json.dumps("Simulation stopped."))
 
 
@@ -160,7 +161,7 @@ def outage_button_handler(request):
             # Create outage
             collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
                                                 {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
-                                                {"TxPower": 0.0}, {"TxPower": 0.0}, {"TxPower": 0.0}])
+                                                {"TxPower": -100000.0}, {"TxPower": -100000.0}, {"TxPower": -100000.0}])
             return HttpResponse(json.dumps({'Message': "Outage created at bs " + str(bs_id) + " (Cells: " +
                                                        str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
                                                        str(list_cells[2]) + ').', 'status': 0}))
@@ -168,7 +169,7 @@ def outage_button_handler(request):
             # Cancel outage
             collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
                                                 {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
-                                                {"TxPower": 46.0}, {"TxPower": 46.0}, {"TxPower": 46.0}])
+                                                {"TxPower": 43.0}, {"TxPower": 43.0}, {"TxPower": 43.0}])
             return HttpResponse(json.dumps({'Message': "Outage cancelled at bs " + str(bs_id) + " (Cells: " +
                                                        str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
                                                        str(list_cells[2]) + ').', 'status': 0}))
@@ -183,9 +184,9 @@ def control_panel_input(request):
             except ValueError:
                 return HttpResponse(json.dumps({'message': "Please enter correct basestation ID.", 'status': 1}))
             if 0 < bs_id_int < 8:
-                # Create outge TODO: change the way its created
+                # Create outage TODO: change the way its created
                 document = {"cellID": bs_id_int, "normal": 0, "outage": 1, "coc": 0,
-                           "cco": 0, "mro": 0, "mlb": 0, "dirty_flag": 0 }
+                           "cco": 0, "mro": 0, "mlb": 0, "dirty_flag": 0}
                 insert_document("controlpanel", document)
                 return HttpResponse(json.dumps({'message': "Outage created at basestation " + str(bs_id_int) + ".",
                                                 'status': 0}))
@@ -249,6 +250,19 @@ def create_ml_models(request):
         return 0
 
 
+def get_ue_location_history_by_cell(request):
+    """ Get user location and connection history request handler """
+    if request.method == "GET":
+        try:
+            cell_id = int(request.GET['CellID'])
+        except ValueError:
+            return 0
+        connections = get_ue_location_and_connection_history(int(cell_id))
+        return HttpResponse(json.dumps(connections))
+    else:
+        return 0
+
+
 def get_ue_location_history(request):
     """ Get user location and connection history request handler """
     if request.method == "GET":
@@ -271,7 +285,7 @@ def update_alarm_gui(request):
         global outage_rows
         if training_ended and is_update_needed_for_alarm_table():
             response_data = {'total': 1, 'rows': []}
-            data = collection_read_mongo(collection="main_kpis_log", skip=last_read_ml)
+            data = read_mongo_best_effort(collection="main_kpis_log", skip=last_read_ml)
             last_read_ml += len(data)
 
             if len(data) != 0:

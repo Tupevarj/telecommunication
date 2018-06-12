@@ -113,9 +113,10 @@ $(document).ready(function () {
     // Start update loop for charts
     setInterval(function () {
         sendUpdateRequest();
-        }, 2000);
+        }, 10000);
 });
 
+var last_time_stamp = 0.0;
 /**
  * Sends main update request to server and updates charts and simulation console.
  */
@@ -126,6 +127,16 @@ function sendUpdateRequest() {
 
         for(var i = 0; i < charts.length; i++)
             charts[i].update(parsed);
+
+        // TODO: !!!
+        // if(parsed["TotalThroughput"] != undefined) {
+        //     var time_curr = parsed["TotalThroughput"][0][0];
+        //
+        //     if(time_curr > last_time_stamp+0.25){
+        //         var ERROR = true;
+        //     }
+        //     last_time_stamp = parsed["TotalThroughput"][parsed["TotalThroughput"].length-1][0];
+        // }
 
         dominanceMapChart.update(parsed);
         updateSimulationConsole(parsed["SimulationStatus"]);

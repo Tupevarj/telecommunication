@@ -7,9 +7,11 @@ import calendar
 import heapq
 import subprocess
 from threading import Thread
+import numpy as np
 
 mongo_conn = MongoClient()
 mongo_db = "5gopt"
+
 
 def start_mongo():
     subprocess.call(["./start_mongo.sh"])
@@ -145,48 +147,102 @@ def collection_update_multiple_with_set(collection, queries, values):
     unlock_database()
 
 
-def read_multiple_mongo_collections_df(collections, skips, query={}):
-    """ Reads multiple collections from mongo database.
-        Supports only skip and query options. Query same for all reads.
-        Collections and skips must match in length!"""
-    global mongo_conn
-    global mongo_db
-    while not is_database_unlocked():
-        time.sleep(0.003)
-    lock_database()
-    dict_data_frames = dict()
-    for i in range(0, len(collections)):
-        df = pd.DataFrame(list(mongo_conn[mongo_db][collections[i]].find(query).skip(skips[i])))
-        if len(df) != 0:
-            dict_data_frames[collections[i]] = df.drop(columns="_id")
-        else:
-            dict_data_frames[collections[i]] = df
-    unlock_database()
-    return dict_data_frames
+# def read_mongo_collection_df_(dictionary, collection, skip, query={}):
+#     """ If successful, return dataframe's length, otherwise returns negative number """
+#     df = pd.DataFrame(list(mongo_conn[mongo_db][collection].find(query).skip(skip)))
+#     if len(df) != 0:
+#         df = df.drop(columns="_id")
+#         dictionary[collection] = df.drop(columns="CheckSum")
+#     return 0
 
 
-def collection_read_mongo(collection, query={}, no_id=True, skip=0, limit=0):
-    global mongo_conn
-    global mongo_db
-    while not is_database_unlocked():
-        time.sleep(0.003)
-    lock_database()
-    cursor = mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit)
-    #array = list(mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit))
-    unlock_database()
-    # TODO: We have to first check the size
-    df = pd.DataFrame(list(cursor))
+def read_mongo_guaranteed(dictionary, collection, skip=0, query={}):
+    """ If successful, return dataframe's length, otherwise returns negative number """
+    count_start = -1
+    count_end = 0
+    df = 0
+    while count_end != count_start:
+        count_start = mongo_conn[mongo_db][collection].count()
+        df = pd.DataFrame(list(mongo_conn[mongo_db][collection].find(query).skip(skip)))
+        count_end = mongo_conn[mongo_db][collection].count()
+    if len(df) != 0:
+        dictionary[collection] = df.drop(columns="_id")
+        return len(df)
+    return 0
 
-   # x = []
-   # for i in array:
-    #    x.append(i)
 
-    if no_id:
-        try:
-            del df["_id"]
-        except:
-           pass
-    return df
+def read_mongo_best_effort(dictionary, collection, skip, query={}):
+    """ If successful, return dataframe's length, otherwise returns negative number """
+    count_start = mongo_conn[mongo_db][collection].count()
+    df = pd.DataFrame(list(mongo_conn[mongo_db][collection].find(query).skip(skip)))
+    if count_start != mongo_conn[mongo_db][collection].count():
+        return -1   # happens when possible dirty read
+    if len(df) != 0:
+        dictionary[collection] = df.drop(columns="_id")
+        return len(df)
+    return 0
+
+
+# def read_mongo_collection_df_safe(dictionary, collection, skip, query={}):
+#     """ If successful, return dataframe's length, otherwise returns negative number """
+#     df = pd.DataFrame(list(mongo_conn[mongo_db][collection].find(query).skip(skip)))
+#     if len(df) != 0:
+#         if df["CheckSum"].iloc[-1] > 0:
+#             if len(df) == (df["CheckSum"].iloc[-1]-skip):
+#                 df = df.drop(columns="_id")
+#                 dictionary[collection] = df.drop(columns="CheckSum")
+#                 return len(df)
+#             return -1   # Only happens when inner elements are incorrect
+#         else:
+#             return -1   # Only happens last elements are incorrect
+#     return 0
+
+#
+# def read_multiple_mongo_collections_df(collections, skips, query={}):
+#     """ Reads multiple collections from mongo database.
+#         Supports only skip and query options. Query same for all reads.
+#         Collections and skips must match in length!"""
+#     global mongo_conn
+#     global mongo_db
+#   #  while not is_database_unlocked():
+#    #     time.sleep(0.003)
+#   #  lock_database()
+#     dict_data_frames = dict()
+#    # for i in range(0, len(collections)):
+#       #  read_mongo_collection_df(dict_data_frames, collections[i], skips[i])
+#
+#
+#        # df = pd.DataFrame(list(mongo_conn[mongo_db][collections[i]].find(query).skip(skips[i])))
+#       #  if len(df) != 0:
+#        #     dict_data_frames[collections[i]] = df.drop(columns="_id")
+#        # else:
+#         #    dict_data_frames[collections[i]] = df
+#    # unlock_database()
+#     return dict_data_frames
+
+#
+# def collection_read_mongo(collection, query={}, no_id=True, skip=0, limit=0):
+#     global mongo_conn
+#     global mongo_db
+#     while not is_database_unlocked():
+#         time.sleep(0.003)
+#     lock_database()
+#     cursor = mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit)
+#     #array = list(mongo_conn[mongo_db][collection].find(query).skip(skip).limit(limit))
+#     unlock_database()
+#     # TODO: We have to first check the size
+#     df = pd.DataFrame(list(cursor))
+#
+#    # x = []
+#    # for i in array:
+#     #    x.append(i)
+#
+#     if no_id:
+#         try:
+#             del df["_id"]
+#         except:
+#            pass
+#     return df
 
 
 def insert_document(collection, data):

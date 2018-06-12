@@ -1,7 +1,5 @@
 import pandas as pd
-from .models import collection_read_mongo, read_multiple_mongo_collections_df, get_collection_count, get_last_element
-import json
-from sklearn import manifold
+from .models import read_mongo_guaranteed
 import numpy as np
 
 ##############################################################
@@ -18,9 +16,10 @@ def preprocessed_data_to_csv_file(path):
     file.close()
     file_labels.close()
 
-    data = collection_read_mongo(collection="main_kpis_log")
-    processed = preprocess_data_8_dim(data)
-    write_data_frame_to_csv_file(data_frame=processed, path=path)
+    dict_dfs = dict()
+    if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="main_kpis_log"):
+        processed = preprocess_data_8_dim(dict_dfs["main_kpis_log"])
+        write_data_frame_to_csv_file(data_frame=processed, path=path)
 
 
 # Move another location, function temporary located here
