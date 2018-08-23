@@ -73,8 +73,6 @@ private:
   void DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg);
   void DoSendMeasurementReport (LteRrcSap::MeasurementReport msg);
 
-
-
   void SetEnbRrcSapProvider ();
 
   Ptr<LteUeRrc> m_rrc;
@@ -113,9 +111,6 @@ public:
   LteUeRrcSapProvider* GetUeRrcSapProvider (uint16_t rnti);
   void SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p);
 
-
- // void SendMlbCondition_1_OK(uint16_t cellId);
-
 private:
 
   // methods forwarded from LteEnbRrcSapUser
@@ -134,7 +129,6 @@ private:
   Ptr<Packet> DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReconfiguration msg);
   LteRrcSap::RrcConnectionReconfiguration DoDecodeHandoverCommand (Ptr<Packet> p);
 
-  //void DoSendMlbCondition_1(uint16_t cellId);
 
   uint16_t m_rnti;
   uint16_t m_cellId;

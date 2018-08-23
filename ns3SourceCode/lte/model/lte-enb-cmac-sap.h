@@ -54,10 +54,6 @@ public:
 
   virtual void AddUe (uint16_t rnti) = 0;
 
-  virtual uint32_t GetNumberUE() = 0 ;
-  virtual uint32_t GetFrameNo() = 0 ;
-  virtual uint32_t GetSubframeNo() = 0 ;
-
   /** 
    * remove the UE, e.g., after handover or termination of the RRC connection
    * 

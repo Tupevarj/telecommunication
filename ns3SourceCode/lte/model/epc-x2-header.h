@@ -59,9 +59,7 @@ public:
     LoadIndication          = 2,
     SnStatusTransfer        = 4,
     UeContextRelease        = 5,
-	ResourceStatusReportingInitiation = 9,
-    ResourceStatusReporting = 10,
-
+    ResourceStatusReporting = 10
   };
 
   enum TypeOfMessage_t {
@@ -323,166 +321,20 @@ public:
   uint16_t GetEnb2MeasurementId () const;
   void SetEnb2MeasurementId (uint16_t enb2MeasurementId);
 
-  uint16_t GetSourceEnbId () const;
-  void SetSourceEnbId (uint16_t sourceEnbId);
-
-  uint16_t GetTargetEnbId () const;
-   void SetTargetEnbId (uint16_t targetEnbId);
-
-  std::vector<EpcX2Sap::CellMeasurementResultItem> GetCellMeasurementResultList () const;
-  void SetCellMeasurementResultList (std::vector<EpcX2Sap::CellMeasurementResultItem> cellMeasurementResultList);
+  std::vector <EpcX2Sap::CellMeasurementResultItem> GetCellMeasurementResultList () const;
+  void SetCellMeasurementResultList (std::vector <EpcX2Sap::CellMeasurementResultItem> cellMeasurementResultList);
 
   uint32_t GetLengthOfIes () const;
   uint32_t GetNumberOfIes () const;
 
 private:
-  uint32_t          m_numberOfIes;
-  uint32_t          m_headerLength;
-
-  uint16_t 			m_targetEnbId;
-  uint16_t          m_sourceEnbId;
-
-  uint16_t          m_enb1MeasurementId;
-  uint16_t          m_enb2MeasurementId;
-  std::vector<EpcX2Sap::CellMeasurementResultItem> m_cellMeasurementResultList;
-};
-/**
- * RESOURCE STATUS REQUEST MESSAGE
- * To be Modified
- */
-class EpcX2ResourceStatusRequestHeader : public Header
-{
-public:
-  EpcX2ResourceStatusRequestHeader ();
-  virtual ~EpcX2ResourceStatusRequestHeader ();
-
-  static  TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
-  virtual void Print (std::ostream &os) const;
-
-
-  uint16_t GetEnb1MeasurementId () const;
-  void SetEnb1MeasurementId (uint16_t enb1MeasurementId);
-
-  uint16_t GetEnb2MeasurementId () const;
-  void SetEnb2MeasurementId (uint16_t enb2MeasurementId);
-
-  uint8_t GetRegistrationRequest () const;
-  void SetRegistrationRequest (uint8_t regReq);
-
-  std::bitset<32> GetReportCharacteristics () const;
-  void SetReportCharacteristics (std::bitset<32>  reportCharacteristics);
-
-  //std::vector<EpcX2Sap::CellId> GetTargetCellId() const;
-  //void SetTargetCellId (std::vector<EpcX2Sap::CellId> cellToReportId);
-
-  std::vector<uint16_t> GetTargetEnbId() const;
-  void SetTargetEnbId ( std::vector<uint16_t> enbToReportId);
-
-  uint16_t GetSourceEnbId () const;
-  void SetSourceEnbId (uint16_t sourceEnbId);
-
-  uint8_t GetPartialSuccessIndicator () const;
-  void SetPartialSuccessIndicator (uint8_t PSI);
-
-  uint8_t GetReportingPeriodicity () const;
-  void SetReportingPeriodicity (uint8_t reportingPeriodicity);
-
-  uint8_t GetPeriodicityRSRPMeasurementReport () const;
-  void SetPeriodicityRSRPMeasurementReport (uint8_t periodicityRSRP);
-
-  uint8_t GetPeriodicityCSIReport () const;
-  void SetPeriodicityCSIReport (uint8_t periodicityCSI);
-
-  uint32_t GetLengthOfIes () const;
-  uint32_t GetNumberOfIes () const;
-
-private:
-  uint8_t           m_messageType = 10; ///< ResourceStatusReportingInitiation
-  uint32_t          m_numberOfIes;
-  uint32_t          m_headerLength;
-
-
-
-  uint16_t          m_enb1MeasurementId =0;
-  uint16_t          m_enb2MeasurementId =0 ;
-
-  uint8_t			m_regReq = 0;
-
-  std::bitset<32>    m_reportCharacteristics;
-
-  uint16_t			m_sourceEnbId =0;
-
-  std::vector<uint16_t>		 	m_targetEnbId ; //
-
-  uint8_t			m_partialSuccessIndicator =0;
-  uint8_t           m_reportingPeriodicity =0;
-  uint8_t           m_periodicityRSRP =0;
-  uint8_t           m_periodicityCSI =0;
-};
-
-/** MY************
- * RESOURCE STATUS RESPONSE MESSAGE
- * To be Modified
- */
-class EpcX2ResourceStatusResponseHeader : public Header
-{
-public:
-  EpcX2ResourceStatusResponseHeader ();
-  virtual ~EpcX2ResourceStatusResponseHeader ();
-
-  static  TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (Buffer::Iterator start) const;
-  virtual uint32_t Deserialize (Buffer::Iterator start);
-  virtual void Print (std::ostream &os) const;
-
-
-  uint16_t GetEnb1MeasurementId () const;
-  void SetEnb1MeasurementId (uint16_t enb1MeasurementId);
-
-  uint16_t GetEnb2MeasurementId () const;
-  void SetEnb2MeasurementId (uint16_t enb2MeasurementId);
-
-  uint16_t GetTargetEnbId() const;
-  void SetTargetEnbId (uint16_t targetCellId);
-
-  uint16_t GetSourceEnbId () const;
-  void SetSourceEnbId (uint16_t sourceEnbId);
-
-
-  std::vector<EpcX2Sap::MeasurementInitiationResultItem> GetMeasurementInitiationResult () const;
-  void SetMeasurementInitiationResult(std::vector<EpcX2Sap::MeasurementInitiationResultItem> measurementInitiationResultList);
-
-  // uint8_t GetCause() const;
-  // void SetCause(uint8_t cause);
-
- // std::bitset<32> GetMeasurementFailedReportCharacteristics () const;
- // void SetMeasurementFailedReportCharacteristics (std::bitset<32>  measurementFailedReportCharacteristics);
-
-  uint32_t GetLengthOfIes () const;
-  uint32_t GetNumberOfIes () const;
-
-private:
-  uint8_t           m_messageType = 10; ///< ResourceStatusReportingInitiation
   uint32_t          m_numberOfIes;
   uint32_t          m_headerLength;
 
   uint16_t          m_enb1MeasurementId;
   uint16_t          m_enb2MeasurementId;
-
-  uint16_t			m_sourceEnbId;
-
-  uint16_t			m_targetEnbId;
-
-  std::vector<EpcX2Sap::MeasurementInitiationResultItem>  m_measurementInitiationResultList;
-
+  std::vector <EpcX2Sap::CellMeasurementResultItem> m_cellMeasurementResultList;
 };
-
 
 
 } // namespace ns3

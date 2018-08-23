@@ -149,11 +149,6 @@ public:
     (uint32_t frame, uint32_t subframe, uint16_t rnti,
      uint8_t mcs, uint16_t tbsSize);
   
-  //To get how many UE in each cell.
-  uint32_t m_numberOfUEPerCell;
-
-
-
 private:
 
   /**
@@ -178,11 +173,6 @@ private:
   // forwarded from LteEnbCmacSapProvider
   void DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth);
   void DoAddUe (uint16_t rnti);
-
-  uint32_t DoGetNumberUE();
-  uint32_t DoGetFrameNo() ;
-  uint32_t DoGetSubframeNo() ;
-
   void DoRemoveUe (uint16_t rnti);
   void DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu);
   void DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo);

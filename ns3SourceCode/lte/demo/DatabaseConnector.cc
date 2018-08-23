@@ -485,7 +485,6 @@ DatabaseConnector::SetOutPutFolder(std::string path)
 bool
 DatabaseConnector::IsDatabaseUnlocked()
 {
-	return true;	//TODO: !!!!!!!!!!!!
 	//SetDatabase("5gopt");
 	SetCollection("locks");
 	mongocxx::cursor cursor = mongoCollection->find(bsoncxx::builder::stream::document{} << bsoncxx::builder::stream::finalize);

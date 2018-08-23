@@ -492,7 +492,6 @@ struct MainKpiLog : public WritableLog
 	}
 };
 
-static int indexing = 0;
 /*
  * 	Main KPIs log for training
  *
@@ -524,8 +523,7 @@ struct MainKpiWithLabelLog : public MainKpiLog
 	{
 		bsoncxx::builder::stream::document doc {};
 		doc << "Time" << time << "LocationX" << x << "LocationY" << y << "UserID" << (int64_t)imsi
-			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected << "LABEL" << (uint16_t)label
-			<< "INDEX" << indexing++;
+			<< "CellID" << (int16_t)cellId << "RSRP" << rsrp << "RSRQ" << rsrq << "CONNECTED" << connected << "LABEL" << (uint16_t)label;
 			return doc;
 	}
 	static std::string GetFileName()

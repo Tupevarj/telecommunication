@@ -40,21 +40,14 @@ class PacketBurst;
 class LteNetDevice;
 class LteUePhy;
 
-
 /**
  * \ingroup lte
  * LteEnbPhy models the physical layer for the eNodeB
  */
-
-
-
 class LteEnbPhy : public LtePhy
 {
   friend class EnbMemberLteEnbPhySapProvider;
   friend class MemberLteEnbCphySapProvider<LteEnbPhy>;
-
- // friend class EnbMemberLteEnbPhySapUser;
- // friend class MemberLteEnbCphySapUser<LteEnbPhy>;
 
 public:
   /**
@@ -76,29 +69,7 @@ public:
   virtual void DoInitialize (void);
   virtual void DoDispose (void);
 
- // std::vector<int> GetlistOfDownlinkSubchannel();
- // uint8_t GetDlBandwidth();
 
-//  std::vector <int> m_listOfDownlinkSubchannel2;
-//  uint8_t m_dlBandwidth2;
-  /**
-   * The `enbCheckMlbPeriod` attribute. Time period for checking eNB
-   * condition#1, i.e.,  (default 200 ms).
-   */
-  Time m_enbCheckMlbPeriod = MilliSeconds (200);
-
-  /**
-   * Th_pre: the MLB condition 1 threshold
-   */
-  uint8_t m_THPre =0.2;
-
-struct MlbInfo
-{
-	 uint16_t cellId;
-	 uint8_t  dlBandwidth;
-	 std::vector <int> listOfDownlinkSubchannel;
-
-}m_MlbInfo;
   /**
   * \brief Get the PHY SAP provider
   * \return a pointer to the SAP Provider of the PHY
@@ -128,8 +99,6 @@ struct MlbInfo
    */
   void SetTxPower (double pow);
 
-  void SetTxPowerToZero ();
-
   /**
    * \return the transmission power in dBm
    */
@@ -139,10 +108,6 @@ struct MlbInfo
    * \return the transmission power in dBm
    */
   int8_t DoGetReferenceSignalPower () const;
-
-
-  //A.M
- // double DoGetMyTxPower () const;
 
   /**
    * \param pow the noise figure in dB
@@ -341,19 +306,8 @@ struct MlbInfo
 
 private:
 
-  //A.M Not used anymore
-  /**
-   * This function will check the condition #1 of MLB triggering
-   * Initially executed at +0.200s, and then repeatedly executed with
-   * periodicity as indicated by the *EnbCheckMlbPeriod* attribute.
-   */
-  void CheckMlbCondition_1();
-
   // LteEnbCphySapProvider forwarded methods
   void DoSetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth);
-
-
-
   void DoSetEarfcn (uint16_t dlEarfcn, uint16_t ulEarfcn);
   void DoAddUe (uint16_t rnti);
   void DoRemoveUe (uint16_t rnti);
@@ -414,8 +368,6 @@ private:
 
   LteEnbCphySapProvider* m_enbCphySapProvider;
   LteEnbCphySapUser* m_enbCphySapUser;
- // MemberLteEnbCphySapUser* m_memberenbCphySapUser;
-
 
   /**
    * The frame number currently served. In ns-3, frame number starts from 1.
@@ -483,8 +435,6 @@ private:
    * PhyTransmissionStatParameters.
    */
   TracedCallback<PhyTransmissionStatParameters> m_dlPhyTransmission;
-
-
 
 }; // end of `class LteEnbPhy`
 

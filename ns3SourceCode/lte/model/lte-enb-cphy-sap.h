@@ -59,7 +59,6 @@ public:
    */
   virtual void SetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth) = 0;
 
-
   /**
    * \param ulEarfcn the UL EARFCN
    * \param dlEarfcn the DL EARFCN
@@ -117,9 +116,6 @@ public:
    * \return Reference Signal Power for SIB2
    */
   virtual int8_t GetReferenceSignalPower () = 0;
-
-  //A.M
-  //virtual double GetMyTxPower () = 0;
 };
 
 
@@ -131,18 +127,12 @@ public:
 */
 class LteEnbCphySapUser
 {
-
 public:
   
   /** 
    * destructor
    */
   virtual ~LteEnbCphySapUser ();
-
-  /**
-    * SapCheckMlbCondition_1
-    */
- // virtual void SapCheckMlbCondition_1 (uint16_t cellId, uint8_t dlBandwidth, std::vector<int> listOfDownlinkSubchannel) = 0;
 
 };
 
@@ -161,9 +151,6 @@ public:
   // inherited from LteEnbCphySapProvider
   virtual void SetCellId (uint16_t cellId);
   virtual void SetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth);
-
-
-
   virtual void SetEarfcn (uint16_t ulEarfcn, uint16_t dlEarfcn);
   virtual void AddUe (uint16_t rnti);
   virtual void RemoveUe (uint16_t rnti);
@@ -172,12 +159,7 @@ public:
   virtual void SetSrsConfigurationIndex (uint16_t  rnti, uint16_t srsCi);
   virtual void SetMasterInformationBlock (LteRrcSap::MasterInformationBlock mib);
   virtual void SetSystemInformationBlockType1 (LteRrcSap::SystemInformationBlockType1 sib1);
-
   virtual int8_t GetReferenceSignalPower ();
-
-  //A.M
-//  virtual double GetMyTxPower ();
-
   
 private:
   MemberLteEnbCphySapProvider ();
@@ -209,8 +191,6 @@ MemberLteEnbCphySapProvider<C>::SetBandwidth (uint8_t ulBandwidth, uint8_t dlBan
 {
   m_owner->DoSetBandwidth (ulBandwidth, dlBandwidth);
 }
-
-
 
 template <class C>
 void 
@@ -275,32 +255,18 @@ MemberLteEnbCphySapProvider<C>::GetReferenceSignalPower ()
   return m_owner->DoGetReferenceSignalPower ();
 }
 
-//A.M
-/*template <class C>
-double
-MemberLteEnbCphySapProvider<C>::GetMyTxPower ()
-{
-  return m_owner->DoGetMyTxPower ();
-}*/
-
-
-
-
-
-
 /**
  * Template for the implementation of the LteEnbCphySapUser as a member
  * of an owner class of type C to which all methods are forwarded
  * 
  */
 template <class C>
-class MemberLteEnbCphySapUser :  public LteEnbCphySapUser
+class MemberLteEnbCphySapUser : public LteEnbCphySapUser
 {
 public:
   MemberLteEnbCphySapUser (C* owner);
 
   // methods inherited from LteEnbCphySapUser go here
- // virtual void SapCheckMlbCondition_1 (uint16_t cellId, uint8_t dlBandwidth, std::vector<int> listOfDownlinkSubchannel);
 
 private:
   MemberLteEnbCphySapUser ();
@@ -318,19 +284,7 @@ MemberLteEnbCphySapUser<C>::MemberLteEnbCphySapUser ()
 {
 }
 
-/*
-template <class C>
-void
-MemberLteEnbCphySapUser<C>::SapCheckMlbCondition_1 (uint16_t cellId, uint8_t dlBandwidth, std::vector<int> listOfDownlinkSubchannel)
-{
-  std::cout <<Simulator::Now().GetSeconds()<<": Cell ="<< cellId
-		  <<" In MemberLteEnbCphySapUser<C>::CheckMlbCondition_1 "
-		  << "Bandwidith = "<<(uint16_t) dlBandwidth
-		  << "List of channels"<< (uint16_t) listOfDownlinkSubchannel.size()
-		  << std::endl;
-  //m_owner->DoCheckMlbCondition_1 (mlbInfo);
-}
-*/
+
 
 
 

@@ -395,7 +395,6 @@ public:
     /// Number of measurement reports applicable, always assumed to be infinite.
     uint8_t reportAmount;
 
-    //For initialization of the above parameters
     ReportConfigEutra ();
 
   }; // end of struct ReportConfigEutra
@@ -610,10 +609,6 @@ public:
     MobilityControlInfo mobilityControlInfo;
     bool haveRadioResourceConfigDedicated;
     RadioResourceConfigDedicated radioResourceConfigDedicated;
-   // A.M.
-    //I could add the Hysteresis so when UE receives this msg can update its Hysteresis
-    bool   newHysteresisHasValue;
-    double newHysteresis;
   };
 
   struct RrcConnectionReconfigurationCompleted
@@ -896,9 +891,6 @@ public:
   virtual Ptr<Packet> EncodeHandoverCommand (RrcConnectionReconfiguration msg) = 0;
   virtual RrcConnectionReconfiguration DecodeHandoverCommand (Ptr<Packet> p) = 0;
 
-  //virtual void SendMlbCondition_1 (uint16_t cellId) = 0;
-
-
 };
 
 
@@ -978,8 +970,6 @@ public:
    */
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg) = 0;
 
-  //virtual void RecvMlbCondition_1 (uint16_t cellId) = 0;
-
 };
 
 
@@ -1011,8 +1001,6 @@ public:
   virtual void SendRrcConnectionReestablishmentRequest (RrcConnectionReestablishmentRequest msg);
   virtual void SendRrcConnectionReestablishmentComplete (RrcConnectionReestablishmentComplete msg);
   virtual void SendMeasurementReport (MeasurementReport msg);
-
-
 
 private:
   MemberLteUeRrcSapUser ();
@@ -1078,8 +1066,6 @@ MemberLteUeRrcSapUser<C>::SendMeasurementReport (MeasurementReport msg)
 {
   m_owner->DoSendMeasurementReport (msg);
 }
-
-
 
 /**
  * Template for the implementation of the LteUeRrcSapProvider as a member
@@ -1202,20 +1188,10 @@ public:
   virtual Ptr<Packet> EncodeHandoverCommand (RrcConnectionReconfiguration msg);
   virtual RrcConnectionReconfiguration DecodeHandoverCommand (Ptr<Packet> p);
 
- // virtual void SendMlbCondition_1 (uint16_t cellId);
-
 private:
   MemberLteEnbRrcSapUser ();
   C* m_owner;
 };
-
-
-/*template <class C>
-void
-MemberLteEnbRrcSapUser<C>::SendMlbCondition_1 (uint16_t cellId)
-{
-  m_owner->DoSendMlbCondition_1 (cellId);
-}*/
 
 template <class C>
 MemberLteEnbRrcSapUser<C>::MemberLteEnbRrcSapUser (C* owner)
@@ -1340,7 +1316,6 @@ public:
   virtual void RecvRrcConnectionReestablishmentRequest (uint16_t rnti, RrcConnectionReestablishmentRequest msg);
   virtual void RecvRrcConnectionReestablishmentComplete (uint16_t rnti, RrcConnectionReestablishmentComplete msg);
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg);
-  //virtual void RecvMlbCondition_1 (uint16_t cellId);
 
 private:
   MemberLteEnbRrcSapProvider ();
@@ -1407,12 +1382,7 @@ MemberLteEnbRrcSapProvider<C>::RecvMeasurementReport (uint16_t rnti, Measurement
   Simulator::ScheduleNow (&C::DoRecvMeasurementReport, m_owner, rnti, msg);
 }
 
-/*template <class C>
-void
-MemberLteEnbRrcSapProvider<C>::RecvMlbCondition_1 (uint16_t cellId)
-{
-  Simulator::ScheduleNow (&C::DoRecvMlbCondition_1, m_owner, cellId);
-}*/
+
 
 
 

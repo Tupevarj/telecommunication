@@ -761,15 +761,6 @@ LteEnbRrcProtocolReal::DoDecodeHandoverCommand (Ptr<Packet> p)
   return msg;
 }
 
-/*void
-LteEnbRrcProtocolReal::DoSendMlbCondition_1 (uint16_t cellId)
-{
-   Simulator::Schedule (RRC_REAL_MSG_DELAY,
-                        &LteEnbRrcSapProvider::RecvMlbCondition_1,
-                        m_enbRrcSapProvider,
-                        cellId);
-}*/
-
 //////////////////////////////////////////////////////
 
 RealProtocolRlcSapUser::RealProtocolRlcSapUser (LteEnbRrcProtocolReal* pdcp, uint16_t rnti)

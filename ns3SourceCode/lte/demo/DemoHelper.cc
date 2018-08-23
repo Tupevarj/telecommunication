@@ -118,10 +118,10 @@ void
 DemoHelper::CreateUsers(NodeContainer& macroUes, MobilityHelper& mobility, Box& macroUeBox, Ptr <LteHelper> lteHelper, uint32_t nUes, double uesSpeed)
 {
 	// TO MAKE BOX SMALLER THAN NETWORK AREA (enbs: 17, enbs x: 3)
-//	macroUeBox.xMin += 500;
-//	macroUeBox.xMax -= 500;
-//	macroUeBox.yMin += 500;
-//	macroUeBox.yMax -= 500;
+//	macroUeBox.xMin += 70;
+//	macroUeBox.xMax -= 70;
+//	macroUeBox.yMin += 70;
+//	macroUeBox.yMax -= 70;
 
 //	macroUeBox.xMin += 350;
 //	macroUeBox.xMax -= 350;
@@ -211,7 +211,7 @@ DemoHelper::CreateEPC(Ptr<PointToPointEpcHelper>& epcHelper, Ptr <LteHelper> lte
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
 	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
 
-	// for internetworking purposes, consider macro UEs
+	// for internetworking purposes, consider together home UEs and macro UEs
 	ues.Add (macroUes);
 	ueDevs.Add (macroUeDevs);
 

@@ -699,10 +699,13 @@
                     <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
                         <label class="form-check-label">(Un)hide Elements</label>
                         <div class=".row" style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="buttonHideTrack" onclick="hideDivsButtonHandler(this, 'divNetworkTrack')" style="height:50px; font-size:12px;">Track<br>Users</button>
                             <button class="btn btn-primary" id="buttonHideML" onclick="hideDivsButtonHandler(this, 'divMachineLearning')" style="height:50px; font-size:12px;">Machine<br>Learning</button>
+                            <button class="btn btn-primary" id="buttonHideEve" onclick="hideDivsButtonHandler(this, 'divNetworkEvents')" style="height:50px; font-size:12px;">Network<br>Events</button>
+                        </div>
+                        <div class=".row" style="margin-top: 10px;">
                             <button class="btn btn-primary" id="buttonHideMon" onclick="hideDivsButtonHandler(this, 'divNetworkMonitoring')" style="height:50px; font-size:12px;">Network<br>Monitoring</button>
                             <button class="btn btn-primary" id="buttonHidePer" onclick="hideDivsButtonHandler(this, 'divNetworksPerformance')" style="height:50px; font-size:12px;">Network<br>Performance</button>
-                            <button class="btn btn-primary" id="buttonHideEve" onclick="hideDivsButtonHandler(this, 'divNetworkEvents')" style="height:50px; font-size:12px;">Network<br>Events</button>
                         </div>
                     </div>
                 </div>
@@ -730,45 +733,46 @@
 
 
 <!--======================================= TRACK USERS ================================================-->
-<div class="container" id="divNetworkEvents">
+<div id="divNetworkTrack">
+    <div class="container">
         <div class="heading">
             <h3 style="margin-top: 75px; color: #313338; font-size: 30px;">Track Users</h3>
         </div>
-</div>
-
-<div class="container" style="text-align: center; margin-top: 40px;">
-    <div class="panel panel-primary" style="text-align: center; width: 800px; margin:0 auto;">
-        <div class="panel-heading">Track user</div>
-        <!--======  START PANEL BODY ====== -->
-        <div class="panel-body">
-            <div class="row" style="margin: 20px 0px 0px 0px;">
-                <!--======  FIRST COLUMN ====== -->
-                <div class="col-md-6">
-                    <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
-                    <label class="form-check-label">Track user</label>
-                    <div class=".row" style="margin-top: 10px;">
-                        <input class="input-sm" id="inputTrackUser" type="text" style="margin: auto; width:50px;" value="1">
-                        <button class="btn btn-primary" id="buttonTrackUser" onclick="searchUserLocationButtonHandler()" style="font-size:12px;">Track User</button>
+    </div>
+    <div class="container" style="text-align: center; margin-top: 40px;">
+        <div class="panel panel-primary" style="text-align: center; width: 800px; margin:0 auto;">
+            <div class="panel-heading">Track user</div>
+            <!--======  START PANEL BODY ====== -->
+            <div class="panel-body">
+                <div class="row" style="margin: 20px 0px 0px 0px;">
+                    <!--======  FIRST COLUMN ====== -->
+                    <div class="col-md-6">
+                        <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
+                        <label class="form-check-label">Track user</label>
+                        <div class=".row" style="margin-top: 10px;">
+                            <input class="input-sm" id="inputTrackUser" type="text" style="margin: auto; width:50px;" value="1">
+                            <button class="btn btn-primary" id="buttonTrackUser" onclick="searchUserLocationButtonHandler()" style="font-size:12px;">Track User</button>
+                        </div>
+                        </div>
                     </div>
+                    <div class="col-md-6">
+                        <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
+                        <label class="form-check-label">Track users by cell</label>
+                        <div class=".row" style="margin-top: 10px;">
+                            <input class="input-sm" id="inputTrackUsersCell" type="text" style="margin: auto; width:50px;" value="1">
+                            <button class="btn btn-primary" id="buttonTrackUsersCell" onclick="searchUsersLocationsByCellButtonHandler()" style="font-size:12px;">Track User</button>
+                        </div>
+                        </div>
                     </div>
+                    <!--======  END PANEL BODY ====== -->
                 </div>
-                <div class="col-md-6">
-                    <div style="text-align: center; margin-top: 10px; margin-bottom: 40px">
-                    <label class="form-check-label">Track users by cell</label>
-                    <div class=".row" style="margin-top: 10px;">
-                        <input class="input-sm" id="inputTrackUsersCell" type="text" style="margin: auto; width:50px;" value="1">
-                        <button class="btn btn-primary" id="buttonTrackUsersCell" onclick="searchUsersLocationsByCellButtonHandler()" style="font-size:12px;">Track User</button>
-                    </div>
-                    </div>
-                </div>
-                <!--======  END PANEL BODY ====== -->
             </div>
         </div>
     </div>
-</div>
-<div class="container" style="margin-top: 25px;" style="width:780px; margin:0 auto;">
-    <div id="ueLocationsChartContainer"></div>
-    <div id="ueConnectionsChartContainer"></div>
+    <div class="container" style="margin-top: 25px;" style="width:780px; margin:0 auto;">
+        <div id="ueLocationsChartContainer"></div>
+        <div id="ueConnectionsChartContainer"></div>
+    </div>
 </div>
 
 

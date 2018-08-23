@@ -102,7 +102,6 @@ public:
   };
 
 
-
   /**
    * create an RRC instance for use within an ue
    *
@@ -114,8 +113,6 @@ public:
    * Destructor
    */
   virtual ~LteUeRrc ();
-
-
 
 
   // inherited from Object
@@ -634,7 +631,7 @@ private:
    * The `ConnectionEstablished` trace source. Fired upon successful RRC
    * connection establishment. Exporting IMSI, cell ID, and RNTI.
    */
-  TracedCallback<uint64_t, uint16_t, uint16_t, double> m_connectionEstablishedTrace;
+  TracedCallback<uint64_t, uint16_t, uint16_t> m_connectionEstablishedTrace;
   /**
    * The `ConnectionTimeout` trace source. Fired upon timeout RRC connection
    * establishment because of T300. Exporting IMSI, cell ID, and RNTI.
@@ -723,11 +720,6 @@ typedef void (*KpiTraceCallback)
 
    void OutOfSynchTimeout(double rsrp);
 
-
-   //A.M.
-   int m_NumRLF_RACHOK 		= 0;
-   int m_NumRLF_RACHNotOK 	= 0;
-   int m_NumHandoverTrials	= 0;
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -742,12 +734,6 @@ typedef void (*KpiTraceCallback)
   bool m_hasReceivedSib1;
   /// True if SIB2 was received for the current cell.
   bool m_hasReceivedSib2;
-
-
-
-  //A.M
-    double m_hysteresis = 3.0;
-    bool m_hysteresisHasValue = false;
 
   /// Stored content of the last SIB1 received.
   LteRrcSap::SystemInformationBlockType1 m_lastSib1;

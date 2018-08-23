@@ -5,7 +5,7 @@ import json
 from django.http import HttpResponse
 from .data_processing import preprocess_training_set_to_8_and_10_dimensions,\
     preprocess_testing_set_to_10_dimensions
-from .chart_data_processing import initialize_data_processing, get_data_for_all_charts, \
+from .chart_data_processing import initialize_data_processing, \
     get_ue_location_and_connection_history, get_cell_locations_II
 from .ml import run_ml, calculate_reference_z_scores, \
     train_and_test_all_regressions, save_all_regressors, load_all_regressors, Regressor, set_regressor, \
@@ -13,12 +13,19 @@ from .ml import run_ml, calculate_reference_z_scores, \
 import subprocess, signal
 import os
 from threading import Thread
+from .chart_module import ChartModule
+from .mongo_module import MongoModule
+# TODO: from moduls.py import ...
+
 
 # Global values
 last_read_ml = 0
 training_ended = False  # cache
 outage_rows = [0, 0, 0]
 sim_thread = 0
+modules = {'chart': ChartModule(), 'mongo': MongoModule()}  #chart_module = ChartModule()
+#mongo_module = MongoModule()
+
 
 ##############################################################
 #   UPDATING CHARTS
@@ -61,15 +68,11 @@ def create_context_for_reg_graphs():
 #   END : UPDATING CHARTS
 ##############################################################
 
-def update_nb_cell_lists_in_db():
-    """ Updates neighbour list for each cell in DB."""
-    update_nb_cell_lists()
-
 
 def create_regression_models():
     """ First preprocesses data from database and then trains regression
         models with it """
-    update_nb_cell_lists_in_db()    # FIXME: CALLING FROM HERE FOR NOW ON
+    update_nb_cell_lists()   # FIXME: CALLING FROM HERE FOR NOW ON
     dict_dfs = dict()
     if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="main_kpis_log"):
         array_8_dim = []
@@ -102,9 +105,9 @@ def apply_coc():
             compensated_cell_list = list()
             # Compensate:
             for cell in outage_cell_ids:
-                for nb_list in dict_dfs["nb_cell_list"]:
-                    if cell == nb_list['CellID']:
-                        for nb_cell in nb_list['NbCellIDs']:
+                for index, row in dict_dfs["nb_cell_list"].iterrows():
+                    if cell == row.CellID:
+                        for nb_cell in row.NbCellIDs:
                             if nb_cell not in outage_cell_ids and nb_cell not in compensated_cell_list:
                                 compensated_cell_list.append(nb_cell)
 
@@ -161,7 +164,7 @@ def outage_button_handler(request):
             # Create outage
             collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
                                                 {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
-                                                {"TxPower": -100000.0}, {"TxPower": -100000.0}, {"TxPower": -100000.0}])
+                                                {"TxPower": -100.0}, {"TxPower": -100.0}, {"TxPower": -100.0}])
             return HttpResponse(json.dumps({'Message': "Outage created at bs " + str(bs_id) + " (Cells: " +
                                                        str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
                                                        str(list_cells[2]) + ').', 'status': 0}))
@@ -203,7 +206,8 @@ def update_charts(request):
         and returns data needed for charts """
     if request.method == "GET" and request.path == '/updateCharts':
         context = dict()
-        get_data_for_all_charts(context)
+        modules['chart'].update(mongo_module=modules['mongo'])
+        #get_data_for_all_charts(context)
         return HttpResponse(json.dumps(context))
     return HttpResponse(json.dumps(0))
 
@@ -285,36 +289,38 @@ def update_alarm_gui(request):
         global outage_rows
         if training_ended and is_update_needed_for_alarm_table():
             response_data = {'total': 1, 'rows': []}
-            data = read_mongo_best_effort(collection="main_kpis_log", skip=last_read_ml)
-            last_read_ml += len(data)
+            dict_read = dict()
+            if 0 < read_mongo_best_effort(dictionary=dict_read, collection="main_kpis_log", skip=last_read_ml):
+                data = dict_read["main_kpis_log"]
+                last_read_ml += len(data)
 
-            if len(data) != 0:
-                array_10_dim = preprocess_testing_set_to_10_dimensions(data)
-                ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
-                response_data['ZScores'] = ml_data[1]
+                if len(data) != 0:
+                    array_10_dim = preprocess_testing_set_to_10_dimensions(data)
+                    ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
+                    response_data['ZScores'] = ml_data[1]
 
-                outage_id = ml_data[0]
+                    outage_id = ml_data[0]
 
-                if outage_rows[0] == outage_id:
-                    outage_rows[1] += 1
-                else:
-                    outage_rows[1] = 0
-                if outage_rows[1] >= 5:  # outage_rows[1] >= 3 is not working with BS 3
-                    outage_rows[2] = outage_id
-                #    training_ended = False        # to stop after making a prediction
+                    if outage_rows[0] == outage_id:
+                        outage_rows[1] += 1
+                    else:
+                        outage_rows[1] = 0
+                    if outage_rows[1] >= 5:  # outage_rows[1] >= 3 is not working with BS 3
+                        outage_rows[2] = outage_id
+                    #    training_ended = False        # to stop after making a prediction
 
-                outage_rows[0] = outage_id
-                outage_id = outage_rows[2]
+                    outage_rows[0] = outage_id
+                    outage_id = outage_rows[2]
 
-                for i in range(1, 8):
-                    severity = "Normal"
-                    problem = "Normal Traffic"
-                    if i == outage_id:
-                        severity = "Critical"
-                        problem = "Outage"
-                    response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
+                    for i in range(1, 8):
+                        severity = "Normal"
+                        problem = "Normal Traffic"
+                        if i == outage_id:
+                            severity = "Critical"
+                            problem = "Outage"
+                        response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
 
-                return HttpResponse(json.dumps(response_data))
+                    return HttpResponse(json.dumps(response_data))
         return HttpResponse(json.dumps(0))
 
 
@@ -346,7 +352,8 @@ def index(request):
     context = dict()
     cell_locations = get_cell_locations_II()
     context['CellLocations'] = cell_locations
-    get_data_for_all_charts(context)
+    modules['chart'].update(mongo_module=modules['mongo'], context=context)
+    #get_data_for_all_charts(context)
 
     z_scores_chart = dict()
     z_scores_chart['BS'] = ["BS1", "BS2", "BS3", "BS4", "BS5", "BS6", "BS7" ]

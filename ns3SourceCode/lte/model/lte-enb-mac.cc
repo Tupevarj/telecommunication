@@ -59,11 +59,6 @@ public:
   // inherited from LteEnbCmacSapProvider
   virtual void ConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth);
   virtual void AddUe (uint16_t rnti);
-
-  virtual uint32_t GetNumberUE();
-  virtual uint32_t GetFrameNo()  ;
-  virtual uint32_t GetSubframeNo() ;
-
   virtual void RemoveUe (uint16_t rnti);
   virtual void AddLc (LcInfo lcinfo, LteMacSapUser* msu);
   virtual void ReconfigureLc (LcInfo lcinfo);
@@ -89,27 +84,10 @@ EnbMacMemberLteEnbCmacSapProvider::ConfigureMac (uint8_t ulBandwidth, uint8_t dl
   m_mac->DoConfigureMac (ulBandwidth, dlBandwidth);
 }
 
-
 void
 EnbMacMemberLteEnbCmacSapProvider::AddUe (uint16_t rnti)
 {
   m_mac->DoAddUe (rnti);
-}
-
-uint32_t
-EnbMacMemberLteEnbCmacSapProvider::GetNumberUE ()
-{
- return m_mac->DoGetNumberUE ();
-}
-uint32_t
-EnbMacMemberLteEnbCmacSapProvider::GetFrameNo ()
-{
- return m_mac->DoGetFrameNo ();
-}
-uint32_t
-EnbMacMemberLteEnbCmacSapProvider::GetSubframeNo ()
-{
- return m_mac->DoGetSubframeNo ();
 }
 
 void
@@ -405,7 +383,6 @@ void
 LteEnbMac::SetFfMacSchedSapProvider (FfMacSchedSapProvider* s)
 {
   m_schedSapProvider = s;
-  m_numberOfUEPerCell =  0; //initialize here
 }
 
 FfMacSchedSapUser*
@@ -476,7 +453,6 @@ LteEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
   m_frameNo = frameNo;
   m_subframeNo = subframeNo;
 
- // std::cout <<"In do SubFrameIndication function ***************************************"<<std::endl;
 
   // --- DOWNLINK ---
   // Send Dl-CQI info to the scheduler
@@ -618,11 +594,6 @@ LteEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
     }
 
   m_schedSapProvider->SchedUlTriggerReq (ulparams);
-
-  //std::cout <<"No of frames = ("<<dlSchedFrameNo<<")"<<std::endl;
- // std::cout <<"No of subframes = ("<<dlSchedSubframeNo<<")"<<std::endl;
-
- // std::cout <<"End do SubFrameIndication function ***************************************"<<std::endl;
 
 }
 
@@ -806,8 +777,6 @@ LteEnbMac::DoAddUe (uint16_t rnti)
   buf.push_back (dlHarqLayer0pkt);
   buf.push_back (dlHarqLayer1pkt);
   m_miDlHarqProcessesPackets.insert (std::pair <uint16_t, DlHarqProcessesBuffer_t> (rnti, buf));
-
-  m_numberOfUEPerCell++;
 }
 
 void
@@ -819,23 +788,6 @@ LteEnbMac::DoRemoveUe (uint16_t rnti)
   m_cschedSapProvider->CschedUeReleaseReq (params);
   m_rlcAttached.erase (rnti);
   m_miDlHarqProcessesPackets.erase (rnti);
-  m_numberOfUEPerCell--;
-}
-
-uint32_t LteEnbMac::DoGetNumberUE()
-{
-	return m_numberOfUEPerCell;
-}
-
-uint32_t
-LteEnbMac::DoGetFrameNo ()
-{
- return m_frameNo;
-}
-uint32_t
-LteEnbMac::DoGetSubframeNo ()
-{
- return m_subframeNo;
 }
 
 void
@@ -1021,15 +973,10 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
   Ptr<PacketBurst> pb = CreateObject<PacketBurst> ();
   std::map <LteFlowId_t, LteMacSapUser* >::iterator it;
 
-
-
-
   for (unsigned int i = 0; i < ind.m_buildDataList.size (); i++)
     {
       for (uint16_t layer = 0; layer < ind.m_buildDataList.at (i).m_dci.m_ndi.size (); layer++)
         {
-
-
           if (ind.m_buildDataList.at (i).m_dci.m_ndi.at (layer) == 1)
             {
               // new data -> force emptying correspondent harq pkt buffer
@@ -1075,8 +1022,6 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
                 }
             }
         }
-
-
       // send the relative DCI
       Ptr<DlDciLteControlMessage> msg = Create<DlDciLteControlMessage> ();
       msg->SetDci (ind.m_buildDataList.at (i).m_dci);
@@ -1095,8 +1040,6 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
                           0, 0
                           );
 
-
-
         }
       // Two TBs used
       else if (ind.m_buildDataList.at (i).m_dci.m_tbsSize.size () == 2)
@@ -1107,7 +1050,6 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
                           ind.m_buildDataList.at (i).m_dci.m_mcs.at (1),
                           ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (1)
                           );
-
         }
       else
         {
@@ -1144,11 +1086,6 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
     }
   if (ind.m_buildRarList.size () > 0)
     {
-	/*  std::cout<<" *****Size******"<<ind.m_buildRarList.size ()<<std::endl;
-	   std::cout <<"No of frames = ("<<m_frameNo<<")"<<std::endl;
-	   std::cout <<"No of subframes = ("<<m_subframeNo<<")"<<std::endl;
-	   std::cout<<" ***********************"<<std::endl;
-	   */
       m_enbPhySapProvider->SendLteControlMessage (rarMsg);
     }
   m_rapIdRntiMap.clear ();

@@ -876,12 +876,6 @@ EpcX2SnStatusTransferHeader::Deserialize (Buffer::Iterator start)
   m_numberOfIes = 3;
   m_headerLength = 6 + sz * (14 + (EpcX2Sap::m_maxPdcpSn / 64));
 
-
-  //
-  /**Masri**
-   * This part of code it seems to be wrong, because it dose not write the value of receiveStatusOfUlPdcpSdus
-   * and it dose not initialize it anywhere.
-   */
   for (int j = 0; j < sz; j++)
     {
       EpcX2Sap::ErabsSubjectToStatusTransferItem ErabItem;
@@ -1319,16 +1313,14 @@ EpcX2LoadInformationHeader::GetNumberOfIes () const
 ////////////////
 
 NS_OBJECT_ENSURE_REGISTERED (EpcX2ResourceStatusUpdateHeader);
-/**
- * ***
- */
-EpcX2ResourceStatusUpdateHeader::EpcX2ResourceStatusUpdateHeader ()
-  : m_numberOfIes (5), 							// ignoring MessageType
-    m_headerLength (2 + 2 + 2 + 2 + 2 + (2+4+12+8+6))
- //   m_enb1MeasurementId (0xfffa),
-  //  m_enb2MeasurementId (0xfffa)
-{
 
+EpcX2ResourceStatusUpdateHeader::EpcX2ResourceStatusUpdateHeader ()
+  : m_numberOfIes (3),
+    m_headerLength (6),
+    m_enb1MeasurementId (0xfffa),
+    m_enb2MeasurementId (0xfffa)
+{
+  m_cellMeasurementResultList.clear ();
 }
 
 EpcX2ResourceStatusUpdateHeader::~EpcX2ResourceStatusUpdateHeader ()
@@ -1337,7 +1329,7 @@ EpcX2ResourceStatusUpdateHeader::~EpcX2ResourceStatusUpdateHeader ()
   m_headerLength = 0;
   m_enb1MeasurementId = 0xfffb;
   m_enb2MeasurementId = 0xfffb;
-
+  m_cellMeasurementResultList.clear ();
 }
 
 TypeId
@@ -1367,146 +1359,73 @@ void
 EpcX2ResourceStatusUpdateHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  //  2 + 2+ 2+ 2 + 2 + (2+4+12+8+6)
 
-  i.WriteHtonU16 (m_enb1MeasurementId); //2
-  i.WriteHtonU16 (m_enb2MeasurementId); //2
+  i.WriteHtonU16 (m_enb1MeasurementId);
+  i.WriteHtonU16 (m_enb2MeasurementId);
 
-  i.WriteHtonU16(m_targetEnbId);       // 2
-  i.WriteHtonU16(m_sourceEnbId);      // 2
+  std::vector <EpcX2Sap::CellMeasurementResultItem>::size_type sz = m_cellMeasurementResultList.size ();
+  i.WriteHtonU16 (sz);              // number of CellMeasurementResultItem
 
+  for (int j = 0; j < (int) sz; j++)
+    {
+      EpcX2Sap::CellMeasurementResultItem item = m_cellMeasurementResultList [j];
 
+      i.WriteHtonU16 (item.sourceCellId);
+      i.WriteU8 (item.dlHardwareLoadIndicator);
+      i.WriteU8 (item.ulHardwareLoadIndicator);
+      i.WriteU8 (item.dlS1TnlLoadIndicator);
+      i.WriteU8 (item.ulS1TnlLoadIndicator);
 
-      std::vector <EpcX2Sap::CellMeasurementResultItem>::size_type sz = m_cellMeasurementResultList.size ();
+      i.WriteHtonU16 (item.dlGbrPrbUsage);
+      i.WriteHtonU16 (item.ulGbrPrbUsage);
+      i.WriteHtonU16 (item.dlNonGbrPrbUsage);
+      i.WriteHtonU16 (item.ulNonGbrPrbUsage);
+      i.WriteHtonU16 (item.dlTotalPrbUsage);
+      i.WriteHtonU16 (item.ulTotalPrbUsage);
 
-      i.WriteHtonU16 (sz);                  //2 number of CellMeasurementResultItem
-
-      for (int j = 0; j < (int) sz; j++)    // (2+4+12+8+6)
-        {
-
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].cellId);
-
-      i.WriteU8 (m_cellMeasurementResultList[j].dlHardwareLoadIndicator);
-      i.WriteU8 (m_cellMeasurementResultList[j].ulHardwareLoadIndicator);
-      i.WriteU8 (m_cellMeasurementResultList[j].dlS1TnlLoadIndicator);
-      i.WriteU8 (m_cellMeasurementResultList[j].ulS1TnlLoadIndicator);
-
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].dlGbrPrbUsage);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].ulGbrPrbUsage);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].dlNonGbrPrbUsage);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].ulNonGbrPrbUsage);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].dlTotalPrbUsage);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].ulTotalPrbUsage);
-
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].dlCompositeAvailableCapacity.cellCapacityClassValue);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].dlCompositeAvailableCapacity.capacityValue);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].ulCompositeAvailableCapacity.cellCapacityClassValue);
-      i.WriteHtonU16 (m_cellMeasurementResultList[j].ulCompositeAvailableCapacity.capacityValue);
-
-      std::vector <EpcX2Sap::RSRPMeasurementReportItem>::size_type sz2 = m_cellMeasurementResultList[j].rRSPMeasurementReportList.size ();
-
-      i.WriteHtonU16 (sz2); // 2
-
-      for (int l =0 ; l<(int) sz2; l++) // for each UE with cell j with eNB
-      {
-		  i.WriteHtonU16(m_cellMeasurementResultList[j].rRSPMeasurementReportList[l].uEId);
-
-		  std::vector <EpcX2Sap::RSRPMeasurementResult>::size_type sz3;
-		  sz3 = m_cellMeasurementResultList[j].rRSPMeasurementReportList[l].rSRPMeasurementResult.size ();
-
-		  i.WriteHtonU16 (sz3); // 2
-
-		  for (int y =0 ; y <(int) sz3; y++) // for each neighbor cell to user UE
-	      {
-			  i.WriteHtonU16(m_cellMeasurementResultList[j].rRSPMeasurementReportList[l].rSRPMeasurementResult[y].RSRPCellId);
-			  i.WriteHtonU16(m_cellMeasurementResultList[j].rRSPMeasurementReportList[l].rSRPMeasurementResult[y].RSRPMeasured);
-	      }
-      }
-        }// end of for loop j
+      i.WriteHtonU16 (item.dlCompositeAvailableCapacity.cellCapacityClassValue);
+      i.WriteHtonU16 (item.dlCompositeAvailableCapacity.capacityValue);
+      i.WriteHtonU16 (item.ulCompositeAvailableCapacity.cellCapacityClassValue);
+      i.WriteHtonU16 (item.ulCompositeAvailableCapacity.capacityValue);
+    }
 }
 
 uint32_t
 EpcX2ResourceStatusUpdateHeader::Deserialize (Buffer::Iterator start)
 {
-
   Buffer::Iterator i = start;
-  //  2 + 2 + 2+ 2 + 2 + sz*(2+4+12+8+2+sz2*(2+2+sz3*(2+2)))
+
   m_enb1MeasurementId = i.ReadNtohU16 ();
   m_enb2MeasurementId = i.ReadNtohU16 ();
 
-  m_targetEnbId 	  = i.ReadNtohU16();
-  m_sourceEnbId		  = i.ReadNtohU16();
-
-
-
-  int sz = i.ReadNtohU16();
-  int sz2_tmp = 0;
-  int sz3_tmp = 0;
-  for (int j = 0; j < (int) sz; j++)    // (2+4+12+8+6)
+  int sz = i.ReadNtohU16 ();
+  for (int j = 0; j < sz; j++)
     {
+      EpcX2Sap::CellMeasurementResultItem item;
 
-	  EpcX2Sap::CellMeasurementResultItem item;
+      item.sourceCellId = i.ReadNtohU16 ();
+      item.dlHardwareLoadIndicator = (EpcX2Sap::LoadIndicator) i.ReadU8 ();
+      item.ulHardwareLoadIndicator = (EpcX2Sap::LoadIndicator) i.ReadU8 ();
+      item.dlS1TnlLoadIndicator = (EpcX2Sap::LoadIndicator) i.ReadU8 ();
+      item.ulS1TnlLoadIndicator = (EpcX2Sap::LoadIndicator) i.ReadU8 ();
 
-	  item.cellId = i.ReadNtohU16 ();
-
-      item.dlHardwareLoadIndicator 	= (EpcX2Sap::LoadIndicator) i.ReadU8 ();
-      item.ulHardwareLoadIndicator 	= (EpcX2Sap::LoadIndicator) i.ReadU8 ();
-      item.dlS1TnlLoadIndicator 	= (EpcX2Sap::LoadIndicator) i.ReadU8 ();
-      item.ulS1TnlLoadIndicator 	= (EpcX2Sap::LoadIndicator) i.ReadU8 ();
-
-      item.dlGbrPrbUsage 	= i.ReadNtohU16 ();
-      item.ulGbrPrbUsage 	= i.ReadNtohU16 ();
+      item.dlGbrPrbUsage = i.ReadNtohU16 ();
+      item.ulGbrPrbUsage = i.ReadNtohU16 ();
       item.dlNonGbrPrbUsage = i.ReadNtohU16 ();
       item.ulNonGbrPrbUsage = i.ReadNtohU16 ();
-      item.dlTotalPrbUsage 	= i.ReadNtohU16 ();
-      item.ulTotalPrbUsage 	= i.ReadNtohU16 ();
+      item.dlTotalPrbUsage = i.ReadNtohU16 ();
+      item.ulTotalPrbUsage = i.ReadNtohU16 ();
 
-      item.dlCompositeAvailableCapacity.cellCapacityClassValue 	= i.ReadNtohU16 ();
-      item.dlCompositeAvailableCapacity.capacityValue 			= i.ReadNtohU16 ();
-      item.ulCompositeAvailableCapacity.cellCapacityClassValue 	= i.ReadNtohU16 ();
-      item.ulCompositeAvailableCapacity.capacityValue 			= i.ReadNtohU16 ();
-
-
-      int sz2 = i.ReadNtohU16();
-      sz2_tmp = sz2;
-
-      for(int l =0; l < sz2 ; l++)
-      {
-    	  EpcX2Sap::RSRPMeasurementReportItem item2;
-    	  item2.uEId = i.ReadNtohU16();
-		  //item.rRSPMeasurementReportList[l].uEId = i.ReadNtohU16();
-
-
-
-		     int sz3 = i.ReadNtohU16();
-
-		     sz3_tmp = sz3;
-		    for(int y =0 ; y <  sz3; y++)
-		    {
-		    	EpcX2Sap::RSRPMeasurementResult item3;
-		    	item3.RSRPCellId 	= i.ReadNtohU16 ();
-		    	item3.RSRPMeasured 	= i.ReadNtohU16();
-
-		    	item2.rSRPMeasurementResult.push_back(item3);
-
-
-				 // item.rRSPMeasurementReportList[l].rSRPMeasurementResult[y].RSRPCellId 	= i.ReadNtohU16 ();
-				  //item.rRSPMeasurementReportList[l].rSRPMeasurementResult[y].RSRPMeasured 	= i.ReadNtohU16();
-		    }
-		    item.rRSPMeasurementReportList.push_back(item2);
-      }
+      item.dlCompositeAvailableCapacity.cellCapacityClassValue = i.ReadNtohU16 ();
+      item.dlCompositeAvailableCapacity.capacityValue = i.ReadNtohU16 ();
+      item.ulCompositeAvailableCapacity.cellCapacityClassValue = i.ReadNtohU16 ();
+      item.ulCompositeAvailableCapacity.capacityValue = i.ReadNtohU16 ();
 
       m_cellMeasurementResultList.push_back (item);
-
-
     }
 
- // 2 + 2 + 2+ 2 + 2 + sz*(2+4+12+8+2+sz2*(2+2+sz3*(2+2)))
-  //m_headerLength = 10 + 32*sz ;
-  m_headerLength = 10 + sz*(28+sz2_tmp*(4+sz3_tmp*(4))) ;
-
-  m_numberOfIes = 5;
-
+  m_headerLength = 6 + sz * 26;
+  m_numberOfIes = 3;
 
   return GetSerializedSize ();
 }
@@ -1514,16 +1433,9 @@ EpcX2ResourceStatusUpdateHeader::Deserialize (Buffer::Iterator start)
 void
 EpcX2ResourceStatusUpdateHeader::Print (std::ostream &os) const
 {
-	// To be Modified
-
-
-  os << " Enb1MeasurementId = " << m_enb1MeasurementId
+  os << "Enb1MeasurementId = " << m_enb1MeasurementId
      << " Enb2MeasurementId = " << m_enb2MeasurementId
-	 << " NumOfCellMeasurementResultItems = " << m_cellMeasurementResultList.size ();
-//     << "targetCellId =" <<m_cellMeasurementResultList.targetCellId
-//	 << ", RSRP =" << m_cellMeasurementResultList.rRSPMeasurementReportList.rSRPMeasurementResult.RSRPMeasured
-//	 << ", RSRPCellId ="<<m_cellMeasurementResultList.rRSPMeasurementReportList.rSRPMeasurementResult.RSRPCellId;
-
+     << " NumOfCellMeasurementResultItems = " << m_cellMeasurementResultList.size ();
 }
 
 uint16_t
@@ -1550,60 +1462,19 @@ EpcX2ResourceStatusUpdateHeader::SetEnb2MeasurementId (uint16_t enb2MeasurementI
   m_enb2MeasurementId = enb2MeasurementId;
 }
 
-uint16_t
-EpcX2ResourceStatusUpdateHeader::GetSourceEnbId() const
-{
-  return m_sourceEnbId;
-}
-
-void
-EpcX2ResourceStatusUpdateHeader::SetSourceEnbId (uint16_t sourceEnbId)
-{
-  m_sourceEnbId = sourceEnbId;
-}
-
-uint16_t
-EpcX2ResourceStatusUpdateHeader::GetTargetEnbId() const
-{
-  return m_targetEnbId;
-}
-
-void
-EpcX2ResourceStatusUpdateHeader::SetTargetEnbId (uint16_t targetEnbId)
-{
-  m_targetEnbId = targetEnbId;
-}
-
-std::vector<EpcX2Sap::CellMeasurementResultItem>
+std::vector <EpcX2Sap::CellMeasurementResultItem>
 EpcX2ResourceStatusUpdateHeader::GetCellMeasurementResultList () const
 {
   return m_cellMeasurementResultList;
 }
 
 void
-EpcX2ResourceStatusUpdateHeader::SetCellMeasurementResultList (std::vector<EpcX2Sap::CellMeasurementResultItem> cellMeasurementResultList)
+EpcX2ResourceStatusUpdateHeader::SetCellMeasurementResultList (std::vector <EpcX2Sap::CellMeasurementResultItem> cellMeasurementResultList)
 {
-	m_headerLength += 10;
   m_cellMeasurementResultList = cellMeasurementResultList;
-  int sz = m_cellMeasurementResultList.size();
-  for (int j =0; j <  sz; j++)
-  {
-	  m_headerLength += 28;
-	  	  int sz2 = m_cellMeasurementResultList[j].rRSPMeasurementReportList.size();
-	  	  for(int y =0 ;y < sz2 ;y++)
-	  	  {
-	  		  int sz3 = m_cellMeasurementResultList[j].rRSPMeasurementReportList[y].rSRPMeasurementResult.size();
-	  		m_headerLength += 4;
-	  		for(int l=0; l< sz3; l++)
-	  		{
-	  			m_headerLength += 4;
-	  		}
-	  	  }
 
-  }
-
- // m_headerLength += sz*(28+sz2*(4+sz3*(4))) ;
-
+  std::vector <EpcX2Sap::CellMeasurementResultItem>::size_type sz = m_cellMeasurementResultList.size ();
+  m_headerLength += sz * 26;
 }
 
 uint32_t
@@ -1617,502 +1488,5 @@ EpcX2ResourceStatusUpdateHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
 }
-
-
-////////////////
-
-NS_OBJECT_ENSURE_REGISTERED (EpcX2ResourceStatusRequestHeader);
-
-EpcX2ResourceStatusRequestHeader::EpcX2ResourceStatusRequestHeader ()
-  : m_numberOfIes (10),
-    m_headerLength (2+2+2+1+4+2+4)
-
-	/*    m_enb1MeasurementId (0xfffa),
-    m_enb2MeasurementId (0xfffa),
-	m_regReq(1), // start
-	m_sourceEnbId(0),
-	m_partialSuccessIndicator(0), // allowed
-	m_reportingPeriodicity(0),    // 1000 ms
-	m_periodicityCSI(0),           // 5 ms
-	m_periodicityRSRP(0),         // 120 ms
-    m_targetEnbId(0)*/
-
-
-{
-	//m_cellToReportId.clear();
-}
-
-EpcX2ResourceStatusRequestHeader::~EpcX2ResourceStatusRequestHeader ()
-{
-  m_numberOfIes = 0;
-  m_headerLength = 0;
-  m_enb1MeasurementId = 0xfffb;
-  m_enb2MeasurementId = 0xfffb;
-  //m_cellToReportId.clear();
-}
-
-TypeId
-EpcX2ResourceStatusRequestHeader::GetTypeId (void)
-{
-  static TypeId tid = TypeId ("ns3::EpcX2ResourceStatusRequestHeader")
-    .SetParent<Header> ()
-    .SetGroupName("Lte")
-    .AddConstructor<EpcX2ResourceStatusRequestHeader> ()
-  ;
-  return tid;
-}
-
-TypeId
-EpcX2ResourceStatusRequestHeader::GetInstanceTypeId (void) const
-{
-  return GetTypeId ();
-}
-
-uint32_t
-EpcX2ResourceStatusRequestHeader::GetSerializedSize (void) const
-{
-  return m_headerLength;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::Serialize (Buffer::Iterator start) const
-{
-  Buffer::Iterator i = start;
-  // (2+2+1+4+2+2+4)
-  i.WriteHtonU16 (m_enb1MeasurementId);   // 2
-  i.WriteHtonU16 (m_enb2MeasurementId);   // 2
-
-  i.WriteU8(m_regReq);					  // 1
-
-
-                                          // 4
-      uint32_t reportValue = 0;
-         for (int m = 0; m < 32; m++)
-            {
-        	 reportValue |= m_reportCharacteristics[m] << m;
-            }
-   i.WriteHtonU32 (reportValue);
-   std::vector<uint16_t>::size_type sz = m_targetEnbId.size();
-   i.WriteHtonU16 (sz);
-   for (int j = 0; j<(int) sz; j++)
-   {
-
-        i.WriteHtonU16 (m_targetEnbId[j]); 		// 2
-   }
-   i.WriteHtonU16(m_sourceEnbId);      // 2
-
-//   std::vector<EpcX2Sap::CellId>::size_type sz = m_targetEnbId.size();
-
-//   i.WriteHtonU16(sz);
-
-//for (int j =0; j < (int) sz; j++)
-//{
-//   i.WriteHtonU16 (m_targetEnbId[j].cellId);   // 2*sz
-//}
-
-
-
-  i.WriteU8(m_partialSuccessIndicator);
-  i.WriteU8(m_reportingPeriodicity);
-  i.WriteU8(m_periodicityRSRP);
-  i.WriteU8(m_periodicityCSI);
-
-
-
-}
-
-uint32_t
-EpcX2ResourceStatusRequestHeader::Deserialize (Buffer::Iterator start)
-{
-  Buffer::Iterator i = start;
-  // (2+2+2+1+4+2+4)
-  m_enb1MeasurementId = i.ReadNtohU16 ();    // 2
-  m_enb2MeasurementId = i.ReadNtohU16 ();    // 2
-
-  m_regReq = i.ReadU8 ();                    // 1
-
-
-  uint32_t reportValue = i.ReadNtohU32 ();   // 4
-  for (int m = 0; m < 32; m++)
-    {
-      m_reportCharacteristics[m] = (reportValue >> m) & 1;
-    }
-
-
- // uint16_t sz = i.ReadNtohU16(); //2
-
-//  for ( int j = 0; j<sz ; j++ )
-//  {
-//	 EpcX2Sap::CellId item;
-//     item.cellId	= i.ReadNtohU16 ();  // 2
-//     m_targetEnbId.push_back(item);
-//  }
-
-  std::vector<uint16_t>::size_type sz = i.ReadNtohU16();
-
-  for (int j = 0; j<(int) sz; j++)
-  {
-	  uint16_t tmp	= i.ReadNtohU16 ();//2
-	  m_targetEnbId.push_back(tmp);
-  }
-  m_sourceEnbId				= i.ReadNtohU16();   // 2
-  m_partialSuccessIndicator = i.ReadU8();   // 1
-  m_reportingPeriodicity    = i.ReadU8();   // 1
-  m_periodicityRSRP         = i.ReadU8();   // 1
-  m_periodicityCSI          = i.ReadU8();   // 1
-
-  m_headerLength = 9 + 2 + sz*2 + 2 + 4;
-  m_numberOfIes = 10;
-
-  return GetSerializedSize ();
-}
-
-void
-EpcX2ResourceStatusRequestHeader::Print (std::ostream &os) const
-{
-  os << "In EpcX2ResourceStatusRequestHeader in epc-x2-header.cc"
-  	 << " Enb1MeasurementId = " << m_enb1MeasurementId
-     << " Enb2MeasurementId = " << m_enb2MeasurementId
-	// << " NumOfCellToReport = " << m_targetEnbId.size ()
-	 << "ReportCharacteristics" << m_reportCharacteristics.to_string();
-}
-
-uint16_t
-EpcX2ResourceStatusRequestHeader::GetEnb1MeasurementId () const
-{
-  return m_enb1MeasurementId;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::SetEnb1MeasurementId (uint16_t enb1MeasurementId)
-{
-  m_enb1MeasurementId = enb1MeasurementId;
-}
-
-uint16_t
-EpcX2ResourceStatusRequestHeader::GetEnb2MeasurementId () const
-{
-  return m_enb2MeasurementId;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::SetEnb2MeasurementId (uint16_t enb2MeasurementId)
-{
-  m_enb2MeasurementId = enb2MeasurementId;
-}
-
-std::vector<uint16_t>
-EpcX2ResourceStatusRequestHeader::GetTargetEnbId () const
-{
-  return m_targetEnbId;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::SetTargetEnbId (std::vector<uint16_t> enbToReportIdList)
-{
-	m_targetEnbId = enbToReportIdList;
-
-  std::vector <uint16_t>::size_type sz = m_targetEnbId.size ();
-  m_headerLength += sz * 2;
-}
-
-
-uint16_t
-EpcX2ResourceStatusRequestHeader::GetSourceEnbId() const
-{
-  return m_sourceEnbId;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::SetSourceEnbId (uint16_t sourceEnbId)
-{
-  m_sourceEnbId = sourceEnbId;
-}
-
-
-uint8_t
-EpcX2ResourceStatusRequestHeader::GetRegistrationRequest () const
-{
-	return m_regReq;
-}
-void
-EpcX2ResourceStatusRequestHeader::SetRegistrationRequest (uint8_t regReq)
-{
-
-	m_regReq = regReq;
-}
-
-std::bitset<32>
-EpcX2ResourceStatusRequestHeader::GetReportCharacteristics () const
-{
-	return m_reportCharacteristics;
-}
-
-void
-EpcX2ResourceStatusRequestHeader::SetReportCharacteristics (std::bitset<32>  reportCharacteristics)
-{
-	m_reportCharacteristics = reportCharacteristics;
-}
-
-
-
-uint8_t
-EpcX2ResourceStatusRequestHeader::GetPartialSuccessIndicator () const
-{
-	return m_partialSuccessIndicator;
-}
-void
-EpcX2ResourceStatusRequestHeader::SetPartialSuccessIndicator (uint8_t PSI)
-{
-	m_partialSuccessIndicator = PSI;
-}
-
-uint8_t
-EpcX2ResourceStatusRequestHeader::GetReportingPeriodicity () const
-{
-	return m_reportingPeriodicity;
-}
-void
-EpcX2ResourceStatusRequestHeader::SetReportingPeriodicity (uint8_t reportingPeriodicity)
-{
-	m_reportingPeriodicity = reportingPeriodicity;
-}
-
-uint8_t
-EpcX2ResourceStatusRequestHeader::GetPeriodicityRSRPMeasurementReport () const
-{
-	return m_periodicityRSRP;
-}
-void EpcX2ResourceStatusRequestHeader::SetPeriodicityRSRPMeasurementReport (uint8_t periodicityRSRP)
-{
-	m_periodicityRSRP = periodicityRSRP;
-}
-
-uint8_t
-EpcX2ResourceStatusRequestHeader::GetPeriodicityCSIReport () const
-{
-	return m_periodicityCSI;
-}
-void
-EpcX2ResourceStatusRequestHeader::SetPeriodicityCSIReport (uint8_t periodicityCSI)
-{
-	m_periodicityCSI = periodicityCSI;
-}
-/////////////////////////////////////////
-
-
-uint32_t
-EpcX2ResourceStatusRequestHeader::GetLengthOfIes () const
-{
-  return m_headerLength;
-}
-
-uint32_t
-EpcX2ResourceStatusRequestHeader::GetNumberOfIes () const
-{
-  return m_numberOfIes;
-}
-
-
-
-///////////////////////////////////////////////
-NS_OBJECT_ENSURE_REGISTERED (EpcX2ResourceStatusResponseHeader);
-
-EpcX2ResourceStatusResponseHeader::EpcX2ResourceStatusResponseHeader ()
-  : m_numberOfIes (4),
-    m_headerLength (2+2+2+(2+4+1))
-//	m_sourceEnbId (0),
-//	m_targetEnbId (0),
-//    m_enb1MeasurementId (0xfffa),
-//    m_enb2MeasurementId (0xfffa)
-{
-
-}
-
-EpcX2ResourceStatusResponseHeader::~EpcX2ResourceStatusResponseHeader ()
-{
-  m_numberOfIes = 0;
-  m_headerLength = 0;
-  m_enb1MeasurementId = 0xfffb;
-  m_enb2MeasurementId = 0xfffb;
-
-}
-
-TypeId
-EpcX2ResourceStatusResponseHeader::GetTypeId (void)
-{
-  static TypeId tid = TypeId ("ns3::EpcX2ResourceStatusResponseHeader")
-    .SetParent<Header> ()
-    .SetGroupName("Lte")
-    .AddConstructor<EpcX2ResourceStatusResponseHeader> ()
-  ;
-  return tid;
-}
-
-TypeId
-EpcX2ResourceStatusResponseHeader::GetInstanceTypeId (void) const
-{
-  return GetTypeId ();
-}
-
-uint32_t
-EpcX2ResourceStatusResponseHeader::GetSerializedSize (void) const
-{
-  return m_headerLength;
-}
-
-void
-EpcX2ResourceStatusResponseHeader::Serialize (Buffer::Iterator start) const
-{
-  Buffer::Iterator i = start;
-  //(2+2+2+2+2+(2+4+1))
-  i.WriteHtonU16 (m_enb1MeasurementId);  // 2
-  i.WriteHtonU16 (m_enb2MeasurementId);  // 2
-  i.WriteHtonU16 (m_sourceEnbId);       // 2
-  i.WriteHtonU16 (m_targetEnbId);  // 2
-
-
-std::vector<EpcX2Sap::MeasurementInitiationResultItem>::size_type sz = m_measurementInitiationResultList.size();
-
-i.WriteHtonU16(sz); //2
-
-for (int j = 0; j < (int) sz; j++)
-{
-	i.WriteHtonU16(m_measurementInitiationResultList[j].cellId);  // 2*sz
-
-      uint32_t reportValue = 0;
-         for (int m = 0; m < 32; m++)
-            {
-        	 reportValue |= m_measurementInitiationResultList[j].measurementFailureCauseList.measurementFailedReportCharacteristics[m] << m;
-            }
-   i.WriteHtonU32 (reportValue); // 4 *sz
-   i.WriteU8(m_measurementInitiationResultList[j].measurementFailureCauseList.cause);       // 1*sz
-
-}
-}
-
-uint32_t
-EpcX2ResourceStatusResponseHeader::Deserialize (Buffer::Iterator start)
-{
-  Buffer::Iterator i = start;
-  //(2+2+2+(2+4+1))
-  m_enb1MeasurementId = i.ReadNtohU16 ();  // 2
-  m_enb2MeasurementId = i.ReadNtohU16 ();  // 2
-  m_sourceEnbId	 	  = i.ReadNtohU16 ();  // 2
-  m_targetEnbId		  = i.ReadNtohU16();   // 2
-
-  uint16_t sz 		  = i.ReadNtohU16();   // 2
-
-
-  for (int j = 0; j < (int) sz; j++)
-  {
-	  EpcX2Sap::MeasurementInitiationResultItem item;
-      item.cellId = i.ReadNtohU16 ();           // 2
-
-      uint32_t reportValue = i.ReadNtohU32 ();  // 4
-      for (int m = 0; m < 32; m++)
-        {
-    	  item.measurementFailureCauseList.measurementFailedReportCharacteristics[m]= (reportValue >> m) & 1;
-        }
-
-      item.measurementFailureCauseList.cause = 0;  // 1
-      m_measurementInitiationResultList.push_back(item);
-  }
-
-
-  m_headerLength = 10+ 7 * sz ;
-  m_numberOfIes = 5;
-
-  return GetSerializedSize ();
-}
-
-void
-EpcX2ResourceStatusResponseHeader::Print (std::ostream &os) const
-{
-  os << "Enb1MeasurementId = " << m_enb1MeasurementId
-     << " Enb2MeasurementId = " << m_enb2MeasurementId;
-}
-
-uint16_t
-EpcX2ResourceStatusResponseHeader::GetEnb1MeasurementId () const
-{
-  return m_enb1MeasurementId;
-}
-
-void
-EpcX2ResourceStatusResponseHeader::SetEnb1MeasurementId (uint16_t enb1MeasurementId)
-{
-  m_enb1MeasurementId = enb1MeasurementId;
-}
-
-uint16_t
-EpcX2ResourceStatusResponseHeader::GetEnb2MeasurementId () const
-{
-  return m_enb2MeasurementId;
-}
-
-void
-EpcX2ResourceStatusResponseHeader::SetEnb2MeasurementId (uint16_t enb2MeasurementId)
-{
-  m_enb2MeasurementId = enb2MeasurementId;
-}
-
-std::vector<EpcX2Sap::MeasurementInitiationResultItem>
-EpcX2ResourceStatusResponseHeader::GetMeasurementInitiationResult () const
-{
-  return m_measurementInitiationResultList;
-}
-
-void
-EpcX2ResourceStatusResponseHeader::SetMeasurementInitiationResult (std::vector<EpcX2Sap::MeasurementInitiationResultItem> measurementInitiationResultItem)
-{
-  m_measurementInitiationResultList= measurementInitiationResultItem;
-  std::vector<EpcX2Sap::MeasurementInitiationResultItem>::size_type sz = m_measurementInitiationResultList.size();
-
-  m_headerLength += 7* sz;
-}
-
-uint16_t
-EpcX2ResourceStatusResponseHeader::GetTargetEnbId() const
-{
-   return m_targetEnbId;
-}
-void
-EpcX2ResourceStatusResponseHeader::SetTargetEnbId(uint16_t cellId)
-{
-	m_targetEnbId = cellId;
-}
-
-
-uint16_t
-EpcX2ResourceStatusResponseHeader::GetSourceEnbId() const
-{
-   return m_sourceEnbId;
-}
-void
-EpcX2ResourceStatusResponseHeader::SetSourceEnbId(uint16_t cellId)
-{
-	m_sourceEnbId = cellId;
-}
-
-
-
-
-
-uint32_t
-EpcX2ResourceStatusResponseHeader::GetLengthOfIes () const
-{
-  return m_headerLength;
-}
-
-uint32_t
-EpcX2ResourceStatusResponseHeader::GetNumberOfIes () const
-{
-  return m_numberOfIes;
-}
-/**
- * *************************
- */
-
 
 } // namespace ns3

@@ -214,11 +214,13 @@ class Chart {
         {
             var serie = series[i-1];
 
+
             // NOTE: update
-            if(serie.name != Object.keys(dictionary)[i]) {
-                for(var j = 1; j < Object.keys(dictionary).length; j++)
+            if(serie.name != Object.keys(dictionary)[i]) {      // Not next in series
+
+                for(var j = 0; j < series.length; j++)     // Find match from series
                 {
-                    if(Object.keys(dictionary)[i] == Object.keys(dictionary)[j]) {
+                    if(Object.keys(dictionary)[i] == series[j].name) {
                         serie = series[j];
                         break;                  // IF NOT FOUND???? TODO:
                     }
