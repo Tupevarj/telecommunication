@@ -171,7 +171,6 @@ function drawRegressionCharts(data) {
     for(var i = 0; i < mlCharts.length; i++)
          mlCharts[i].update(data, true);
 
-    zScoreChart.cleanChart();
     zScoreChart.update(data);
 }
 

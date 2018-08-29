@@ -234,7 +234,7 @@ def calculate_z_scores(predictions, x_test):
     # Calculate number users that are closest to cell:
     list_ues_per_bs = [0] * 7
     for i in range(0, len(predictions)):
-        if predictions[i] >= 0.25:
+        if predictions[i] >= 0.1:
             min_distance = sys.float_info.max
             base_station_id = -1
             for j, bs in dataset_basestations.iterrows():
@@ -296,7 +296,6 @@ def run_ml(array_x):
     z_scores_new['Ref. Z-scores'] = get_ref_z_scores(sel_reg_enum)['Ref. Z-scores']
     z_scores_new['Z Score'] = calculate_z_scores(predictions, array_x)
 
-    maxval = [0, -1]
     high4 = [0, -1]
     for i in range(0, 7):
         if high4[1] < z_scores_new["Z Score"][i]:
@@ -345,15 +344,16 @@ def update_nb_cell_lists():
     dict_dfs = dict()
     if 0 > read_mongo_guaranteed(dictionary=dict_dfs, collection="handover_log"):
         return
-    df_nb_cells = read_mongo_guaranteed(dictionary=dict_dfs, collection="nb_cell_list")
+    df_nb_cells = dict()
+    read_mongo_guaranteed(dictionary=df_nb_cells, collection="nb_cell_list")
 
     df_nb_pairs = dict_dfs["handover_log"][["CellID", "TargetCellID"]].loc[dict_dfs["handover_log"]["TargetCellID"] != 0]
     cell_count = get_number_of_cells()
 
     for i in range(1, cell_count+1):
         new_nb_cells = (df_nb_pairs.loc[(df_nb_pairs["CellID"] == i) | (df_nb_pairs["TargetCellID"] == i)].sum(axis=1) - i).drop_duplicates().tolist()
-        if df_nb_cells != 0:
-            nb_cells = dict_dfs["nb_cell_list"].loc[dict_dfs["nb_cell_list"]["CellID"] == i]["NbCellIDs"]
+        if len(df_nb_cells['nb_cell_list']) != 0:
+            nb_cells = df_nb_cells['nb_cell_list'].loc[df_nb_cells['nb_cell_list']["CellID"] == i]["NbCellIDs"]
             if len(nb_cells) != 0:
                 new_nb_cells.extend(x for x in nb_cells.iloc[0] if x not in new_nb_cells)
         collection_update_with_set(collection="nb_cell_list", query={"CellID": i}, value={"NbCellIDs": new_nb_cells})
