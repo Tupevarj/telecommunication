@@ -1,24 +1,29 @@
 from django.shortcuts import render
 from .models import insert_document, read_mongo_best_effort, read_mongo_guaranteed, get_collection_count, \
-    connect_to_mongo_db, collection_update_with_set, collection_update_multiple_with_set
+    connect_to_mongo_db, collection_update_with_set
 import json
 from django.http import HttpResponse
 from .data_processing import preprocess_training_set_to_8_and_10_dimensions,\
     preprocess_testing_set_to_10_dimensions
-from .chart_data_processing import initialize_data_processing, get_data_for_all_charts, \
-    get_ue_location_and_connection_history, get_cell_locations_II
+from .chart_data_processing import initialize_data_processing, get_cell_locations_II
 from .ml import run_ml, calculate_reference_z_scores, \
     train_and_test_all_regressions, save_all_regressors, load_all_regressors, Regressor, set_regressor, \
     get_reg_chart_data, get_reg_z_scores, get_auc_scores, get_current_z_scores, update_nb_cell_lists
-import subprocess, signal
-import os
-from threading import Thread
+from .simulator_module import SimulatorModule
+from .cod_module import CodModule
+from .mongo_connector import MongoConnector
+# TODO: from moduls.py import ...
+
 
 # Global values
 last_read_ml = 0
 training_ended = False  # cache
 outage_rows = [0, 0, 0]
 sim_thread = 0
+mongo_connector = 0
+modules = dict()
+#mongo_module = MongoModule()
+
 
 ##############################################################
 #   UPDATING CHARTS
@@ -37,39 +42,35 @@ def is_update_needed_for_alarm_table():
     else:
         return True
 
-
-def create_context_for_reg_graphs():
-    """ Creates context for regression charts"""
-    context = dict()
-    points = get_reg_chart_data()
-    auc_scores = get_auc_scores()
-    z_scores = get_reg_z_scores()
-
-    context['Regression'] = points[Regressor.SIMPLE_REG.value]
-    context['RegressionSVR'] = points[Regressor.SVR_REG.value]
-    context['RegressionDT'] = points[Regressor.DECISION_TREE_REG.value]
-    context['RegressionRF'] = points[Regressor.RANDOM_FOREST_REG.value]
-    context['sRegAUC'] = json.dumps(auc_scores[Regressor.SIMPLE_REG.value])
-    context['rfRegAUC'] = json.dumps(auc_scores[Regressor.RANDOM_FOREST_REG.value])
-    context['svcRegAUC'] = json.dumps(auc_scores[Regressor.SVR_REG.value])
-    context['dtRegAUC'] = json.dumps(auc_scores[Regressor.DECISION_TREE_REG.value])
-    context['ZScores'] = z_scores[Regressor.SIMPLE_REG.value]
-    return context
+#
+# def create_context_for_reg_graphs():
+#     """ Creates context for regression charts"""
+#     context = dict()
+#     points = get_reg_chart_data()
+#     auc_scores = get_auc_scores()
+#     z_scores = get_reg_z_scores()
+#
+#     context['Regression'] = points[Regressor.SIMPLE_REG.value]
+#     context['RegressionSVR'] = points[Regressor.SVR_REG.value]
+#     context['RegressionDT'] = points[Regressor.DECISION_TREE_REG.value]
+#     context['RegressionRF'] = points[Regressor.RANDOM_FOREST_REG.value]
+#     context['sRegAUC'] = json.dumps(auc_scores[Regressor.SIMPLE_REG.value])
+#     context['rfRegAUC'] = json.dumps(auc_scores[Regressor.RANDOM_FOREST_REG.value])
+#     context['svcRegAUC'] = json.dumps(auc_scores[Regressor.SVR_REG.value])
+#     context['dtRegAUC'] = json.dumps(auc_scores[Regressor.DECISION_TREE_REG.value])
+#     context['ZScores'] = z_scores[Regressor.SIMPLE_REG.value]
+#     return context
 
 
 ##############################################################
 #   END : UPDATING CHARTS
 ##############################################################
 
-def update_nb_cell_lists_in_db():
-    """ Updates neighbour list for each cell in DB."""
-    update_nb_cell_lists()
-
 
 def create_regression_models():
     """ First preprocesses data from database and then trains regression
         models with it """
-    update_nb_cell_lists_in_db()    # FIXME: CALLING FROM HERE FOR NOW ON
+    update_nb_cell_lists()   # FIXME: CALLING FROM HERE FOR NOW ON
     dict_dfs = dict()
     if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="main_kpis_log"):
         array_8_dim = []
@@ -102,9 +103,9 @@ def apply_coc():
             compensated_cell_list = list()
             # Compensate:
             for cell in outage_cell_ids:
-                for nb_list in dict_dfs["nb_cell_list"]:
-                    if cell == nb_list['CellID']:
-                        for nb_cell in nb_list['NbCellIDs']:
+                for index, row in dict_dfs["nb_cell_list"].iterrows():
+                    if cell == row.CellID:
+                        for nb_cell in row.NbCellIDs:
                             if nb_cell not in outage_cell_ids and nb_cell not in compensated_cell_list:
                                 compensated_cell_list.append(nb_cell)
 
@@ -117,62 +118,62 @@ def apply_coc():
 #   HTTP REQUEST HANDLERS
 ##############################################################
 
+#
+# def run_simulation(params):
+#     subprocess.call(["./start_simulation.sh", params])
 
-def run_simulation(params):
-    subprocess.call(["./start_simulation.sh", params])
+#
+# def stop_simulation(request):
+#     """" Stops running simulation TODO: status code?"""
+#     if request.method == "GET" and request.path == '/stopSimulation':
+#         global sim_thread
+#         dict_dfs = dict()
+#         if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="simulation_configurations"):
+#             pid = dict_dfs["simulation_configurations"]["pid"][0]
+#             os.kill(pid, signal.SIGUSR2)
+#             sim_thread.join()
+#     return HttpResponse(json.dumps("Simulation stopped."))
+#
+#
+# def start_simulation(request):
+#     """" Starts running simulation TODO: status code?"""
+#     if request.method == "GET" and request.path == '/startSimulation':
+#         global sim_thread
+#         sim_thread = Thread(target=run_simulation, args=("0",))
+#         sim_thread.start()
+#     return HttpResponse(json.dumps("Simulation started."))
+#
+#
+# def start_training_simulation(request):
+#     """" Starts running training simulation TODO: status code?"""
+#     if request.method == "GET" and request.path == '/startTrainingSimulation':
+#         global sim_thread
+#         sim_thread = Thread(target=run_simulation, args=("1",))
+#         sim_thread.start()
+#     return HttpResponse(json.dumps("Training phase started."))
 
-
-def stop_simulation(request):
-    """" Stops running simulation TODO: status code?"""
-    if request.method == "GET" and request.path == '/stopSimulation':
-        global sim_thread
-        dict_dfs = dict()
-        if 0 < read_mongo_guaranteed(dictionary=dict_dfs, collection="simulation_configurations"):
-            pid = dict_dfs["simulation_configurations"]["pid"][0]
-            os.kill(pid, signal.SIGUSR2)
-            sim_thread.join()
-    return HttpResponse(json.dumps("Simulation stopped."))
-
-
-def start_simulation(request):
-    """" Starts running simulation TODO: status code?"""
-    if request.method == "GET" and request.path == '/startSimulation':
-        global sim_thread
-        sim_thread = Thread(target=run_simulation, args=("0",))
-        sim_thread.start()
-    return HttpResponse(json.dumps("Simulation started."))
-
-
-def start_training_simulation(request):
-    """" Starts running training simulation TODO: status code?"""
-    if request.method == "GET" and request.path == '/startTrainingSimulation':
-        global sim_thread
-        sim_thread = Thread(target=run_simulation, args=("1",))
-        sim_thread.start()
-    return HttpResponse(json.dumps("Training phase started."))
-
-
-def outage_button_handler(request):
-    if request.method == "GET" and request.path == '/outageInput':
-        state = int(request.GET['CreateOutage'])
-        bs_id = int(request.GET['BasestationID'])
-        list_cells = basetation_to_cell_ids(bs_id)
-        if state != 0:
-            # Create outage
-            collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
-                                                {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
-                                                {"TxPower": -100.0}, {"TxPower": -100.0}, {"TxPower": -100.0}])
-            return HttpResponse(json.dumps({'Message': "Outage created at bs " + str(bs_id) + " (Cells: " +
-                                                       str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
-                                                       str(list_cells[2]) + ').', 'status': 0}))
-        else:
-            # Cancel outage
-            collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
-                                                {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
-                                                {"TxPower": 43.0}, {"TxPower": 43.0}, {"TxPower": 43.0}])
-            return HttpResponse(json.dumps({'Message': "Outage cancelled at bs " + str(bs_id) + " (Cells: " +
-                                                       str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
-                                                       str(list_cells[2]) + ').', 'status': 0}))
+#
+# def outage_button_handler(request):
+#     if request.method == "GET" and request.path == '/outageInput':
+#         state = int(request.GET['CreateOutage'])
+#         bs_id = int(request.GET['BasestationID'])
+#         list_cells = basetation_to_cell_ids(bs_id)
+#         if state != 0:
+#             # Create outage
+#             collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
+#                                                 {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
+#                                                 {"TxPower": -100.0}, {"TxPower": -100.0}, {"TxPower": -100.0}])
+#             return HttpResponse(json.dumps({'Message': "Outage created at bs " + str(bs_id) + " (Cells: " +
+#                                                        str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
+#                                                        str(list_cells[2]) + ').', 'status': 0}))
+#         else:
+#             # Cancel outage
+#             collection_update_multiple_with_set(collection="cell_configurations", queries=[{"CellID": list_cells[0]},
+#                                                 {"CellID": list_cells[1]}, {"CellID": list_cells[2]}], values=[
+#                                                 {"TxPower": 43.0}, {"TxPower": 43.0}, {"TxPower": 43.0}])
+#             return HttpResponse(json.dumps({'Message': "Outage cancelled at bs " + str(bs_id) + " (Cells: " +
+#                                                        str(list_cells[0]) + ', ' + str(list_cells[1]) + ' and ' +
+#                                                        str(list_cells[2]) + ').', 'status': 0}))
 
 
 def control_panel_input(request):
@@ -197,83 +198,110 @@ def control_panel_input(request):
             return HttpResponse(json.dumps(message))
     return HttpResponse(json.dumps(0))
 
+#
+# def update_charts(request):
+#     """ Main update routine for charts; checks if charts needs to be updated
+#         and returns data needed for charts """
+#     global modules
+#     global mongo_connector
+#     if request.method == "GET" and request.path == '/updateCharts':
+#         context = dict()
+#         modules['simulator'].update(mongo_connector)
+#         #get_data_for_all_charts(context)
+#         return HttpResponse(json.dumps(context))
+#     return HttpResponse(json.dumps(0))
 
-def update_charts(request):
-    """ Main update routine for charts; checks if charts needs to be updated
-        and returns data needed for charts """
-    if request.method == "GET" and request.path == '/updateCharts':
-        context = dict()
-        get_data_for_all_charts(context)
-        return HttpResponse(json.dumps(context))
-    return HttpResponse(json.dumps(0))
+#
+# def select_reg_model(request):
+#     """" Set regression model and return references Z-scores accordingly selection """
+#     reg = int(request.GET['selectedReg'])
+#     set_regressor(reg)
+#     context = dict()
+#     z_scores = get_current_z_scores()
+#     context['ZScores'] = z_scores
+#     return HttpResponse(json.dumps(context))
+#
+#
+# def load_ml_models(request):
+#     """ Load Regression models and data for regression charts from hard drive """
+#     global training_ended
+#     if request.method == "GET" and request.path == '/loadMLModels':
+#         if load_all_regressors() == 0:
+#             return HttpResponse(json.dumps(0))
+#         else:
+#             training_ended = True
+#             return HttpResponse(json.dumps(create_context_for_reg_graphs()))
+#
+#
+# def save_ml_models(request):
+#     """ Saves regression models to hard disk"""
+#     global training_ended
+#     if request.method == "GET" and request.path == '/saveMLModels':
+#         if training_ended:
+#             return HttpResponse(save_all_regressors())
+#         else:
+#             HttpResponse(0)
+#
+#
+# def create_ml_models(request):
+#     """ Fits Regression models and creates data for regression charts and table """
+#     global training_ended
+#     if request.method == "GET" and request.path == '/createModels':
+#         create_regression_models()
+#         training_ended = True
+#         return HttpResponse(json.dumps(create_context_for_reg_graphs()))
+#     else:
+#         return 0
+
+#
+# def get_ue_location_history_by_cell(request):
+#     """ Get user location and connection history request handler """
+#     if request.method == "GET":
+#         try:
+#             cell_id = int(request.GET['CellID'])
+#         except ValueError:
+#             return 0
+#         connections = get_ue_location_and_connection_history(int(cell_id))
+#         return HttpResponse(json.dumps(connections))
+#     else:
+#         return 0
+
+#
+# def get_ue_location_history(request):
+#     """ Get user location and connection history request handler """
+#     if request.method == "GET":
+#         try:
+#             ue_id = int(request.GET['UeID'])
+#         except ValueError:
+#             return 0
+#         connections = get_ue_location_and_connection_history(int(ue_id))
+#         return HttpResponse(json.dumps(connections))
+#     else:
+#         return 0
+
+# ------------------------- # SIMULATOR MODULE REQUEST HANDLER # ------------------------- #
 
 
-def select_reg_model(request):
-    """" Set regression model and return references Z-scores accordingly selection """
-    reg = int(request.GET['selectedReg'])
-    set_regressor(reg)
-    context = dict()
-    z_scores = get_current_z_scores()
-    context['ZScores'] = z_scores
-    return HttpResponse(json.dumps(context))
-
-
-def load_ml_models(request):
-    """ Load Regression models and data for regression charts from hard drive """
-    global training_ended
-    if request.method == "GET" and request.path == '/loadMLModels':
-        if load_all_regressors() == 0:
-            return HttpResponse(json.dumps(0))
-        else:
-            training_ended = True
-            return HttpResponse(json.dumps(create_context_for_reg_graphs()))
-
-
-def save_ml_models(request):
-    """ Saves regression models to hard disk"""
-    global training_ended
-    if request.method == "GET" and request.path == '/saveMLModels':
-        if training_ended:
-            return HttpResponse(save_all_regressors())
-        else:
-            HttpResponse(0)
-
-
-def create_ml_models(request):
-    """ Fits Regression models and creates data for regression charts and table """
-    global training_ended
-    if request.method == "GET" and request.path == '/createModels':
-        create_regression_models()
-        training_ended = True
-        return HttpResponse(json.dumps(create_context_for_reg_graphs()))
-    else:
-        return 0
-
-
-def get_ue_location_history_by_cell(request):
-    """ Get user location and connection history request handler """
+def send_command_to_simulator_module(request):
+    """ Passes command to simulator module and replies with an response
+        returned by the module. """
+    global modules
+    response = 0
     if request.method == "GET":
-        try:
-            cell_id = int(request.GET['CellID'])
-        except ValueError:
-            return 0
-        connections = get_ue_location_and_connection_history(int(cell_id))
-        return HttpResponse(json.dumps(connections))
-    else:
-        return 0
+        response = modules["simulator"].execute_command(request.path, request.GET)
+    return HttpResponse(json.dumps(response))
+
+# ------------------------- # COD MODULE REQUEST HANDLER # ------------------------- #
 
 
-def get_ue_location_history(request):
-    """ Get user location and connection history request handler """
+def send_command_to_cod_module(request):
+    """ Passes command to COD module and replies with an response
+        returned by the module. """
+    global modules
+    response = 0
     if request.method == "GET":
-        try:
-            ue_id = int(request.GET['UeID'])
-        except ValueError:
-            return 0
-        connections = get_ue_location_and_connection_history(int(ue_id))
-        return HttpResponse(json.dumps(connections))
-    else:
-        return 0
+        response = modules["cod"].execute_command(request.path, request.GET)
+    return HttpResponse(json.dumps(response))
 
 
 def update_alarm_gui(request):
@@ -285,39 +313,38 @@ def update_alarm_gui(request):
         global outage_rows
         if training_ended and is_update_needed_for_alarm_table():
             response_data = {'total': 1, 'rows': []}
-            dictionary = dict()
-            if read_mongo_best_effort(collection="main_kpis_log", dictionary=dictionary, skip=last_read_ml) < 0:
-                return HttpResponse(json.dumps(0))
-            data = dictionary['main_kpis_log']
-            last_read_ml += len(data)
+            dict_read = dict()
+            if 0 < read_mongo_best_effort(dictionary=dict_read, collection="main_kpis_log", skip=last_read_ml):
+                data = dict_read["main_kpis_log"]
+                last_read_ml += len(data)
 
-            if len(data) != 0:
-                array_10_dim = preprocess_testing_set_to_10_dimensions(data)
-                ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
-                response_data['ZScores'] = ml_data[1]
+                if len(data) != 0:
+                    array_10_dim = preprocess_testing_set_to_10_dimensions(data)
+                    ml_data = run_ml(array_10_dim)      # ML data has outage cell ID in first element and Z-scores in second element
+                    response_data['ZScores'] = ml_data[1]
 
-                outage_id = ml_data[0]
+                    outage_id = ml_data[0]
 
-                if outage_rows[0] == outage_id:
-                    outage_rows[1] += 1
-                else:
-                    outage_rows[1] = 0
-                if outage_rows[1] >= 5:  # outage_rows[1] >= 3 is not working with BS 3
-                    outage_rows[2] = outage_id
-                #    training_ended = False        # to stop after making a prediction
+                    if outage_rows[0] == outage_id:
+                        outage_rows[1] += 1
+                    else:
+                        outage_rows[1] = 0
+                    if outage_rows[1] >= 5:  # outage_rows[1] >= 3 is not working with BS 3
+                        outage_rows[2] = outage_id
+                    #    training_ended = False        # to stop after making a prediction
 
-                outage_rows[0] = outage_id
-                outage_id = outage_rows[2]
+                    outage_rows[0] = outage_id
+                    outage_id = outage_rows[2]
 
-                for i in range(1, 8):
-                    severity = "Normal"
-                    problem = "Normal Traffic"
-                    if i == outage_id:
-                        severity = "Critical"
-                        problem = "Outage"
-                    response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
+                    for i in range(1, 8):
+                        severity = "Normal"
+                        problem = "Normal Traffic"
+                        if i == outage_id:
+                            severity = "Critical"
+                            problem = "Outage"
+                        response_data['rows'].append({"bsID": i, "created": "00.00.00", "severity": severity, "problem": problem, "service": "eUTRAN"})
 
-                return HttpResponse(json.dumps(response_data))
+                    return HttpResponse(json.dumps(response_data))
         return HttpResponse(json.dumps(0))
 
 
@@ -332,11 +359,15 @@ def initialize():
     global training_ended
     global last_read_ml
     global outage_rows
+    global mongo_connector
     last_read_ml = 0
     connect_to_mongo_db()
     ml_is_calculating = False
     training_ended = False
     outage_rows = [0, 0, 0]
+    mongo_connector = MongoConnector()
+    modules['simulator'] = SimulatorModule(mongo_connector)
+    modules['cod'] = CodModule(mongo_connector)
 
 
 def index(request):
@@ -349,12 +380,8 @@ def index(request):
     context = dict()
     cell_locations = get_cell_locations_II()
     context['CellLocations'] = cell_locations
-    get_data_for_all_charts(context)
-
-    z_scores_chart = dict()
-    z_scores_chart['BS'] = ["BS1", "BS2", "BS3", "BS4", "BS5", "BS6", "BS7" ]
-    z_scores_chart['Ref. Z-scores'] = [0, 0, 0, 0, 0, 0, 0]
-    z_scores_chart['Z Score'] = [0, 0, 0, 0, 0, 0, 0]
-    context['ZScores'] = z_scores_chart  # TODO: Get rid of this
+    context.update(modules['simulator'].initialize())       # Initialize modules here!
+    context.update(modules['cod'].initialize())            # TODO: IS NEEDED!
+    #get_data_for_all_charts(context)
 
     return render(request, 'fiveG/index.html', context)

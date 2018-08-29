@@ -1,4 +1,9 @@
 
+/**
+ * Handlers and initializers for all the buttons in frontend.
+ *
+ * - Tuukka Varjus <tupevarj@student.jyu.fi>
+ */
 
 
 var regressionButtons = new ToggleButtonGroup([new ToggleButton("#useSimpleReg_0", '#337ab7', '#9aabb7'), new ToggleButton("#useRfReg_2", '#337ab7', '#9aabb7'),
@@ -13,7 +18,8 @@ var simulatorButtons = new ToggleButtonGroup([new ToggleButton("#startTraining",
                                                 new ToggleButton("#stopSimulation", '#c60005', '#337ab7', '337ab7')]);
 
 var viewButtons = new ToggleButtonGroup([new ToggleButton("#buttonHideML", '#337ab7', '#9aabb7'), new ToggleButton("#buttonHideMon", '#337ab7', '#9aabb7'),
-                                                new ToggleButton("#buttonHidePer", '#337ab7', '#9aabb7'), new ToggleButton("#buttonHideEve", '#337ab7', '#9aabb7')]);
+                                                new ToggleButton("#buttonHidePer", '#337ab7', '#9aabb7'), new ToggleButton("#buttonHideEve", '#337ab7', '#9aabb7'),
+                                        new ToggleButton("#buttonHideTrack", '#337ab7', '#9aabb7')]);
 var outageButton = new ToggleButton("#outageBsButton", "#00C815", '#337ab7');
 
 // Disable stop

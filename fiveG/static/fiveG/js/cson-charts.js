@@ -7,7 +7,12 @@ var dominanceMapChart;
 
 // Console:
 var sim_console;
-//var CropOpts = JSON.parse("{{ TotalThroughput | safe }}");
+
+/**
+ * Handlers and initializers for all the charts (and console) in frontend.
+ *
+ * - Tuukka Varjus <tupevarj@student.jyu.fi>
+ */
 
 
 /**
@@ -64,13 +69,13 @@ function initializePerformanceCharts() {
 function initializeMlCharts() {
 
     mlCharts.push(new Chart(['SVR Regression Model', 'Detection Performance'], [['FPR', ''], ['TPR', '']],
-                                        'regressionSvrChartContainer', '', 'RegressionSVR', false, false, 0, 500));
+                                        'regressionSvrChartContainer', '', 'svr', false, false, 0, 500));
     mlCharts.push(new Chart(['Random Forest Regression Model', 'Detection Performance'], [['FPR', ''], ['TPR', '']],
-                                        'regressionRfChartContainer', '', 'RegressionRF', false, false, 0, 500));
+                                        'regressionRfChartContainer', '', 'random_forest', false, false, 0, 500));
     mlCharts.push(new Chart(['Simple Regression Model', 'Detection Performance'], [['FPR', ''], ['TPR', '']],
-                                        'regressionChartContainer', '', 'Regression', false, false, 0, 500));
+                                        'regressionChartContainer', '', 'linear', false, false, 0, 500));
     mlCharts.push(new Chart(['Decision Tree Regression Model', 'Detection Performance'], [['FPR', ''], ['TPR', '']],
-                                        'regressionDtChartContainer', '', 'RegressionDT', false, false, 0, 500));
+                                        'regressionDtChartContainer', '', 'decision_tree', false, false, 0, 500));
 
     zScoreChart = new Chart(['Z-Score For Regressors', 'Based on anomal users in each basestation'], [['Z-score',''], ['','']],
                                             'zScoreChartContainer', '', 'ZScores', true, true);
@@ -113,7 +118,7 @@ $(document).ready(function () {
     // Start update loop for charts
     setInterval(function () {
         sendUpdateRequest();
-        }, 10000);
+        }, 20000);
 });
 
 var last_time_stamp = 0.0;
@@ -125,6 +130,10 @@ function sendUpdateRequest() {
 
         var parsed = JSON.parse(data);
 
+        if ('Initialize' in parsed && parsed['Initialize'] == 'true') {
+            for(var i = 0; i < charts.length; i++)
+                charts[i].cleanChart();
+        }
         for(var i = 0; i < charts.length; i++)
             charts[i].update(parsed);
 
@@ -163,14 +172,15 @@ function updateSimulationConsole(status) {
  * @param data - Data for table and ML charts.
  */
 function drawRegressionCharts(data) {
-    document.getElementById("simpleReg").innerHTML = data["sRegAUC"].substring(0,4);
-    document.getElementById("rfReg").innerHTML = data["rfRegAUC"].substring(0,4);
-    document.getElementById("svcClass").innerHTML = data["svcRegAUC"].substring(0,4);
-    document.getElementById("decTree").innerHTML = data["dtRegAUC"].substring(0,4);
+    document.getElementById("simpleReg").innerHTML = data["linearAUC"].substring(0,4);
+    document.getElementById("rfReg").innerHTML = data["random_forestAUC"].substring(0,4);
+    document.getElementById("svcClass").innerHTML = data["svrAUC"].substring(0,4);
+    document.getElementById("decTree").innerHTML = data["decision_treeAUC"].substring(0,4);
 
     for(var i = 0; i < mlCharts.length; i++)
          mlCharts[i].update(data, true);
 
+    zScoreChart.cleanChart();
     zScoreChart.update(data);
 }
 

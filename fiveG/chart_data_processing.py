@@ -27,6 +27,16 @@ number_of_cells = 0       # MAKE IT READ FROM DATABASE
 #last_time_stamp = 0
 
 
+def basetation_to_cell_ids(bs_id):
+    """ Converts basestation ID to corresponding cell IDs """
+    start = (bs_id - 1) * 3 + 1
+    list_cells = list()
+    for i in range(0, 3):
+        list_cells.append((start + i))
+
+    return list_cells
+
+
 def get_number_of_cells():
     """ Returns number of cells in simulation """
     dict_dfs = dict()
@@ -141,7 +151,7 @@ def update_rlf_per_cell_chart_data(df_events, context):
         np_events = np.array(df_events.loc[df_events['EventID'] == 0][["LocationX", "LocationY"]])
         for point in np_events:
             index = get_min_squared_distance_index(np_cell_locations, point)
-            rlf_per_cell[np_cell_locations[index][2]-1][1] += 1
+            rlf_per_cell[int(np_cell_locations[index][2])-1][1] += 1
         context['RlfData'] = rlf_per_cell
 
 
@@ -203,10 +213,10 @@ def update_latest_rsrp_per_cell_chart_data(df_data, context):
   #      context['RsrpPerCell'] = df_latest.values.tolist()
 
 
-def get_ue_location_and_connection_history(cell_id):
-    """ Returns users connection and location history in dictionary """
-    # TODO:
-    return 0
+# def get_ue_location_and_connection_history(cell_id):
+#     """ Returns users connection and location history in dictionary """
+#     # TODO:
+#     return 0
 
 
 def get_ue_location_and_connection_history(ue_id):
@@ -267,51 +277,51 @@ def update_ac_cumulative_rlf_chart_data(event_df, context):
             cumulative_rlf_count = rlf_total["Cumulative"][-1]
             context['RlfTotal'] = rlf_total
 
-
-def get_data_for_all_charts(context):
-    global last_read_main
-    global last_read_thr
-    global last_read_events
-    global last_read_status
-    global last_read_dominance
-    global number_of_cells
-
-    if number_of_cells == 0:
-        number_of_cells = get_number_of_cells()
-        init_rlf()
-
-    # Check if new simulation started and charts need to be initialized
-    update_intialized(context)
-
-    # Read collections from mongo:
- #   dict_dfs = read_multiple_mongo_collections_df(collections=["throughput_log", "main_kpis_log", "event_log", "status_log", "rem_log"],
-  #                                     skips=[last_read_thr, last_read_main, last_read_events, last_read_status, last_read_dominance])
-
-    data_frames = dict()
-    if 0 < read_mongo_best_effort(dictionary=data_frames, collection="throughput_log", skip=last_read_thr):
-        last_read_thr += len(data_frames["throughput_log"])
-        update_total_throughput_chart_data(data_frames["throughput_log"], context)
-
-    if 0 < read_mongo_best_effort(dictionary=data_frames, collection="main_kpis_log", skip=last_read_main):
-        last_read_main += len(data_frames["main_kpis_log"])
-
-        data_frames["main_kpis_log"] = data_frames["main_kpis_log"][np.isfinite(data_frames["main_kpis_log"]['RSRP'])]
-        update_rsrp_per_cell_chart_data(data_frames["main_kpis_log"], context)
-        update_latest_rsrp_per_cell_chart_data(data_frames["main_kpis_log"], context)
-        update_number_of_users_per_cell_chart_data(data_frames["main_kpis_log"], context)
-
-    if 0 < read_mongo_best_effort(dictionary=data_frames, collection="event_log", skip=last_read_events):
-        last_read_events += len(data_frames["event_log"])
-        update_rlf_per_cell_chart_data(data_frames["event_log"], context)
-        update_ac_cumulative_rlf_chart_data(data_frames["event_log"], context)
-
-    if 0 < read_mongo_best_effort(dictionary=data_frames, collection="status_log", skip=last_read_status):
-        last_read_status += len(data_frames["status_log"])
-        update_simulator_status_message_data(data_frames["status_log"], context)          # TODO
-
-    if 0 < read_mongo_best_effort(dictionary=data_frames, collection="rem_log", skip=last_read_dominance):
-        last_read_dominance += len(data_frames["rem_log"])
-        update_rem_map_chart(data_frames["rem_log"].tail(22500), context)          # TODO
+#
+# def get_data_for_all_charts(context):
+#     global last_read_main
+#     global last_read_thr
+#     global last_read_events
+#     global last_read_status
+#     global last_read_dominance
+#     global number_of_cells
+#
+#     if number_of_cells == 0:
+#         number_of_cells = get_number_of_cells()
+#         init_rlf()
+#
+#     # Check if new simulation started and charts need to be initialized
+#     update_intialized(context)
+#
+#     # Read collections from mongo:
+#  #   dict_dfs = read_multiple_mongo_collections_df(collections=["throughput_log", "main_kpis_log", "event_log", "status_log", "rem_log"],
+#   #                                     skips=[last_read_thr, last_read_main, last_read_events, last_read_status, last_read_dominance])
+#
+#     data_frames = dict()
+#     if 0 < read_mongo_best_effort(dictionary=data_frames, collection="throughput_log", skip=last_read_thr):
+#         last_read_thr += len(data_frames["throughput_log"])
+#         update_total_throughput_chart_data(data_frames["throughput_log"], context)
+#
+#     if 0 < read_mongo_best_effort(dictionary=data_frames, collection="main_kpis_log", skip=last_read_main):
+#         last_read_main += len(data_frames["main_kpis_log"])
+#
+#         data_frames["main_kpis_log"] = data_frames["main_kpis_log"][np.isfinite(data_frames["main_kpis_log"]['RSRP'])]
+#         update_rsrp_per_cell_chart_data(data_frames["main_kpis_log"], context)
+#         update_latest_rsrp_per_cell_chart_data(data_frames["main_kpis_log"], context)
+#         update_number_of_users_per_cell_chart_data(data_frames["main_kpis_log"], context)
+#
+#     if 0 < read_mongo_best_effort(dictionary=data_frames, collection="event_log", skip=last_read_events):
+#         last_read_events += len(data_frames["event_log"])
+#         update_rlf_per_cell_chart_data(data_frames["event_log"], context)
+#         update_ac_cumulative_rlf_chart_data(data_frames["event_log"], context)
+#
+#     if 0 < read_mongo_best_effort(dictionary=data_frames, collection="status_log", skip=last_read_status):
+#         last_read_status += len(data_frames["status_log"])
+#         update_simulator_status_message_data(data_frames["status_log"], context)          # TODO
+#
+#     if 0 < read_mongo_best_effort(dictionary=data_frames, collection="rem_log", skip=last_read_dominance):
+#         last_read_dominance += len(data_frames["rem_log"])
+#         update_rem_map_chart(data_frames["rem_log"].tail(22500), context)          # TODO
 
  #   if len(dict_dfs["main_kpis_log"]) % (105*21) != 0:
  #       errori = True

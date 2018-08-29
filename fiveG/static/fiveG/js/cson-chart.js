@@ -1,4 +1,11 @@
 
+/**
+ * Chart class using Highcharts.
+ *
+ * - Tuukka Varjus <tupevarj@student.jyu.fi>
+ */
+
+
 //--------------------------------------------------------------------------------------------------------------
 //          START: CHART CLASS
 //--------------------------------------------------------------------------------------------------------------
@@ -135,6 +142,8 @@ class Chart {
      * Deletes all points from charts series.
      */
     cleanChart() {
+        if(this.chart == undefined)
+            return;
         for(var i = 0; i < this.chart.series.length; i++) {
             this.chart.series[i].setData([]);
         }
@@ -214,11 +223,13 @@ class Chart {
         {
             var serie = series[i-1];
 
+
             // NOTE: update
-            if(serie.name != Object.keys(dictionary)[i]) {
-                for(var j = 1; j < Object.keys(dictionary).length; j++)
+            if(serie.name != Object.keys(dictionary)[i]) {      // Not next in series
+
+                for(var j = 0; j < series.length; j++)     // Find match from series
                 {
-                    if(Object.keys(dictionary)[i] == Object.keys(dictionary)[j]) {
+                    if(Object.keys(dictionary)[i] == series[j].name) {
                         serie = series[j];
                         break;                  // IF NOT FOUND???? TODO:
                     }
@@ -279,7 +290,7 @@ class Chart {
             this.drawChart(data[this.dataName]);
         }
         else {
-            if ('Initialize' in data) {
+            if ("Initialize" in data) {
                 if (data['Initialize'] != undefined && data['Initialize'] == 'true')
                     this.cleanChart();
             }

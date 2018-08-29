@@ -50,6 +50,48 @@ def write_data_frame_to_csv_file(data_frame, path):
 ##############################################################
 
 
+def preprocess_cod_train(data_frame):
+    """ Preprocess data to two arrays, columns:
+           -     dim_8_list : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           -      locations : LocationX, LocationY
+           -        array_y : LABEL """
+
+    storage = dict()
+    storage['data'] = list()
+    storage['labels'] = list()
+
+    for identity, group in data_frame.groupby(["Time", "UserID"]):
+        # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
+        numpy_array = np.array(group.values)
+
+        if not np.isnan(numpy_array[0][6]):
+            numpy_array = numpy_array[numpy_array[:, 5].argsort()]  # sort
+            storage['data'].append([numpy_array[0][3], numpy_array[0][4], numpy_array[-1][5], numpy_array[-1][6], numpy_array[-2][5], numpy_array[-2][6],
+                               numpy_array[-3][5], numpy_array[-3][6], numpy_array[-4][5], numpy_array[-4][6]])
+           # locations = np.append(locations, [numpy_array[0][3], numpy_array[0][4]])
+            storage['labels'].append(numpy_array[0][2])
+    storage['data'] = np.asarray(storage['data'])
+    storage['labels'] = np.asarray(storage['labels'])
+    return storage
+
+
+def preprocess_cod(data, locations, data_frame):
+    """ Preprocess data to two arrays, columns:
+           -     dim_8_list : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
+           -      locations : LocationX, LocationY
+           -        array_y : LABEL """
+
+    for identity, group in data_frame.groupby(["Time", "UserID"]):
+        # Pick the top 4 highest RSRP values and then its corresponding RSRQ values in that row
+        numpy_array = np.array(group.values)
+
+        if not np.isnan(numpy_array[0][6]):
+            numpy_array = numpy_array[numpy_array[:, 5].argsort()]  # sort
+            data = np.append(data, [numpy_array[-1][5], numpy_array[-1][6], numpy_array[-2][5], numpy_array[-2][6],
+                               numpy_array[-3][5], numpy_array[-3][6], numpy_array[-4][5], numpy_array[-4][6]])
+            locations = np.append(locations, [numpy_array[0][3], numpy_array[0][4]])
+
+
 def preprocess_training_set_to_8_dimensions(dim_8_list, labels, data_frame):
     """ Preprocess data to two arrays, columns:
            -     dim_8_list : RSRP_1 RSRQ_1 RSRP_2 RSRQ_2 RSRP_3 RSRQ_3 RSRP_4 RSRQ_4
