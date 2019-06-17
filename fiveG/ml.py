@@ -186,44 +186,6 @@ def getThreshold(data, time_interval=30):
 
     return {"upper": upper, "lower": lower}
 
-
-def getVectorRSRP(data):
-    '''
-    generate rsrp vector and its traffic label
-    :return:
-    '''
-
-    # get all total rsrp for all cells for each user
-    grouped = data.groupby(["Time", "UserID"])["RSRP"]
-    time_interval = 5
-    l = list()
-    for k, rsrp in grouped:
-        totalRSRP = np.sum(rsrp)
-        l.append([k[0], k[1], totalRSRP])
-
-    df = pd.DataFrame(l, columns=["Time", "Cell", "TotalRSRP"])
-
-
-    # get specific section of dataframe between specific time slot
-
-    latestTime = max(df["Time"])
-
-    repeatTimes = int(latestTime / time_interval) + 1
-    # for i in range(repeatTimes):
-    #     if
-
-
-def calculateAvgRSRPForCell(data):
-    grouped = data.groupby("cell")["TotalRSRP"]
-
-
-    rsrpCells = dict()
-    rsrpCells[1] = 0
-    rsrpCells[2] = 0
-    return rsrpCells
-
-
-
 def detectCellREAL():
 #     preprocess data to get the specific dataframe
     data = collection_read_mongo(collection="main_file_with_UserTHR")
@@ -275,6 +237,37 @@ def preprocessDF(data):
 
 
     return wantedDF
+
+def mds(data):
+    '''
+    :param data:
+    :return:
+    '''
+    # for each user A, we pick the top 4 highest RSRP, RSRQ value at a time point t.
+    identiferList = list()
+    pd.DataFrame(columns=["Time", "UserID"])
+    signalList = list()
+
+    for ident, group in testData.groupby(["Time", "UserID"]):
+        #     iterate the group object, and pick the top 4 highest rsrp value and then its corresponsing rsrq value in that row
+        #     print(type(group))
+        top4Row = group.sort_values(by=["RSRP"])[:4]
+        #     print(top4Row)
+        try:
+            signalRow = [top4Row.iloc[0]["RSRP"], top4Row.iloc[0]["RSRQ"], top4Row.iloc[1]["RSRP"],
+                         top4Row.iloc[1]["RSRQ"], top4Row.iloc[2]["RSRP"], top4Row.iloc[2]["RSRQ"],
+                         top4Row.iloc[3]["RSRP"], top4Row.iloc[3]["RSRQ"]]
+            signalList.append(signalRow)
+            ident = (round(ident[0], 1), ident[1])
+            identiferList.append(ident)
+        except:
+            pass
+
+
+
+
+    return referenceDF
+
 
 
 
