@@ -1,0 +1,14 @@
+
+#ueConnectionsChartContainer .highcharts-xrange-series .highcharts-point {
+	stroke-width: 1px;
+	stroke: dimgrey;
+	fill: rgb(124, 181, 236);
+	font-size: 12px;
+    font-weight: bold;
+}
+
+#ueConnectionsChartContainer .highcharts-label .highcharts-data-label text {
+	font-size: 12px;
+    font-weight: bold;
+    fill: #ffffff;
+}

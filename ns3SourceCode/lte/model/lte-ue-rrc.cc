@@ -1605,7 +1605,6 @@ LteUeRrc::SaveUeMeasurements (uint16_t cellId, double rsrp, double rsrq,
   //
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  m_KpiTrace(m_imsi, cellId, rsrp, rsrq);
 
   if(cellId == m_cellId && rsrp < m_rsrpThrLow)
     {
@@ -1666,6 +1665,14 @@ LteUeRrc::SaveUeMeasurements (uint16_t cellId, double rsrp, double rsrq,
       NS_ASSERT_MSG (ret.second == true, "element already existed");
       storedMeasIt = ret.first;
     }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  m_KpiTrace(m_imsi, cellId, storedMeasIt->second.rsrp, storedMeasIt->second.rsrq, m_cellId);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
   NS_LOG_DEBUG (this << " IMSI " << m_imsi << " state " << ToString (m_state)
                      << ", measured cell " << m_cellId

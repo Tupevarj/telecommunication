@@ -127,7 +127,7 @@ def build(bld):
         'model/lte-ffr-enhanced-algorithm.cc',
         'model/lte-ffr-distributed-algorithm.cc',
         'model/lte-ue-power-control.cc',
-        'demo/ConfigureInOut.cc',
+        'demo/DatabaseConnector.cc',
         'demo/DemoHelper.cc',
         ]
 
@@ -304,8 +304,8 @@ def build(bld):
         'model/lte-ffr-enhanced-algorithm.h',
         'model/lte-ffr-distributed-algorithm.h',     
         'model/lte-ue-power-control.h',
-        'demo/ConfigureInOut.h',
-        'demo/ConfigureInOutStructures.h',
+        'demo/DatabaseConnector.h',
+        'demo/DatabaseStructs.h',
         'demo/DemoHelper.h',
         ]
 

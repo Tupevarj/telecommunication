@@ -65,10 +65,14 @@ PhyStatsCalculator::GetTypeId (void)
                    StringValue ("UlInterferenceStats.txt"),
                    MakeStringAccessor (&PhyStatsCalculator::SetInterferenceFilename),
                    MakeStringChecker ())
-	.AddTraceSource ("SinrTrace",
-			"Trace fired",
+	.AddTraceSource ("SinrUeTrace",
+			"Trace fired, when SINR calculated",
 			 MakeTraceSourceAccessor (&PhyStatsCalculator::m_SinrTrace),
 			"ns3::PhyStatsCalculator::SinrCallback")
+	.AddTraceSource ("SinrEnbTrace",
+					"Trace fired, when SINR calculated",
+					 MakeTraceSourceAccessor (&PhyStatsCalculator::m_SinrEnbTrace),
+					"ns3::PhyStatsCalculator::SinrEnbCallback")
   ;
   return tid;
 }
@@ -149,11 +153,11 @@ PhyStatsCalculator::ReportCurrentCellRsrpSinr (uint16_t cellId, uint64_t imsi, u
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //  int time = Simulator::Now().GetSeconds() * 1000;
-//
+
 //  if(time % 200 == 0)
 //  {
-//	  m_KpiTrace((time / 1000.0), imsi, cellId, 10.0 * log10(rsrp), 10.0 * log10(sinr));
-
+	  m_SinrEnbTrace((Simulator::Now().GetSeconds() * 10)/10.0, imsi, cellId, 10.0 * log10(sinr));
+//  }
   outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << ",";
 	  outFile << cellId << ",";
 	  outFile << imsi << ",";
@@ -202,15 +206,14 @@ PhyStatsCalculator::ReportUeSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti,
   // if (time % 200 < 2) saadann 400 800 1200...
 
 //  int time = Simulator::Now().GetSeconds() * 1000;  // 0.641 -> 641 s    80  600 / 80
-
-  // 0.08 s
-
-//  if(time % 200 == 2 ||time % 200 == 41)
+//
+//  // 0.08 s
+//
+//  if(time % 200 == 2 || time % 200 == 41)
 //  {
-	  m_SinrTrace((int)(Simulator::Now().GetSeconds() * 10)/10.0, imsi, cellId, 10.0 * log10(sinrLinear));
-
+	  m_SinrTrace((Simulator::Now().GetSeconds() * 10)/10.0, imsi, cellId, 10.0 * log10(sinrLinear));
+//  }
 	  outFile << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << ",";
-	//  outFile << (int)(Simulator::Now().GetSeconds() * 10)/10.0 << ",";
 	  outFile << cellId << ",";
 	  outFile << imsi << ",";
 	  outFile << rnti << ",";

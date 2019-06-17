@@ -1,6 +1,7 @@
+
+#pragma once
 #include <string>
 #include <vector>
-#pragma once
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
@@ -9,25 +10,25 @@
 
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
-#include "ConfigureInOutStructures.h"
+#include <mongocxx/write_concern.hpp>
 
-// ConfigureInOut class:
-// Communicates with mongoDB
+#include "DatabaseStructs.h"
+
+
+
+// DatabaseConnector class:
+// Handles communication with mongoDB
 //
 // todo: level of abstarction
 //	- no need to know about ns-3 => boost library
-//		log structs:
- //		------------
-//		+ log structs 'loopable'
-//		+ different location
-//		todo: USE INHERITANCE IN WRITING!! (boost?)
+//	- use inheritance in writing (boost?)
 //
-class ConfigureInOut
+class DatabaseConnector
 {
 public:
 
-	ConfigureInOut();
-	~ConfigureInOut();
+	DatabaseConnector();
+	~DatabaseConnector();
 
 	/* Sets output folder for CSV files */
 	void SetOutPutFolder(std::string path);
@@ -46,6 +47,9 @@ public:
 
 	void TestWriteToCurrentCollection();
 
+	/* Adds status message to cache */
+	void LogStatus(std::string sim_time, std::string message, int type);
+
 	/* Adds event to cache */
 	void LogEvent(double time, double x, double y,uint64_t imsi, EventName e, uint16_t cellId, double rsr);
 
@@ -59,13 +63,36 @@ public:
 	void LogThroughput(double time, uint64_t imsi, uint16_t cellId, double thr);
 
 	/* Adds environment measure to cache */
-	void LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq);
+	void LogMainKpis(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected);
+
+	/* Adds environment measure to cache with labeling */
+	void LogMainKpisWithLabeling(double time, double x, double y, uint64_t imsi, uint16_t cellId, double rsrp, double rsrq, bool connected, bool label);
+
+	std::vector<int> ReadRLFs(float time, float variance);
 
 	/* Adds REM measurement */
 	void LogREM(double x, double y, double z, double sinr);
 
+	/* Save simulation state into database */
+	void SaveSimulationState(uint32_t nMacroEnbSites, uint32_t nMacroEnbSitesX, double interSiteDistance, int pid);
+	void ReadSimulationState(uint32_t& nMacroEnbSites, uint32_t& nMacroEnbSitesX, double& interSiteDistances, int32_t& pid);
+
+	/* Save cells transmission powers into database */
+	void SaveCellsStates(double txs[], int noCells);
+	void ReadCellsStates(double txs[], int noCells);
+	void InitializeCellConfigurations(double txPower, int noCells, std::vector<std::vector<int>> cellLocations);
+
+	/* Clears state collection from database */
+	void ClearSimulationState();
+
 	/* Writes all the logs into database/csv files and CLEARS LOG FILES */
 	void FlushLogs();
+
+	/* Converts WritableLog to documents and inserts documents into database */
+	//void InsertMultipleDocuments(std::string coll_name, std::vector<WritableLog> &logs);
+
+	std::vector<Location> ReadConnectionLocations(std::vector<uint16_t> cells);
+	std::vector<Location> ReadHandovers(std::vector<uint16_t> cells);
 
 	/* Reads SONEngine instructions from database  FOR TESTING ONLY!! */
 	SONEngineLog ReadSONEngineMethodsFromDatabase();
@@ -76,7 +103,22 @@ public:
 	/* Returns current configuration settings */
 	const ConfigurationLog& GetConfigurationData();
 
+	void UpdateTxPower(u_int16_t cellId, double tx);
+
+	/* Start REMgenerator */
+	void RunREMGeneratorScript(int stepId);
+
+	/* Sets post fix for CSV files */
+	void SetPostFixCSV(std::string postFix);
+
+	void dropDatabase();
+
 private:
+
+	// Database synchronization
+	bool IsDatabaseUnlocked();
+	void LockDatabase();
+	void UnlockDatabase();
 
 	/* Sets current mongo collection in database */
 	void SetCollection(std::string coll);
@@ -104,7 +146,8 @@ private:
 	mongocxx::database* mongoDatabase;
 	mongocxx::collection* mongoCollection;
 
-	std::string outputFolder = "/home/tupevarj/NS3SimulatorData/";
+	std::string outputFolder = "/home/tupevarj/NS3SimulatorData/Testing/";
+	std::string postFix = "";
 
 //	LogCollection eventsLogCol = {std::vector<WritableLog> {}};
 //	LogCollection handoversLogCol = {std::vector<WritableLog> {}};
@@ -117,7 +160,9 @@ private:
 	std::vector<SinrLog> sinrsLog;
 	std::vector<ThrouhgputLog> throughputsLog;
 	std::vector<MainKpiLog> mainKpisLog;
+	std::vector<MainKpiWithLabelLog> mainKpisWithLabelLog;
 	std::vector<REMLog> remLog;
+	std::vector<StatusLog> statusLog;
 
 	int64_t numberOfSONLogsInDB = 0;
 };

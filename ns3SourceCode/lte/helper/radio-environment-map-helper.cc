@@ -150,6 +150,11 @@ RadioEnvironmentMapHelper::GetTypeId (void)
 				   	 "Trace fired",
 				   	MakeTraceSourceAccessor (&RadioEnvironmentMapHelper::m_RemTrace),
 				   	"ns3::RadioEnvironmentMapHelper::RemCallback")
+	.AddTraceSource("RemEndedTrace",
+					"Trace fired when REM has been finished",
+				   	MakeTraceSourceAccessor (&RadioEnvironmentMapHelper::m_RemEndedTrace),
+				   	"ns3::RadioEnvironmentMapHelper::RemEndedCallback")
+
   ;
   return tid;
 }
@@ -267,7 +272,7 @@ RadioEnvironmentMapHelper::DelayedInstall ()
           if ((numPointsCurrentIteration == m_maxPointsPerIteration)
               || ((x > m_xMax - 0.5*m_xStep) && (y > m_yMax - 0.5*m_yStep)) )
             {
-              Simulator::Schedule (Seconds (remIterationStartTime), 
+              Simulator::Schedule (Seconds (remIterationStartTime),
                                    &RadioEnvironmentMapHelper::RunOneIteration,
                                    this, xMinNext, x, yMinNext, y);
               remIterationStartTime += 0.001;
@@ -277,7 +282,7 @@ RadioEnvironmentMapHelper::DelayedInstall ()
         }      
     }
 
-  Simulator::Schedule (Seconds (remIterationStartTime), 
+  Simulator::Schedule (Seconds (remIterationStartTime),
                        &RadioEnvironmentMapHelper::Finalize,
                        this);
 }
@@ -314,7 +319,7 @@ RadioEnvironmentMapHelper::RunOneIteration (double xMin, double xMax, double yMi
         }
     }
 
-  Simulator::Schedule (Seconds (0.0005), &RadioEnvironmentMapHelper::PrintAndReset, this);  
+  Simulator::Schedule (Seconds (0.0005), &RadioEnvironmentMapHelper::PrintAndReset, this);
 }
 
 void 
@@ -336,13 +341,6 @@ RadioEnvironmentMapHelper::PrintAndReset ()
           // at the end of the list can be unused
           break;
         }
-      Ptr<NetDevice> netDevice = it->phy->GetDevice();
-
-      Ptr<LteUeNetDevice> lteNetDevice = it->bmm->GetObject<LteUeNetDevice>();
-
-     // Ptr<LteUeNetDevice> lteNetDevice = it->phy->GetDevice()->GetObject<LteUeNetDevice>();
-
-     // Ptr<LteUeRrc> rrc = lteNetDevice->GetRrc();
 
       Vector pos = it->bmm->GetPosition ();
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -359,15 +357,20 @@ RadioEnvironmentMapHelper::PrintAndReset ()
                 << pos.y << ","
                 << pos.z << ","
                 << it->phy->GetSinr (m_noisePower)
-			//	<< "CellID" << lteNetDevice->GetRrc()->GetCellId()
                 << std::endl;
       it->phy->Reset ();
     }
 }
 
-void 
+void
 RadioEnvironmentMapHelper::Finalize ()
 {
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	 m_RemEndedTrace(true);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   NS_LOG_FUNCTION (this);
   m_outFile.close ();
   if (m_stopWhenDone)
